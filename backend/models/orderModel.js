@@ -103,6 +103,10 @@ deliveryOtp : {
 earning: {
   amount: { type: Number, default: 0 }, // What the rider earned for this delivery
   collected: { type: Number, default: 0 }, // If COD, what rider collected from customer
+},
+isAssigning: {
+  type: Boolean,
+  default: false // true if rider is being assigned, false if not
 }
 
 }, { minimize: false, timestamps: true });

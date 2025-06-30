@@ -6,11 +6,12 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { OrderContext } from "../contexts/OrderContext";
 import haversine from "haversine-distance";
-
+  
 const Dashboard = () => {
   const { userData } = useContext(UserContext);
   const { backendUrl, token } = useContext(GlobalContext);
   const { setCurrentOrder } = useContext(OrderContext);
+
 
   const [orderData, setOrderData] = useState(null);
   const [timer, setTimer] = useState(null);
@@ -68,6 +69,7 @@ const Dashboard = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
+        console.log("Restored order from localStorage:", parsed);
         setOrderData(parsed);
         setRiderAmount(parsed.riderAmount || 0);
         startCountdown(parsed);
@@ -87,6 +89,7 @@ const Dashboard = () => {
           collected: 0,
         },
       };
+      console.log("New order received:", fullOrder);
       setOrderData(fullOrder);
       setRiderAmount(fullOrder.earning.amount);
       localStorage.setItem("activeOrder", JSON.stringify(fullOrder));
@@ -112,6 +115,7 @@ const Dashboard = () => {
         { orderId, riderAmount },
         { headers: { token } }
       );
+      
       if (response.data.success) {
         toast.success(`✅ Order accepted! You will earn ₹${riderAmount}`);
         clearInterval(countdownRef.current);

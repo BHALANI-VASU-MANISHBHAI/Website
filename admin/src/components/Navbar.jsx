@@ -88,6 +88,15 @@ const Navbar = () => {
               <img className="w-5 h-5" src={assets.order_icon} alt="" />
               <p className="font-bold">Dashboard</p>
             </NavLink>  
+            <NavLink
+              onClick={() => setSidebar(false)}
+              className="flex items-center gap-3 border border-gray-300  px-4 py-2 rounded"
+              to="/rider-dashboard"
+            >
+              <img className="w-5 h-5" src={assets.order_icon}
+                alt="" />
+              <p className="font-bold">Rider Dashboard</p>
+            </NavLink>
           </div>
         </div>
       }

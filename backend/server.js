@@ -121,6 +121,10 @@ socket.on('leaveStockRoom', () => {
     console.log('User left stockRoom:', socket.id);
     socket.leave('stockRoom');
   });
+  socket.on("hello", (data) => {
+    console.log("Got hello:", data);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });

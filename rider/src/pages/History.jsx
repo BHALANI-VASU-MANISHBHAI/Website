@@ -3,7 +3,6 @@ import { GlobalContext } from "../contexts/GlobalContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-
 const History = () => {
   const { backendUrl, token } = useContext(GlobalContext);
   const [orderHistory, setOrderHistory] = useState([]);
@@ -19,23 +18,35 @@ const History = () => {
   const [startTime, setStartTime] = useState("12 AM");
   const [endTime, setEndTime] = useState("11 PM");
 
-    const [codCollected, setCodCollected] = useState(0);
+  const [codCollected, setCodCollected] = useState(0);
   const getRiderAcceptedOrders = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/rider/acceptedOrder`, {
-        headers: { token }
-      });
+      const response = await axios.get(
+        `${backendUrl}/api/rider/acceptedOrder`,
+        {
+          headers: { token },
+        }
+      );
+     
       if (response.data.success) {
         setOrderHistory(response.data.orders);
-        console.log("Rider's accepted orders:", response.data.orders[0].earning);
+        console.log(
+          "Rider's accepted orders:",
+          response.data.orders[0].earning
+        );
       } else {
-        toast.error(response.data.message || "Failed to fetch rider's accepted orders");
+        toast.error(
+          response.data.message || "Failed to fetch rider's accepted orders"
+        );
       }
     } catch (error) {
       console.error("Error fetching rider's accepted orders:", error);
-      toast.error(error.response?.data?.message || "Error fetching rider's accepted orders");
+      toast.error(
+        error.response?.data?.message ||
+          "Error fetching rider's accepted orders"
+      );
     }
-    };
+  };
 
   const convertTo24Hour = (timeStr) => {
     const [hour, period] = timeStr.split(" ");
@@ -49,7 +60,9 @@ const History = () => {
     let filtered = [...orderHistory];
 
     if (paymentMethod !== "All") {
-      filtered = filtered.filter((order) => order.paymentMethod === paymentMethod);
+      filtered = filtered.filter(
+        (order) => order.paymentMethod === paymentMethod
+      );
     }
 
     if (status !== "All") {
@@ -73,26 +86,25 @@ const History = () => {
     setFilteredOrders(filtered);
   };
 
-const codCollectedMoney = () => {
+  const codCollectedMoney = () => {
     console.log("Calculating COD collected...");
     console.log("Payment method:", paymentMethod);
-   if (paymentMethod !== "COD" && paymentMethod !== "All") {
-  return 0;
-}
+    if (paymentMethod !== "COD" && paymentMethod !== "All") {
+      return 0;
+    }
 
     console.log("Payment method is COD, calculating total collected...");
     let totalCollected = 0;
-    filteredOrders.forEach((order) => { {
-            totalCollected += order.amount;
-        }
+    filteredOrders.forEach((order) => {
+      {
+        totalCollected += order.amount;
+      }
     });
-  console.log("Total COD collected:", totalCollected);
-  setCodCollected(totalCollected);
-  return totalCollected;
-};
+    console.log("Total COD collected:", totalCollected);
+    setCodCollected(totalCollected);
+    return totalCollected;
+  };
 
-
-   
   useEffect(() => {
     if (!token) return;
     getRiderAcceptedOrders();
@@ -100,15 +112,22 @@ const codCollectedMoney = () => {
 
   useEffect(() => {
     filterOrders();
-    
-  }, [orderHistory, paymentMethod, status, startDate, endDate, startTime, endTime]);
+  }, [
+    orderHistory,
+    paymentMethod,
+    status,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+  ]);
 
+  useEffect(() => {
+    codCollectedMoney(); // this will run only AFTER filteredOrders is updated
+  }, [filteredOrders]);
 
-useEffect(() => {
-  codCollectedMoney(); // this will run only AFTER filteredOrders is updated
-}, [filteredOrders]);
-
-  const timeOptions = [...Array(12).keys()].map((i) => `${i + 1} AM`)
+  const timeOptions = [...Array(12).keys()]
+    .map((i) => `${i + 1} AM`)
     .concat([...Array(12).keys()].map((i) => `${i + 1} PM`));
 
   const resetFilters = () => {
@@ -122,12 +141,14 @@ useEffect(() => {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">📜 Rider Order History</h1>
+      <h1 className="text-2xl font-bold mb-4">Rider Order History</h1>
 
       {/* Filters */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
         <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700">Status:</label>
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Status:
+          </label>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
@@ -140,7 +161,9 @@ useEffect(() => {
           </select>
         </div>
         <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700">Payment Method:</label>
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Payment Method:
+          </label>
           <select
             value={paymentMethod}
             onChange={(e) => setPaymentMethod(e.target.value)}
@@ -155,7 +178,9 @@ useEffect(() => {
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
         <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700">Start Date:</label>
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Start Date:
+          </label>
           <input
             type="date"
             value={startDate}
@@ -164,7 +189,9 @@ useEffect(() => {
           />
         </div>
         <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700">End Date:</label>
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            End Date:
+          </label>
           <input
             type="date"
             value={endDate}
@@ -173,76 +200,134 @@ useEffect(() => {
           />
         </div>
         <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700">Start Time:</label>
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Start Time:
+          </label>
           <select
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
             className="w-full p-2 border border-gray-300 rounded-md"
           >
             {timeOptions.map((time) => (
-              <option key={time} value={time}>{time}</option>
+              <option key={time} value={time}>
+                {time}
+              </option>
             ))}
           </select>
         </div>
         <div>
-          <label className="block mb-1 text-sm font-medium text-gray-700">End Time:</label>
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            End Time:
+          </label>
           <select
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
             className="w-full p-2 border border-gray-300 rounded-md"
           >
             {timeOptions.map((time) => (
-              <option key={time} value={time}>{time}</option>
+              <option key={time} value={time}>
+                {time}
+              </option>
             ))}
           </select>
         </div>
-            <div className="flex items-end">
-          <button onClick={resetFilters} className="w-full p-2 bg-gray-200 rounded-md hover:bg-gray-300">
+        <div className="flex items-end">
+          <button
+            onClick={resetFilters}
+            className="w-full p-2 bg-gray-200 rounded-md hover:bg-gray-300"
+          >
             Reset Filters
           </button>
         </div>
       </div>
 
-
       {/* Filter Summary */}
       <p className="text-sm text-gray-500 mb-4">
-        Showing orders from <strong>{startDate}</strong> <strong>{startTime}</strong> to <strong>{endDate}</strong> <strong>{endTime}</strong>
+        Showing orders from <strong>{startDate}</strong>{" "}
+        <strong>{startTime}</strong> to <strong>{endDate}</strong>{" "}
+        <strong>{endTime}</strong>
       </p>
-            <h1 className="text-xl mb-5">{codCollected > 0 ? ` Total COD Collected: ₹${codCollected}` : "No COD collected yet"}</h1>
+      <h1 className="text-xl mb-5">
+        {codCollected > 0
+          ? ` Total COD Collected: ₹${codCollected}`
+          : "No COD collected yet"}
+      </h1>
       {/* Order List */}
       {filteredOrders.length > 0 ? (
         <ul className="space-y-6">
           {filteredOrders.map((order) => (
-            <li key={order._id} className="border p-4 rounded-lg bg-white shadow">
-              <p><strong>🆔 Order ID:</strong> {order._id}</p>
-              <p><strong>🧾 Status:</strong> {order.status}</p>
-              <p><strong>💰 Amount:</strong> ₹{order.amount}</p>
-              <p>
-                <strong>💳 Payment:</strong> {order.paymentMethod} ({order.paymentStatus})
-                {order.paymentMethod === "COD" && (
-                  <>
-                    <span className="ml-2 text-sm text-yellow-600 font-semibold bg-yellow-100 px-2 py-1 rounded">Collect Cash on Delivery</span>
-                    {order.paymentStatus === "Unpaid" && (
-                      <span className="ml-2 text-sm text-red-600 font-semibold">🛑 Payment Pending</span>
-                    )}
-                  </>
-                )}
-              </p>
-              <p><strong>📆 Date:</strong> {new Date(order.createdAt).toLocaleString()}</p>
-<p>
-  <strong>⏰ Time:</strong>{" "}
-  {new Date(order.createdAt).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  })}
-</p>
+            /* Each order item */
 
-              <hr className="my-2" />
-              <p><strong>📍 Pickup Address:</strong> {order.pickUpAddress?.street}, {order.pickUpAddress?.city}, {order.pickUpAddress?.state} - {order.pickUpAddress?.pincode}</p>
-              <p className="mt-2"><strong>🏠 Delivery Address:</strong> {order.address?.firstName} {order.address?.lastName}, {order.address?.street}, {order.address?.city}, {order.address?.state} - {order.address?.zipcode}</p>
-              <p>Email: {order.address?.email} | Phone: {order.address?.phone}</p>
-            </li>
+            <div
+              key={order._id}
+              className="p-4 border border-gray-300 rounded-md shadow-sm bg-white grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              <div className="space-y-3">
+                <p>
+                  <strong> Order ID:</strong> {order._id}
+                </p>
+                <p>
+                  <strong> Status:</strong> {order.status}
+                </p>
+                <p>
+                  <strong> Amount:</strong> ₹{order.amount}
+                </p>
+                <p>
+                  <strong> Payment:</strong> {order.paymentMethod} (
+                  {order.paymentStatus})
+                  {order.paymentMethod === "COD" && (
+                    <>
+                      <span className="ml-2 text-sm text-yellow-600 font-semibold bg-yellow-100 px-2 py-1 rounded">
+                        Collect Cash on Delivery
+                      </span>
+                      {order.paymentStatus === "Unpaid" && (
+                        <span className="ml-2 text-sm text-red-600 font-semibold">
+                          {" "}
+                          Payment Pending
+                        </span>
+                      )}
+                    </>
+                  )}
+                </p>
+                <p>
+                  <strong> Date:</strong>{" "}
+                  {new Date(order.createdAt).toLocaleString()}
+                </p>
+                <p>
+                  <strong> Time:</strong>{" "}
+                  {new Date(order.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}
+                </p>
+              </div>
+              {/* <hr className="my-2" /> */}
+              {/* Pickup  Address */}
+              <div className="flex flex-col space-y-10">
+                <div>
+                  <p>
+                    <strong>Pickup Address:</strong>{" "}
+                    {order.pickUpAddress?.street}, {order.pickUpAddress?.city},{" "}
+                    {order.pickUpAddress?.state} -{" "}
+                    {order.pickUpAddress?.pincode}
+                  </p>
+                </div>
+                {/* Delivery Address */}
+                <div className="space-y-2">
+                  <p className="mt-2">
+                    <strong> Delivery Address:</strong>{" "}
+                    {order.address?.firstName} {order.address?.lastName},{" "}
+                    {order.address?.street}, {order.address?.city},{" "}
+                    {order.address?.state} - {order.address?.zipcode}
+                  </p>
+                  <p>
+                    Email: {order.address?.email}
+                  </p>
+                    <p>Phone :{order.address?.phone}</p>
+                </div>
+              </div>
+            </div>
           ))}
         </ul>
       ) : (

@@ -13,7 +13,7 @@ const Orders = ({ token }) => {
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [category, setCategory] = useState("All");
   const [subCategory, setSubCategory] = useState("All");
-  const [status, setStatus] = useState("All");
+  const [status, setStatus] = useState("Order Placed");
   const [paymentStatus, setPaymentStatus] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useContext } from 'react';
 import { GlobalContext } from './GlobalContext';
+import socket from '../services/socket';
 
 
 export const OrderContext = React.createContext();
@@ -21,7 +22,7 @@ const getCurrentOrder = async () => {
             headers: {
                 token}
         });
-        console.log("Response from getCurrentOrder:", response.data.success);
+
         if (response.data.success) {
             const order = response.data.order;
             setCurrentOrder(order);
