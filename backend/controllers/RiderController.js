@@ -12,7 +12,7 @@ const findAllRidersByShortestTrip = async (
   const availableRiders = await UserModel.find({
     role: "rider",
     riderStatus: "available",
-  }).lean();
+  }).lean()
 
   if (!availableRiders || availableRiders.length === 0) {
     console.log("No available riders found");
@@ -99,7 +99,7 @@ async function waitForRiderResponse(riderId, orderId, timeout = 30000) {
     while (Date.now() - startTime < timeout) {
       const order = await OrderModel.findById(orderId)
         .select("status riderId")
-        .lean();
+        
       if (!order) return { accepted: false, reason: "order_not_found" };
       if (order.status === "Out for delivery") {
         if (order.riderId?.toString() === riderId.toString()) {
@@ -195,7 +195,7 @@ const assignRider = async (req, res) => {
     const existingOrder = await OrderModel.findOne({
       _id: orderId,
       status: "Packing",
-    }).lean();
+    });
 
     if (!existingOrder) {
       return res.status(404).json({
@@ -361,6 +361,7 @@ const GetcurrentRiderOrder = async (req, res) => {
   try {
     const userId = req.userId;
     console.log("Current rider userId:", userId);
+    
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -497,6 +498,149 @@ const riderEarningByRange = async (req, res) => {
   }
 };
 
+
+const  getAllRidersOrder = async (req, res) => {
+  try {
+    const userId = req.userId;
+const orders = await OrderModel.find({
+  isActive: false,
+  riderId: { $ne: null }
+}).populate("riderId", "name phone email riderStatus").lean();
+
+    console.log("Orders for rider:", orders);
+    if(!orders || orders.length === 0) {
+      return res.json({
+        success: false,
+        message: "No orders found for this rider",
+      });
+    } 
+    return res.status(200).json({
+      success: true,
+      orders: orders,
+      message: "All riders orders fetched successfully",
+    });
+  } catch (error) {
+    console.error("Error fetching all riders orders:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+
+const getOrderStatusCounts = async (req, res) => {
+  try { 
+
+    const {OrderStatus} = req.params;
+    const orderCounts = await OrderModel.aggregate([
+      {
+        $match: {
+          status: OrderStatus,
+          isActive: false,
+        },
+      },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    if(!orderCounts || orderCounts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No orders found for this status",
+      });
+    }
+
+    console.log("Order counts:", orderCounts);
+    return res.status(200).json({
+      success: true,
+      orderCounts: orderCounts.reduce((acc, curr) => {
+        acc[curr._id] = curr.count;
+        return acc;
+      }, {}),
+      message: "Order status counts fetched successfully",
+    });
+
+  }catch (error) {
+    console.error("Error fetching order status counts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+
+ const getOnlineTotalRider = async (req, res) => {
+  try {
+    const io = req.app.get("io"); // ✅ Get io from app context
+    const sockets = await io.in("riderRoom").allSockets(); // ✅ Count sockets in "riderRoom"
+    res.json({ success: true, onlineRiders: sockets.size });
+  } catch (error) {
+    console.error("Error getting online riders:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch online rider count",
+    });
+  }
+};
+
+
+const submitRiderCOD = async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const riderId = req.userId;
+    console.log("Rider ID:", riderId);
+    if (!amount || amount < 0) {
+      return res.status(400).json({ error: "Invalid amount" });
+    }
+
+    const rider = await UserModel.findById(riderId);
+    if (!rider) {
+      return res.status(404).json({ error: "Rider not found" });
+    }
+
+    rider.codSubmittedMoney += amount;
+    rider.codLastSubmittedAt = new Date();
+    rider.codMarkedDone = true;
+
+    await rider.save();
+
+    res.status(200).json({  success:true, message: "COD submitted successfully" });
+  } catch (err) {
+    console.log("Error in submitRiderCOD:", err);
+    res.status(500).json({ success:false,message: "Internal server error" });
+  }
+};
+
+const getRiderCODamount = async (req, res) => {
+  try {
+    const riderId = req.userId;
+    console.log("Rider ID:", riderId);
+    const rider = await UserModel.findById(riderId).select("codSubmittedMoney codLastSubmittedAt codMarkedDone").lean();
+
+    if (!rider) {
+      return res.status(404).json({ success: false, message: "Rider not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      codSubmittedMoney: rider.codSubmittedMoney,
+      codLastSubmittedAt: rider.codLastSubmittedAt,
+      codMarkedDone: rider.codMarkedDone,
+    });
+
+  } catch (error) {
+
+    console.error("Error fetching rider COD amount:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
 export {
   getAllRiders,
   assignRider,
@@ -506,4 +650,9 @@ export {
   GetcurrentRiderOrder,
   riderAcceptedOrder,
   riderEarningByRange,
+  getAllRidersOrder,
+  getOrderStatusCounts,
+  getOnlineTotalRider,
+  submitRiderCOD,
+  getRiderCODamount
 };

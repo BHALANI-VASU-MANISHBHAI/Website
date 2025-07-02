@@ -82,8 +82,20 @@ const userSchema = new mongoose.Schema(
     },
     riderStatus: {
       type: String,
-      enum: ["notified", "assigned", "busy", "offline","available"],
+      enum: ["notified", "assigned", "busy", "offline", "available"],
       default: "available",
+    },
+    codSubmittedMoney: {
+      type: Number,
+      default: 0, // Total money submitted by rider
+    },
+    codLastSubmittedAt: {
+      type: Date,
+      default: null,
+    },
+    codMarkedDone: {
+      type: Boolean,
+      default: false,
     },
   },
   { minimize: false, timestamps: true }
