@@ -2,6 +2,10 @@ import UserModel from "../models/userModel.js";
 import OrderModel from "../models/orderModel.js";
 import haversine from "haversine-distance";
 import { Heap } from "heap-js";
+import Razorpay from "razorpay";
+import crypto from "crypto";
+import razorpayInstance from "../config/razorPay.js";
+import RiderCODHistory from "../models/riderPaymentHistory.js";
 
 const findAllRidersByShortestTrip = async (
   deliveryLat,
@@ -133,7 +137,7 @@ const riderAcceptOrder = async (req, res) => {
         message: "Rider not found",
       });
     }
-
+    
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -150,7 +154,7 @@ const riderAcceptOrder = async (req, res) => {
 
     const distanceFromPickUpLocation = 5;
     const distanceFromDeliveryLocation = 10;
-
+  
     await Promise.all([
       UserModel.findByIdAndUpdate(userId, { riderStatus: "busy" }),
       OrderModel.findByIdAndUpdate(orderId, {
@@ -165,7 +169,9 @@ const riderAcceptOrder = async (req, res) => {
         },
       }),
     ]);
-
+  console.log("Rider accepting order:",
+      `Rider ${userId} accepted order ${orderId} with amount ${riderAmount}`
+  )
     return res.status(200).json({
       success: true,
       message: "Order accepted",
@@ -414,7 +420,8 @@ const riderAcceptedOrder = async (req, res) => {
   try {
     // fisrts find the order by riderId
     const userId = req.userId;
-
+    console.log("Rider userId:", userId);
+    console.log("Rider userId:", userId);
     const orders = await OrderModel.find({
       riderId: userId,
       isActive: false,
@@ -505,7 +512,10 @@ const  getAllRidersOrder = async (req, res) => {
 const orders = await OrderModel.find({
   isActive: false,
   riderId: { $ne: null }
-}).populate("riderId", "name phone email riderStatus").lean();
+}).populate("riderId", "name phone email riderStatus codMarkedDone earning cod codSubmittedMoney").lean();
+
+
+
 
     console.log("Orders for rider:", orders);
     if(!orders || orders.length === 0) {
@@ -514,6 +524,7 @@ const orders = await OrderModel.find({
         message: "No orders found for this rider",
       });
     } 
+    console.log("Fetched all riders length:", orders.length);
     return res.status(200).json({
       success: true,
       orders: orders,
@@ -591,6 +602,7 @@ const getOrderStatusCounts = async (req, res) => {
 const submitRiderCOD = async (req, res) => {
   try {
     const { amount } = req.body;
+
     const riderId = req.userId;
     console.log("Rider ID:", riderId);
     if (!amount || amount < 0) {
@@ -641,6 +653,111 @@ const getRiderCODamount = async (req, res) => {
     });
   }
 }
+
+const createRiderCODOrder = async (req, res) => {
+  const { amount } = req.body;
+  const riderId = req.userId;
+
+  if (!amount || amount <= 0) {
+    return res.status(400).json({ success: false, message: "Invalid COD amount" });
+  }
+
+  try {
+    const shortId = riderId.toString().slice(-6); // for 40-char receipt limit
+    const razorpayOrder = await razorpayInstance.orders.create({
+      amount: amount * 100,
+      currency: "INR",
+      receipt: `cod_${Date.now()}_${shortId}`
+    });
+
+    res.status(200).json({
+      success: true,
+      razorpayOrder,
+      key: process.env.RAZORPAY_KEY_ID
+    });
+  } catch (err) {
+    console.error("Error creating Razorpay order:", err);
+    res.status(500).json({ success: false, message: "Razorpay error" });
+  }
+};
+
+const verifyRiderCODPayment = async (req, res) => {
+  const { razorpay_payment_id, razorpay_order_id, razorpay_signature, amount } = req.body;
+  const riderId = req.userId;
+
+  console.log("🔐 Payment Verification Details:");
+  console.log({ razorpay_payment_id, razorpay_order_id, razorpay_signature, amount, riderId });
+
+  const expectedSignature = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+    .digest("hex");
+
+  if (expectedSignature !== razorpay_signature) {
+    return res.status(400).json({ success: false, message: "Invalid Razorpay signature" });
+  }
+
+  try {
+    if (!riderId) {
+      return res.status(400).json({ success: false, message: "Rider ID missing" });
+    }
+
+    // Step 1: Update codSubmittedMoney in user
+    const updatedRider = await UserModel.findByIdAndUpdate(
+      riderId,
+      { $inc: { codSubmittedMoney: amount } },
+      { new: true }
+    );
+    const allRiderOrders = await OrderModel.find({
+      riderId,
+      isActive: false,
+      status: "Delivered",
+    }).lean();
+    await RiderCODHistory.create({
+      riderId,
+      amount,
+      razorpay_order_id,
+      razorpay_payment_id,
+      verified: true, // already default, optional
+    });
+    console.log("✅ COD Amount Updated:", updatedRider.codSubmittedMoney);
+    
+    //currently we are not updating the codMarkedDone field, but you can uncomment the below line if needed
+  
+      for(const order of allRiderOrders) {
+        await OrderModel.findByIdAndUpdate(order._id, {
+          isCodSubmitted: true, // Mark this order as COD submitted
+        });
+      }
+      
+
+    res.status(200).json({ success: true, message: "COD Payment Verified" });
+  } catch (err) {
+    console.error("❌ Error saving COD amount:", err);
+    res.status(500).json({ success: false, message: "DB update failed" });
+  }
+};
+
+
+
+
+
+const getRiderCODHistory = async (req, res) => {
+ 
+  try {
+    const riderId = req.userId;
+    console.log("Fetching COD history for rider:", riderId);
+    const history = await RiderCODHistory.find({ riderId })
+      .sort({ submittedAt: -1 }).populate("riderId", "name phone email") // Populate rider details
+
+    res.status(200).json({ success: true, history });
+  } catch (error) {
+    console.error("Error fetching COD history:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+
 export {
   getAllRiders,
   assignRider,
@@ -654,5 +771,8 @@ export {
   getOrderStatusCounts,
   getOnlineTotalRider,
   submitRiderCOD,
-  getRiderCODamount
+  getRiderCODamount,
+  createRiderCODOrder,
+  verifyRiderCODPayment,
+  getRiderCODHistory,
 };

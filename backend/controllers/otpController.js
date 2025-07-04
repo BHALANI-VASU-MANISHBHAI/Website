@@ -155,8 +155,10 @@ const verifyDeliveryOtp = async (req, res) => {
   const { orderId, otp } = req.body;
 
   const order = await OrderModel.findById(orderId);
+  
+  
   if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-
+  
   const isExpired = Date.now() > order.otpExpiresAt;
   if (isExpired) {
     return res.status(400).json({ success: false, message: "OTP expired" });
@@ -172,6 +174,11 @@ const verifyDeliveryOtp = async (req, res) => {
   order.otpExpiresAt = null; // Clear expiration time
   order.earning.collected = order.amount; // Mark earnings as collected
   await order.save();
+
+  await UserModel.findByIdAndUpdate(order.riderId, {
+      riderStatus: "available"
+  });
+  
 
   return res.status(200).json({ success: true, message: "OTP verified, order marked as delivered" });
 };

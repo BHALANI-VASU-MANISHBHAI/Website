@@ -10,6 +10,10 @@ import { ProductContext } from "../contexts/ProductContext.jsx";
 const Add = ({ token }) => {
   const navigate = useNavigate();
   const AvailableSizes = ["S", "M", "L", "XL", "XXL"];
+  const allCategories =[ "Men", "Women", "Kids"];
+  const allSubcategories = ["Topwear", "Bottomwear", "Winterwear"];
+
+
 
   const [image1, setImage1] = React.useState(null);
   const [image2, setImage2] = React.useState(null);

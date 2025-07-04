@@ -230,11 +230,17 @@ const PlaceOrder = () => {
     console.log("Order Data:", orderData);
     try {
       if (method === "cod") {
-        const response = await axios.post(
-          backendUrl + "/api/order/place",
-          orderData,
-          { headers: { token } }
-        );
+        console.log("Placing COD order");
+       const response = await axios.post(
+  backendUrl + "/api/order/place",
+  orderData, // ✅ This is the request body
+  {
+    headers: {
+      token: token, // or Authorization: `Bearer ${token}` if using bearer tokens
+    },
+  }
+);
+
         if (response.data.success) {
           setCartItems({});
           navigate("/orders");

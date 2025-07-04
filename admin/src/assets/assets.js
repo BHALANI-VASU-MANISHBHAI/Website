@@ -7,6 +7,7 @@ import side_menu_icon from './side_menu_icon.png'
 import cross_icon from './cross_icon.png'
 import search_icon from './search_icon.png'
 import dropdown_icon from './dropdown_icon.png'
+import mark_as_done from './mark_as_done.png'
 
 const assets = {
   logo,
@@ -17,7 +18,8 @@ const assets = {
   side_menu_icon,
   cross_icon,
   search_icon,
-  dropdown_icon
+  dropdown_icon,
+  mark_as_done,
 };
 
 export default assets;

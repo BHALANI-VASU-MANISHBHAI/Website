@@ -103,6 +103,10 @@ const Navbar = () => {
           <NavLink to="/earnings" className="hover:text-blue-600">
             Earnings
           </NavLink>
+          
+          <NavLink to="/payment" className="hover:text-blue-600">
+            Payment
+          </NavLink>
         </div>
 
         {/* Profile & Logout */}

@@ -4,7 +4,7 @@ import assets from "../assets/assets.js";
 
 const SidebarAnimation = () => {
   const [isOpen, setIsOpen] = useState(false);
-
+  
   return (
     <>
       {/* Toggle Button */}

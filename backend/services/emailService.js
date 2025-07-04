@@ -9,7 +9,7 @@ async function sendOtpEmail(toEmail, otp) {
     auth: {
       user: 'vasubhalani2005@gmail.com'
 ,  // fixed email address
-        pass: 'ipng fusn yntl kmhb', // replace with your actual password or use environment variable
+        pass: 'xkpd bynw wvzu atxr', // replace with your actual password or use environment variable
     },
   });
 

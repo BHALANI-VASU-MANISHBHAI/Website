@@ -16,7 +16,7 @@ export const backendUrl = import.meta.env.VITE_BACKEND_URL
 import ProductContextProvider from './contexts/ProductContext'
 import RiderDashBorad from './pages/riderDashBorad'
 import RiderContextProvider from './contexts/RiderContext' // ✅ Import RiderContextProvider
-
+import RiderCodInfo from './pages/RiderCodInfo'
 const App = () => {
   const [token , settoken] = useState(localStorage.getItem('token') ? localStorage.getItem('token') : "")
 
@@ -46,6 +46,8 @@ const App = () => {
                   <Route path='/edit/:id' element={<Edit token={token} />} />
                   <Route path='/dashboard' element={<DashBoard token={token} />} />
                   <Route path='/rider-dashboard' element={<RiderDashBorad token={token} />} />
+                  <Route path='/rider-cod-info' element={<RiderCodInfo token={token} />} />
+                  {/* Add more routes as needed */}
                 </Routes>
               </div>
             </RiderContextProvider> {/* ✅ Close RiderContextProvider */}

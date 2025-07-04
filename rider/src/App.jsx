@@ -7,6 +7,7 @@ import Orders from './pages/Orders';
 import Dashboard from './pages/DashBoard';
 import History from './pages/History';
 import Earning from './pages/Earning';
+import Payment from './pages/Payment';
 import './index.css';
 
 import { ToastContainer } from 'react-toastify';
@@ -35,6 +36,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/history" element={<History />} />
         <Route path="/earnings" element={<Earning />} />
+        <Route path="/payment" element={<Payment />} />
         {/* Add more routes as needed */}
       </Routes>
 

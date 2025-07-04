@@ -2,11 +2,12 @@ import React, { useContext, useEffect, useState } from "react";
 import { GlobalContext } from "../contexts/GlobalContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { OrderContext } from "../contexts/OrderContext";
 
 const History = () => {
   const { backendUrl, token } = useContext(GlobalContext);
-  const [orderHistory, setOrderHistory] = useState([]);
-  const [filteredOrders, setFilteredOrders] = useState([]);
+  const {orderHistory} = useContext(OrderContext);
+    const [filteredOrders, setFilteredOrders] = useState([]);
 
   const [paymentMethod, setPaymentMethod] = useState("All");
   const [status, setStatus] = useState("All");
@@ -19,34 +20,7 @@ const History = () => {
   const [endTime, setEndTime] = useState("11 PM");
 
   const [codCollected, setCodCollected] = useState(0);
-  const getRiderAcceptedOrders = async () => {
-    try {
-      const response = await axios.get(
-        `${backendUrl}/api/rider/acceptedOrder`,
-        {
-          headers: { token },
-        }
-      );
-     
-      if (response.data.success) {
-        setOrderHistory(response.data.orders);
-        console.log(
-          "Rider's accepted orders:",
-          response.data.orders[0].earning
-        );
-      } else {
-        toast.error(
-          response.data.message || "Failed to fetch rider's accepted orders"
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching rider's accepted orders:", error);
-      toast.error(
-        error.response?.data?.message ||
-          "Error fetching rider's accepted orders"
-      );
-    }
-  };
+  
 
   const convertTo24Hour = (timeStr) => {
     const [hour, period] = timeStr.split(" ");
@@ -105,10 +79,7 @@ const History = () => {
     return totalCollected;
   };
 
-  useEffect(() => {
-    if (!token) return;
-    getRiderAcceptedOrders();
-  }, [token]);
+
 
   useEffect(() => {
     filterOrders();

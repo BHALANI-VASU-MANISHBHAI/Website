@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema(
       required: function () {
         return !this.googleId;
       },
-    },
+    },  
     googleId: {
       type: String,
       default: "",
@@ -97,6 +97,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isCodSubmitted : {
+      type: Boolean,
+      default: false, // true if rider has submitted money for COD orders
+    }
   },
   { minimize: false, timestamps: true }
 );
