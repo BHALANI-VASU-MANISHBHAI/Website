@@ -27,9 +27,11 @@ function App() {
 
       {/* Define your routes here */}
       <Routes>
-
+        {/* Public Routes */}
+          
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        {/* Protected Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/orders" element={<Orders />} />

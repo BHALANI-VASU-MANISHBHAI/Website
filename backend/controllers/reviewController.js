@@ -27,7 +27,6 @@ const addReview = async (req, res) => {
       rating,
       comment,
     });
-    console.log("reviewData", reviewData);
     const product = await Product.findById(productId);
 
     // Change product rating
@@ -75,9 +74,7 @@ const updateReview = async (req, res) => {
       comment
     }, { new: true });
 
-    console.log("updatedReview", updatedReview);
-    // ✅ Emit socket event to update product reviews
-    console.log("productId", updatedReview.productId.toString());
+
 req.app.get('io').to(updatedReview.productId.toString()).emit('reviewUpdated', { productId:updatedReview.productId });
 
     return res.json({ success: true, message: 'Review updated successfully' });
@@ -87,8 +84,31 @@ req.app.get('io').to(updatedReview.productId.toString()).emit('reviewUpdated', {
   }
 };
 
-export {
-  addReview,
-  getReviews,
-  updateReview
-}
+
+const deleteReview = async (req, res) => {
+  try {
+    const { reviewId } = req.params;
+    
+    const review = await Review.findByIdAndDelete(reviewId);
+    if (!review) {
+      return res.json({ success: false, message: 'Review not found' });
+    }
+    const product = await Product.findById(review.productId);
+    if (product) {
+      product.totalRating -= review.rating;
+      product.totalReviews -= 1;
+      await product.save();
+    }
+    // Emit socket event to notify users about the review deletion
+    req.app
+      .get("io")
+      .to(review.productId.toString())
+      .emit("reviewDeleted", { productId: review.productId });
+    return res.json({ success: true, message: 'Review deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    return res.json({ success: false, message: err.message });
+  }
+};
+
+export { addReview, getReviews, updateReview, deleteReview };

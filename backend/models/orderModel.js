@@ -101,6 +101,16 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: 0, // in kilometers, can be updated later
     },
+    deliveryLocation: {
+      type: {
+        lat: { type: Number, default: null },
+        lng: { type: Number, default: null },
+      },
+      default: {
+        lat: 21.1676,
+        lng: 72.8149,
+      },
+    },
     otpExpiresAt: {
       type: Date,
       default: null, // only set when sending delivery OTP
@@ -119,7 +129,11 @@ const orderSchema = new mongoose.Schema(
     isCodSubmitted: {
       type:Boolean,
       default: false, // true if rider has submitted money for COD orders
-    }
+    },
+    acceptedTime: {
+      type: Date,
+      default: null, // Time when the order was accepted by the rider
+    },
   },
   { minimize: false, timestamps: true }
 );

@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema(
       required: function () {
         return !this.googleId;
       },
-    },  
+    },
     googleId: {
       type: String,
       default: "",
@@ -97,13 +97,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    isCodSubmitted : {
+    isCodSubmitted: {
       type: Boolean,
       default: false, // true if rider has submitted money for COD orders
-    }
+    },
   },
   { minimize: false, timestamps: true }
 );
 
-const UserModel = mongoose.models.User || mongoose.model("User", userSchema);
+const UserModel = mongoose.model("User", userSchema);
 export default UserModel;

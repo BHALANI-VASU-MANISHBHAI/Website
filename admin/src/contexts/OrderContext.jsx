@@ -34,8 +34,11 @@ const OrderContextProvider = ({ children, token }) => {
 
   // Listen to socket updates
   useEffect(() => {
-    socket.on("orderCancelled", () => {
-      fetchAllOrders();
+    socket.on("orderCancelled", (data) => {
+      console.log("Order cancelled:", data);
+      // Remove the cancelled order from the list
+      setOrders((prevOrders) => prevOrders.map((order) => order._id !== data.orderId));
+      // Optionally, you can also fetch all orders again
     });
 
     socket.on("orderPlaced", () => {
@@ -46,10 +49,20 @@ const OrderContextProvider = ({ children, token }) => {
       fetchAllOrders();
     });
 
+    socket.on("orderDelivered", (data) => {
+      console.log("Order delivered: From OrderContect ", data);
+      fetchAllOrders();
+    });
+
+    socket.on("orderStatusUpdated", (data) => {
+      console.log("Order status updated:", data);
+      fetchAllOrders();
+    });
     return () => {
       socket.off("orderCancelled");
       socket.off("orderPlaced");
       socket.off("AllOrderCancelled");
+      socket.off("orderStatusUpdated");
     };
   }, []);
 

@@ -10,6 +10,7 @@ const Orders = ({ token }) => {
   const currency = "₹";
   const { orders, fetchAllOrders } = useContext(OrderContext);
 
+  const [order, setOrder] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [category, setCategory] = useState("All");
   const [subCategory, setSubCategory] = useState("All");
@@ -21,10 +22,34 @@ const Orders = ({ token }) => {
   const [openSubCategory, setOpenSubCategory] = useState(false);
   const [openStatus, setOpenStatus] = useState(false);
   const [openPaymentStatus, setOpenPaymentStatus] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [allNotification, setAllNotification] = useState([]);
 
-  const allStatusSteps = ["Order Placed", "Packing", "Shipped", "Out for delivery", "Delivered"];
+  const allStatusSteps = [
+    "Order Placed",
+    "Packing",
+    "Shipped",
+    "Out for delivery",
+    "Delivered",
+  ];
+
+
+
+  const getAllNotification = async () => {
+    //find all shipped orders
+    const shippedOrders = orders.filter((order) => order.status === "Shipped");
+    shippedOrders.sort(
+      (a, b) => new Date(b.acceptedTime) - new Date(a.acceptedTime)
+    );
+    setAllNotification(shippedOrders);
+  }
 
   const stepperSteps = allStatusSteps;
+  useEffect(() => {
+    console.log("Orders Chnaged: ", orders);
+    setFilteredOrders(orders);  
+    getAllNotification();
+  }, [orders]);
 
   const statusHandler = async (event, orderId) => {
     try {
@@ -84,9 +109,68 @@ const Orders = ({ token }) => {
 
   return (
     <div className="p-4">
-      <h3 className="text-xl font-semibold mb-4">Orders Page</h3>
-
+      <div className="mb-4 flex justify-between items-center">
+        <h3 className="text-xl font-semibold mb-4">Orders Page</h3>
+        <p className=" text-gray-600 rounded-2xl  bg-gray-200 px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-gray-300 transition-colors duration-200"
+          onClick={() => setShowNotification(!showNotification)}
+        >
+          Notifications ({allNotification.length})
+        </p>
+      </div>
       {/* Filters */}
+
+      {
+        showNotification && (
+          <div className="p-4 bg-white rounded-md shadow-sm mb-4">
+            <h4 className="text-lg font-semibold mb-2">Notifications</h4>
+            <div className="max-h-60 overflow-y-auto">
+              {allNotification.length > 0 ? (
+                allNotification.map((order, index) => (
+                  <div
+                    key={index}
+                    className="p-3 border-b last:border-b-0 hover:bg-gray-50
+                    transition-colors duration-200"
+                  >
+                    <p className="font-medium">
+                      {order.address.firstName} {order.address.lastName}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {order.items.map((item) => item.name).join(", ")}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(order.acceptedTime).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}{" "}-{" "}
+                      {new Date(order.acceptedTime).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Status:{" "}
+                      <span className={`font-semibold ${
+                        order.status === "Shipped"
+                          ? "text-green-500"
+                          : order.status === "Cancelled"
+                          ? "text-red-500"
+                          : "text-yellow-500"
+                      }`}>
+                        {order.status}
+                      </span>
+                    </p>  
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500">No notifications available.</p>
+              )}
+            </div>
+          </div>
+        )
+      }
+      
       <div className="p-4 flex flex-col lg:flex-row md:items-center md:justify-between gap-4 border border-gray-200 bg-gray-100 rounded-b-md">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Category Filter */}
@@ -331,12 +415,11 @@ const Orders = ({ token }) => {
                   value={order.status}
                   className="p-2 font-semibold border rounded-md"
                 >
-                  {allStatusSteps
-                    .map((statusOption) => (
-                      <option key={statusOption} value={statusOption}>
-                        {statusOption}
-                      </option>
-                    ))}
+                  {allStatusSteps.map((statusOption) => (
+                    <option key={statusOption} value={statusOption}>
+                      {statusOption}
+                    </option>
+                  ))}
                 </select>
 
                 <div className="flex items-center gap-2 self-start">

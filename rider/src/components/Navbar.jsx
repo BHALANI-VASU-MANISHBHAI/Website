@@ -62,6 +62,7 @@ const Navbar = () => {
             { label: "History", to: "/history" },
             { label: "Earnings", to: "/earnings" },
             { label: "Profile", to: "/profile" },
+            {label: "Payment", to: "/payment" },
           ].map((item) => (
             <NavLink
               key={item.to}

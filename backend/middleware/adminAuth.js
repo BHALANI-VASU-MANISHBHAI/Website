@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 const adminAuth = (req, res, next) => {
 try{
      const {token} = req.headers;
-     
+        // Check if token is provided
         if(!token){
             return res.status(401).json({success:false,message:"Unauthorized"});
         }
@@ -17,9 +17,8 @@ try{
             return res.status(401).json({success:false,message:"Unauthorized"});
         }
     
-
         req.userId = decoded.id;
-        
+        req.role = decoded.role;    
         next();
 }catch(err){
     console.log(err);

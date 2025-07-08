@@ -8,15 +8,15 @@ import Add from './pages/Add'
 import List from './pages/List'
 import Orders from './pages/Orders'
 import Edit from './pages/Edit'
-import riderDashBorad from './pages/riderDashBorad'
 import { ToastContainer } from 'react-toastify';
 import DashBoard from './pages/DashBoard'
 import OrderContextProvider from './contexts/OrderContext' // ✅ Import context provider
 export const backendUrl = import.meta.env.VITE_BACKEND_URL
 import ProductContextProvider from './contexts/ProductContext'
-import RiderDashBorad from './pages/riderDashBorad'
+
 import RiderContextProvider from './contexts/RiderContext' // ✅ Import RiderContextProvider
 import RiderCodInfo from './pages/RiderCodInfo'
+import RiderDashBorad from './pages/RiderDashBorad'
 const App = () => {
   const [token , settoken] = useState(localStorage.getItem('token') ? localStorage.getItem('token') : "")
 

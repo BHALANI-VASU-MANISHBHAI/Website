@@ -23,17 +23,28 @@ const Dashboard = ({ token }) => {
 
   const [RoundedChartData, setRoundedChartData] = useState([]);
 
-  const [StartDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [EndDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  const [StartDate, setStartDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  const [EndDate, setEndDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [selectedRange, setSelectedRange] = useState(null);
 
   const getLowStocksProduct = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/product/getLowStock`, { headers: { token } });
+      const response = await axios.get(
+        `${backendUrl}/api/product/getLowStock`,
+        { headers: { token } }
+      );
       if (response.data.success) {
         const allLowStocks = response.data.products;
-        const outOfStockProducts = allLowStocks.filter((pro) => pro.stock.some((s) => s.quantity === 0));
-        const lowStockProducts = allLowStocks.filter((pro) => pro.stock.some((s) => s.quantity > 0 && s.quantity <= 5));
+        const outOfStockProducts = allLowStocks.filter((pro) =>
+          pro.stock.some((s) => s.quantity === 0)
+        );
+        const lowStockProducts = allLowStocks.filter((pro) =>
+          pro.stock.some((s) => s.quantity > 0 && s.quantity <= 5)
+        );
         setOutOfStock(outOfStockProducts);
         setLowStock(lowStockProducts);
       } else {
@@ -47,7 +58,10 @@ const Dashboard = ({ token }) => {
 
   const getMostSellerToday = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/product/mostSellerToday`, { headers: { token } });
+      const response = await axios.get(
+        `${backendUrl}/api/product/mostSellerToday`,
+        { headers: { token } }
+      );
       if (response.data.success) {
         setmostSellerToday(response.data.mostSellingProducts);
       } else {
@@ -60,9 +74,12 @@ const Dashboard = ({ token }) => {
   };
   const GetMostSellerByRanges = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/dashboard/getMostSellingProductsByRange?startDate=${StartDate}&endDate=${EndDate}`, { headers: { token } });
+      const response = await axios.get(
+        `${backendUrl}/api/dashboard/getMostSellingProductsByRange?startDate=${StartDate}&endDate=${EndDate}`,
+        { headers: { token } }
+      );
       if (response.data.success) {
-        console.log("Most seller Range ",response.data.mostSellingProducts);
+        console.log("Most seller Range ", response.data.mostSellingProducts);
         setmostSellerToday(response.data.mostSellingProducts);
       } else {
         toast.error("Failed to fetch most seller products by range");
@@ -70,13 +87,15 @@ const Dashboard = ({ token }) => {
     } catch (err) {
       console.error(err);
       toast.error(err.message);
-
     }
   };
 
   const TotalRevenueByRange = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/dashboard/totalRevenueByRange?startDate=${StartDate}&endDate=${EndDate}`, { headers: { token } });
+      const response = await axios.get(
+        `${backendUrl}/api/dashboard/totalRevenueByRange?startDate=${StartDate}&endDate=${EndDate}`,
+        { headers: { token } }
+      );
       if (response.data.success) {
         setTotalRevenue(response.data.totalRevenue);
       } else {
@@ -90,7 +109,10 @@ const Dashboard = ({ token }) => {
 
   const TotalOrderByRange = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/dashboard/getOrdersByRange?startDate=${StartDate}&endDate=${EndDate}`, { headers: { token } });
+      const response = await axios.get(
+        `${backendUrl}/api/dashboard/getOrdersByRange?startDate=${StartDate}&endDate=${EndDate}`,
+        { headers: { token } }
+      );
       if (response.data.success) {
         setTotalOrders(response.data.totalOrders);
       } else {
@@ -104,7 +126,10 @@ const Dashboard = ({ token }) => {
 
   const TotalCustomers = async () => {
     try {
-      const response = await axios.get(`${backendUrl}/api/dashboard/totalCustomers`, { headers: { token } });
+      const response = await axios.get(
+        `${backendUrl}/api/dashboard/totalCustomers`,
+        { headers: { token } }
+      );
       if (response.data.success) {
         setTotalCustomers(response.data.totalCustomers);
       } else {
@@ -119,13 +144,27 @@ const Dashboard = ({ token }) => {
   const getChartData = useCallback(async () => {
     try {
       setRoundedChartData([]);
-      const profitResponse = await axios.get(`${backendUrl}/api/dashboard/getProfitByRange?startDate=${StartDate}&endDate=${EndDate}`, { headers: { token } });
-      const costResponse = await axios.get(`${backendUrl}/api/dashboard/getCostByRange?startDate=${StartDate}&endDate=${EndDate}`, { headers: { token } });
+      const profitResponse = await axios.get(
+        `${backendUrl}/api/dashboard/getProfitByRange?startDate=${StartDate}&endDate=${EndDate}`,
+        { headers: { token } }
+      );
+      const costResponse = await axios.get(
+        `${backendUrl}/api/dashboard/getCostByRange?startDate=${StartDate}&endDate=${EndDate}`,
+        { headers: { token } }
+      );
 
       if (profitResponse.data.success && costResponse.data.success) {
         setRoundedChartData([
-          { name: "Profit", value: profitResponse.data.totalProfit, color: "#4CAF50" },
-          { name: "Cost", value: costResponse.data.totalCost, color: "#FF9800" },
+          {
+            name: "Profit",
+            value: profitResponse.data.totalProfit,
+            color: "#4CAF50",
+          },
+          {
+            name: "Cost",
+            value: costResponse.data.totalCost,
+            color: "#FF9800",
+          },
         ]);
       } else {
         toast.error("Failed to fetch profit or cost");
@@ -140,8 +179,8 @@ const Dashboard = ({ token }) => {
     const today = new Date();
     const pastDate = new Date();
     pastDate.setDate(today.getDate() - days);
-    setStartDate(pastDate.toISOString().split('T')[0]);
-    setEndDate(today.toISOString().split('T')[0]);
+    setStartDate(pastDate.toISOString().split("T")[0]);
+    setEndDate(today.toISOString().split("T")[0]);
     setSelectedRange(label);
   };
 
@@ -149,7 +188,7 @@ const Dashboard = ({ token }) => {
     await Promise.all([
       TotalRevenueByRange(),
       TotalOrderByRange(),
-      getChartData()
+      getChartData(),
     ]);
   }, [StartDate, EndDate, token, getChartData]);
 
@@ -189,7 +228,13 @@ const Dashboard = ({ token }) => {
       socket.off("orderCancelled", handleOrderCancelled);
       socket.off("customerAdded", handleCustomerAdded);
     };
-  }, [token, TotalRevenueByRange, TotalOrderByRange, GetMostSellerByRanges, TotalCustomers]);
+  }, [
+    token,
+    TotalRevenueByRange,
+    TotalOrderByRange,
+    GetMostSellerByRanges,
+    TotalCustomers,
+  ]);
 
   const displayedProducts = selectedStockType === "out" ? outOfStock : lowStock;
 
@@ -198,12 +243,36 @@ const Dashboard = ({ token }) => {
       {/* Date Range Inputs */}
       <div className="flex flex-col gap-4 mb-5 px-4 py-4 rounded-lg md:flex-row md:justify-between md:items-center bg-gray-100 shadow-md">
         <div className="flex flex-wrap gap-4">
-          <QuickDateButton label="Today" selected={selectedRange === "Today"} onClick={() => setStartDateToPastDays(0, "Today")} />
-          <QuickDateButton label="7D" selected={selectedRange === "7D"} onClick={() => setStartDateToPastDays(7, "7D")} />
-          <QuickDateButton label="1M" selected={selectedRange === "1M"} onClick={() => setStartDateToPastDays(30, "1M")} />
-          <QuickDateButton label="3M" selected={selectedRange === "3M"} onClick={() => setStartDateToPastDays(90, "3M")} />
-          <QuickDateButton label="6M" selected={selectedRange === "6M"} onClick={() => setStartDateToPastDays(180, "6M")} />
-          <QuickDateButton label="1Y" selected={selectedRange === "1Y"} onClick={() => setStartDateToPastDays(365, "1Y")} />
+          <QuickDateButton
+            label="Today"
+            selected={selectedRange === "Today"}
+            onClick={() => setStartDateToPastDays(0, "Today")}
+          />
+          <QuickDateButton
+            label="7D"
+            selected={selectedRange === "7D"}
+            onClick={() => setStartDateToPastDays(7, "7D")}
+          />
+          <QuickDateButton
+            label="1M"
+            selected={selectedRange === "1M"}
+            onClick={() => setStartDateToPastDays(30, "1M")}
+          />
+          <QuickDateButton
+            label="3M"
+            selected={selectedRange === "3M"}
+            onClick={() => setStartDateToPastDays(90, "3M")}
+          />
+          <QuickDateButton
+            label="6M"
+            selected={selectedRange === "6M"}
+            onClick={() => setStartDateToPastDays(180, "6M")}
+          />
+          <QuickDateButton
+            label="1Y"
+            selected={selectedRange === "1Y"}
+            onClick={() => setStartDateToPastDays(365, "1Y")}
+          />
         </div>
 
         <div className="flex gap-3 items-center">
@@ -211,7 +280,11 @@ const Dashboard = ({ token }) => {
           <input
             type="date"
             value={StartDate}
-            min={new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().split("T")[0]}
+            min={
+              new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+                .toISOString()
+                .split("T")[0]
+            }
             max={EndDate}
             onChange={(e) => {
               setStartDate(e.target.value);
@@ -240,9 +313,15 @@ const Dashboard = ({ token }) => {
       {/* Cards Section */}
       <div className="flex flex-row gap-7">
         <div className="flex md:gap-10 sm:gap-3 w-full flex-col md:flex-row gap-8">
-          <DashboardCard title="Total Revenue" value={`₹${totalRevenue.toFixed(2)}`} />
+          <DashboardCard
+            title="Total Revenue"
+            value={`₹${totalRevenue.toFixed(2)}`}
+          />
           <DashboardCard title="Total Orders" value={`${totalOrders} Orders`} />
-          <DashboardCard title="Total Customers" value={`${totalCustomers} Customers`} />
+          <DashboardCard
+            title="Total Customers"
+            value={`${totalCustomers} Customers`}
+          />
         </div>
       </div>
 
@@ -268,7 +347,9 @@ const Dashboard = ({ token }) => {
       <div className="mt-10">
         <div className="flex gap-10 bg-gray-300 h-12 justify-between items-center px-4">
           <p className="text-[10px] sm:text-md md:text-xl font-bold">
-            {selectedStockType === "out" ? "Out of Stock Alerts" : "Low Stock Alerts"}
+            {selectedStockType === "out"
+              ? "Out of Stock Alerts"
+              : "Low Stock Alerts"}
           </p>
           <select
             name="STOCK"
@@ -286,12 +367,18 @@ const Dashboard = ({ token }) => {
           <div className="flex flex-col gap-2 mt-3">
             <StockHeader />
             {displayedProducts.map((item, index) => (
-              <StockItem key={index} item={item} selectedStockType={selectedStockType} navigate={navigate} />
+              <StockItem
+                key={index}
+                item={item}
+                selectedStockType={selectedStockType}
+                navigate={navigate}
+              />
             ))}
           </div>
         ) : (
           <p className="text-gray-500 mt-2">
-            No {selectedStockType === "out" ? "Out of Stock" : "Low Stock"} Products
+            No {selectedStockType === "out" ? "Out of Stock" : "Low Stock"}{" "}
+            Products
           </p>
         )}
       </div>
@@ -303,7 +390,9 @@ const DashboardCard = ({ title, value }) => (
   <div className="flex flex-col gap-3 bg-white p-5 rounded-lg shadow-md w-full sm:w-[90%] md:w-[30%]">
     <div className="flex gap-5 items-center justify-between">
       <div className="flex flex-col gap-2">
-        <p className="text-gray-700 font-medium text-sm sm:text-base">{title}</p>
+        <p className="text-gray-700 font-medium text-sm sm:text-base">
+          {title}
+        </p>
       </div>
       <img src={assets.add_icon} className="w-4 h-4 sm:w-5 sm:h-5" alt="" />
     </div>
@@ -313,7 +402,11 @@ const DashboardCard = ({ title, value }) => (
 
 const PopularProductCard = ({ item }) => (
   <div className="flex items-center gap-4 border-b pb-3 mb-3">
-    <img src={item.image[0] || assets.add_icon} alt={item.name} className="w-16 h-16 object-cover rounded" />
+    <img
+      src={item.image[0] || assets.add_icon}
+      alt={item.name}
+      className="w-16 h-16 object-cover rounded"
+    />
     <div>
       <p className="font-medium">{item.name}</p>
       <p className="text-sm text-gray-500">{item.category}</p>
@@ -336,8 +429,14 @@ const StockItem = ({ item, selectedStockType, navigate }) => (
   <div className="grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] gap-2 py-1 px-2 border text-sm items-center">
     <img className="w-20" src={item.image[0]} alt="" />
     <p>{item.name}</p>
-    <p>{item.category} ({item.subCategory})</p>
-    <p className={`rounded-x w-3/4 text-center ${selectedStockType === "out" ? "text-red-600" : "text-orange-500"}`}>
+    <p>
+      {item.category} ({item.subCategory})
+    </p>
+    <p
+      className={`rounded-x w-3/4 text-center ${
+        selectedStockType === "out" ? "text-red-600" : "text-orange-500"
+      }`}
+    >
       {selectedStockType === "out" ? "Out of Stock" : "Low Stock"}
     </p>
     <p
@@ -351,7 +450,9 @@ const StockItem = ({ item, selectedStockType, navigate }) => (
 
 const QuickDateButton = ({ label, onClick, selected }) => (
   <button
-    className={`px-3 py-1 rounded cursor-pointer ${selected ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'}`}
+    className={`px-3 py-1 rounded cursor-pointer ${
+      selected ? "bg-blue-500 text-white" : "bg-gray-200 hover:bg-gray-300"
+    }`}
     onClick={onClick}
   >
     {label}

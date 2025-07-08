@@ -7,6 +7,7 @@ import "nouislider/dist/nouislider.css";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { ProductContext } from "../context/ProductContext.jsx";
 
+
 const Collection = () => {
   const { products } = useContext(ProductContext);
   const { search, showSearch } = useContext(GlobalContext);

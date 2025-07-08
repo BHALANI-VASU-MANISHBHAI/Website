@@ -1,57 +1,68 @@
-  import  { useEffect, useContext, useState } from "react";
-  import { useParams } from "react-router-dom";
+import { useEffect, useContext, useState } from "react";
+import { useParams } from "react-router-dom";
 
-  import ReletedProducts from "../components/ReletedProducts";
-  import Title from "../components/Title";
-  import axios from "axios";
-  import { toast } from "react-toastify";
-  import Rating from "@mui/material/Rating";
-  import ReviewCard from "../components/ReviewCard";
-  import StarLine from "../components/StarLine";
-  import { assetss } from "../assets/frontend_assets/assetss";
-  import { GlobalContext } from "../context/GlobalContext.jsx";
-  import { CartContext } from "../context/CartContext.jsx";
-  import { UserContext } from "../context/UserContext.jsx";
-  import { ProductContext } from "../context/ProductContext.jsx";
-  import socket from "../services/sockets.jsx";
+import ReletedProducts from "../components/ReletedProducts";
+import Title from "../components/Title";
+import axios from "axios";
+import { toast } from "react-toastify";
+import Rating from "@mui/material/Rating";
+import ReviewCard from "../components/ReviewCard";
+import StarLine from "../components/StarLine";
+import { assetss } from "../assets/frontend_assets/assetss";
+import { GlobalContext } from "../context/GlobalContext.jsx";
+import { CartContext } from "../context/CartContext.jsx";
+import { UserContext } from "../context/UserContext.jsx";
+import { ProductContext } from "../context/ProductContext.jsx";
+import socket from "../services/sockets.jsx";
 
 
-  const Product = () => {
-    //  products, currency, addToCart, backendUrl, token, userData 
-    const { id } = useParams();
-    const {products } = useContext(ProductContext);
-    const {addToCart} = useContext(CartContext);
-    const{userData} = useContext(UserContext);
-    const { backendUrl, token, currency ,navigate} = useContext(GlobalContext);
-    const [productData, setProductData] = useState(null);
-    const [image, setImage] = useState("");
-    const [Size, setSizes] = useState("");
-    const [Reviews, setReviews] = useState([]);
-    const [Ratings, setRatings] = useState();
-    const [avgRating, setAvgRating] = useState(0);
-    const [addComment ,setaddComment] = useState("");
-    const[showAddReview, setShowAddReview] = useState(false);
-    const [addRating , setAddRating] = useState(0);
-    const [activeTab, setActiveTab] = useState("description");
-    const [OriginalPrice , setOriginalPrice] = useState(0);
+const Product = () => {
+  //  products, currency, addToCart, backendUrl, token, userData
+  const { id } = useParams();
+  const { products } = useContext(ProductContext);
+  const { addToCart } = useContext(CartContext);
+  const { userData } = useContext(UserContext);
+  const { backendUrl, token, currency, navigate } = useContext(GlobalContext);
+  const [productData, setProductData] = useState(null);
+  const [image, setImage] = useState("");
+  const [Size, setSizes] = useState("");
+  const [Reviews, setReviews] = useState([]);
+  const [Ratings, setRatings] = useState();
+  const [avgRating, setAvgRating] = useState(0);
+  const [addComment, setaddComment] = useState("");
+  const [showAddReview, setShowAddReview] = useState(false);
+  const [addRating, setAddRating] = useState(0);
+  const [activeTab, setActiveTab] = useState("description");
+  const [OriginalPrice, setOriginalPrice] = useState(0);
 
-    console.log("productData", productData);
+  console.log("productData", productData);
 
-  const  owner = userData?._id === productData?.userId?._id;
-    console.log("owner", owner);
-    // Fetch product details from local products state
-  const fetchProductData = async () => {  // ✅ Make it async
+  const owner = userData?._id === productData?.userId?._id;
+  console.log("owner", owner);
+  // Fetch product details from local products state
+
+  const calculateAvgRating = (reviews) => {
+    console.log("reviews", reviews);
+    if (reviews.length === 0) return 0;
+    const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
+
+    return totalRating / reviews.length;
+  };
+
+  const fetchProductData = async () => {
+    // ✅ Make it async
     try {
-      const response = await axios.get(`${backendUrl}/api/product/single/${id}`);  // ✅ await the request
+      const response = await axios.get(
+        `${backendUrl}/api/product/single/${id}`
+      ); // ✅ await the request
       console.log("response", response);
       if (response.data.success) {
         const product = response.data.product;
-          
+
         if (product) {
           setProductData(product);
           setOriginalPrice(product.price * (1 - (product.discount || 0) / 100));
-          setAvgRating(product.avgRating || 5);
-          setRatings(product.totalReviews || 0);
+
           setImage(product.image[0]);
         } else {
           setProductData(null);
@@ -65,73 +76,75 @@
     }
   };
 
-
-
-    // Fetch reviews from backend API
-    const fetchReviews = async () => {
-      try {
-        const response = await axios.get(`${backendUrl}/api/review/get/${id}`);
-        if (response.data.success) {
-          setReviews(response.data.reviews);
-        } else {
-          setReviews([]);
-          setAvgRating(0);
+  // Fetch reviews from backend API
+  const fetchReviews = async () => {
+    try {
+      const response = await axios.get(`${backendUrl}/api/review/get/${id}`);
+      console.log("Reviews response", response);
+      if (response.data.success) {
+        setReviews(response.data.reviews);
+        const avg = calculateAvgRating(response.data.reviews);
+        setAvgRating(avg);
+        if (avg > 0) {
+          setRatings(response.data.reviews.length);
         }
-      } catch (error) {
-        console.log("Error fetching reviews:", error);
+      } else {
+        setReviews([]);
+        setAvgRating(0);
       }
-    };
+    } catch (error) {
+      console.log("Error fetching reviews:", error);
+    }
+  };
 
-    const EditReview = async (reviewId, rating, comment) => {
-      try {
-        const response = await axios.put(
-          `${backendUrl}/api/review/update`,
-          {
-            reviewId,
-            rating,
-            comment,
-          },
-          {
-            headers: { token },
-          }
-        );
-
-        if (response.data.success) {
-          fetchReviews();
-        } else {
-          toast.error("Failed to edit review.");
+  const EditReview = async (reviewId, rating, comment) => {
+    try {
+      const response = await axios.put(
+        `${backendUrl}/api/review/update`,
+        {
+          reviewId,
+          rating,
+          comment,
+        },
+        {
+          headers: { token },
         }
-      } catch (e) {
-        console.log("Error editing review:", e);
-        toast.error("Failed to edit review. Please try again later.");
-      }
-    };
+      );
 
-    const CountRating = (rating) => {
-      let count = 0;
-      for (let i = 0; i < Reviews.length; i++) {
-        if (Reviews[i].rating === rating) {
-          count++;
+      if (response.data.success) {
+        fetchReviews();
+      } else {
+        toast.error("Failed to edit review.");
+      }
+    } catch (e) {
+      console.log("Error editing review:", e);
+      toast.error("Failed to edit review. Please try again later.");
+    }
+  };
+
+  const CountRating = (rating) => {
+    let count = 0;
+    for (let i = 0; i < Reviews.length; i++) {
+      if (Reviews[i].rating === rating) {
+        count++;
+      }
+    }
+    return count;
+  };
+
+  const AddReview = async () => {
+    try {
+      const response = await axios.post(
+        `${backendUrl}/api/review/add`,
+        {
+          productId: id,
+          rating: addRating,
+          comment: addComment,
+        },
+        {
+          headers: { token },
         }
-      }
-      return count;
-    };
-
-    const AddReview = async () => {
-      try{
-
-        const response = await axios.post(
-          `${backendUrl}/api/review/add`,
-          {
-            productId: id,
-            rating: addRating,
-            comment: addComment,
-          },
-          {
-            headers: { token },
-          }
-        );
-  
+      );
 
       if (response.data.success) {
         setShowAddReview(false);
@@ -140,27 +153,45 @@
         fetchReviews();
       } else {
         toast.error(response.data.message || "Failed to add review.");
-        
       }
-      }catch (error) {
+    } catch (error) {
       console.log("Error adding review:", error);
-        toast.error("Failed to add review. Please try again later.");
-      }
-
+      toast.error("Failed to add review. Please try again later.");
     }
+  }; 
 
-    useEffect(() => {
-      fetchProductData();
-    }, [id, products]);
+  const deleteReview = async (reviewId) => {
+    try {
+      const response = await axios.delete(
+        `${backendUrl}/api/review/delete/${reviewId}`,
+        {
+          headers: { token },
+        }
+      );
 
-    useEffect(() => {
-      fetchReviews();
-    }, [id]);
+      if (response.data.success) {
+        fetchReviews();
+      } else {
+        toast.error("Failed to delete review.");
+      }
+    } catch (error) {
+      console.log("Error deleting review:", error);
+      toast.error("Failed to delete review. Please try again later.");
+    }
+  };
+
+  useEffect(() => {
+    fetchProductData();
+  }, [id, products]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [id]);
   useEffect(() => {
     // Join product room on mount
-    socket.emit('joinProductRoom', { productId: id });
+    socket.emit("joinProductRoom", { productId: id });
 
-    socket.on('reviewAdded', (data) => {
+    socket.on("reviewAdded", (data) => {
       if (data.productId === id) {
         toast.success("New review added!");
         setShowAddReview(false);
@@ -168,7 +199,7 @@
       }
     });
 
-    socket.on('reviewUpdated', (data) => {
+    socket.on("reviewUpdated", (data) => {
       console.log("data", data);
       console.log("id", id);
       if (data.productId === id) {
@@ -178,18 +209,21 @@
       }
     });
 
-    
+    socket.on("reviewDeleted", (data) => {
+      if (data.productId === id) {
+        toast.success("Review deleted successfully!");
+        fetchReviews();
+      }
+    });
+
     // Leave product room on unmount
     return () => {
-      socket.emit('leaveProductRoom', { productId: id });
-      socket.off('reviewAdded');
-      socket.off('reviewUpdated');
+      socket.emit("leaveProductRoom", { productId: id });
+      socket.off("reviewAdded");
+      socket.off("reviewUpdated");
+      socket.off("reviewDeleted");
     };
   }, [id]);
-
-    
-
-
 
   if (!productData) return <div className="opacity-0">Loading...</div>;
 
@@ -401,6 +435,7 @@
                     review={review}
                     userData={userData}
                     EditReviewFun={EditReview}
+                    deleteReviewFun={deleteReview}
                   />
                 ))}
 

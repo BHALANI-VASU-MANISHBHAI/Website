@@ -48,10 +48,12 @@ useEffect(() => {
   // ✅ Immediately join the individual rider room
   socket.emit("joinSingleRiderRoom", userData._id);
 
-  // Optional: Listen for confirmation
+  // Optional: Listen for confirmation  
+
   const handleJoin = (data) => {
     console.log("✅ Server acknowledged joinRiderRoom:", data);
   };
+
 
   socket.on("joinRiderRoom", handleJoin);
 
@@ -63,6 +65,27 @@ useEffect(() => {
 }, [userData]);
 
 
+
+useEffect(() => {
+  if (!userData || userData.role !== "rider") return;
+
+  const handleProfileUpdate = ({ riderId, updatedFields }) => {
+    if (userData._id === riderId) {
+      console.log("🔄 Updating user profile in context:", updatedFields);
+      toast.success("Profile updated succssssssessfully!");
+      setUserData((prev) => ({
+        ...prev,
+        ...updatedFields
+      }));
+    }
+  };
+
+  socket.on("riderProfileUpdated", handleProfileUpdate);
+
+  return () => {
+    socket.off("riderProfileUpdated", handleProfileUpdate);
+  };
+}, [userData]);
 
 
 

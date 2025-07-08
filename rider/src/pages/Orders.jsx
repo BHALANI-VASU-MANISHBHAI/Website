@@ -93,29 +93,59 @@ const Orders = () => {
       <h1 className="text-2xl font-bold mb-4">Orders</h1>
 
       <div className="border rounded-lg shadow-md p-4 space-y-4">
-        <h2 className="text-xl font-semibold text-blue-600">🧾 Order Details</h2>
-        <p><strong>Total Amount:</strong> ₹{amount}</p>
-        <p><strong>Delivery Charge:</strong> ₹{earning.amount}</p>
-        <p><strong>Status:</strong> {status}</p>
-        <p><strong>Payment Method:</strong> {paymentMethod}</p>
-        <p><strong>Payment Status:</strong> {paymentStatus}</p>
-        <p><strong>Order Date:</strong> {new Date(date).toLocaleString()}</p>
+        <h2 className="text-xl font-semibold text-blue-600">
+          🧾 Order Details
+        </h2>
+        <p>
+          <strong>Total Amount:</strong> ₹{amount}
+        </p>
+        <p>
+          <strong>Delivery Charge:</strong> ₹{earning.amount}
+        </p>
+        <p>
+          <strong>Status:</strong> {status}
+        </p>
+        <p>
+          <strong>Payment Method:</strong> {paymentMethod}
+        </p>
+        <p>
+          <strong>Payment Status:</strong> {paymentStatus}
+        </p>
+        <p>
+          <strong>Order Date:</strong> {new Date(date).toLocaleString()}
+        </p>
 
         <hr />
 
         <div className="flex flex-col sm:flex-row gap-3 justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-purple-700">🏠 Delivery Address:</h3>
-            <p>{address.firstName} {address.lastName}</p>
-            <p>{address.street}, {address.city}, {address.state} - {address.zipcode}</p>
+            <h3 className="text-lg font-semibold text-purple-700">
+              🏠 Delivery Address:
+            </h3>
+            <p>
+              {address.firstName} {address.lastName}
+            </p>
+            <p>
+              {address.street}, {address.city}, {address.state} -{" "}
+              {address.zipcode}
+            </p>
             <p>{address.country}</p>
-            <p><strong>Phone:</strong> {address.phone}</p>
-            <p><strong>Email:</strong> {address.email}</p>
+            <p>
+              <strong>Phone:</strong> {address.phone}
+            </p>
+            <p>
+              <strong>Email:</strong> {address.email}
+            </p>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-yellow-700">🏭 Pickup Address:</h3>
-            <p>{pickUpAddress.street}, {pickUpAddress.city}, {pickUpAddress.state} - {pickUpAddress.pincode}</p>
+            <h3 className="text-lg font-semibold text-yellow-700">
+              🏭 Pickup Address:
+            </h3>
+            <p>
+              {pickUpAddress.street}, {pickUpAddress.city},{" "}
+              {pickUpAddress.state} - {pickUpAddress.pincode}
+            </p>
             <p>{pickUpAddress.country}</p>
             <a
               href={`https://www.google.com/maps?q=${pickUpLocation.lat},${pickUpLocation.lng}`}
@@ -134,7 +164,9 @@ const Orders = () => {
           <button
             onClick={sendOTP}
             disabled={sending}
-            className={`px-4 py-2 bg-green-600 text-white rounded-md w-full sm:w-[150px] transition ${sending ? "opacity-50 cursor-not-allowed" : "hover:bg-green-700"}`}
+            className={`px-4 py-2 bg-green-600 text-white rounded-md w-full sm:w-[150px] transition ${
+              sending ? "opacity-50 cursor-not-allowed" : "hover:bg-green-700"
+            }`}
           >
             {sending ? "Sending..." : "Send OTP"}
           </button>
@@ -151,7 +183,11 @@ const Orders = () => {
               <button
                 onClick={verifyOTP}
                 disabled={verifying}
-                className={`px-4 py-2 bg-yellow-600 text-white rounded-md transition ${verifying ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-700"}`}
+                className={`px-4 py-2 bg-yellow-600 text-white rounded-md transition ${
+                  verifying
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-yellow-700"
+                }`}
               >
                 {verifying ? "Verifying..." : "Verify OTP"}
               </button>

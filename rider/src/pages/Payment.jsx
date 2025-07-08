@@ -4,6 +4,7 @@ import { GlobalContext } from "../contexts/GlobalContext";
 import { toast } from "react-toastify";
 import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
+import assets from "../assets/assets";
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -17,11 +18,16 @@ const loadRazorpayScript = () => {
 
 const Payment = () => {
   const { backendUrl, token } = useContext(GlobalContext);
-  const { orderHistory ,paymentHistory } = useContext(OrderContext);
-  const { userData /* , fetchUserData */ } = useContext(UserContext); // uncomment if you have refetch
-
+  const { orderHistory, paymentHistory, fetchUserPaymentHistory } =
+    useContext(OrderContext);
+  console.log("Order History:", orderHistory);
+  const { userData /* , fetchUserData */, } =
+    useContext(UserContext); // uncomment if you have refetch
+  const [userPaymentHistory, setUserPaymentHistory] = useState([]);
   const [amount, setAmount] = useState("");
   const [submitMoney, setSubmitMoney] = useState(0);
+  const [riderInfo, setRiderInfo] = useState(null);
+
 
   const totalCollectedMoney = () => {
     if (!orderHistory || orderHistory.length === 0) return 0;
@@ -38,7 +44,12 @@ const Payment = () => {
   };
 
 
-  // const 
+  // Fetch user payment history on mount
+  useEffect(() => {
+    setUserPaymentHistory(paymentHistory);
+  }, [paymentHistory]);
+
+  // const
   useEffect(() => {
     if (
       !orderHistory ||
@@ -103,7 +114,9 @@ const Payment = () => {
               toast.success("COD submitted successfully!");
               setAmount("");
               setSubmitMoney(0);
-              // Optional: Refresh data
+
+             await fetchUserPaymentHistory(); // Refetch payment history
+              // refetch user payment history
               // fetchUserData?.();
             } else {
               toast.error("Payment verification failed.");
@@ -136,29 +149,106 @@ const Payment = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
-      <h2 className="text-xl font-semibold mb-4">Submit COD Payment</h2>
-      <input
-        type="number"
-        placeholder="Enter amount"
-        value={amount}
-        min={1}
-        max={submitMoney}
-        onChange={(e) => setAmount(e.target.value)}
-        className="w-full p-2 border rounded mb-4"
-      />
-      <button
-        onClick={handleSubmit}
-        disabled={
-          !amount ||
-          isNaN(amount) ||
-          Number(amount) <= 0 ||
-          Number(amount) > submitMoney
-        }
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full disabled:bg-gray-400"
-      >
-        Submit via Razorpay
-      </button>
+    <div>
+      <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
+        <h2 className="text-xl font-semibold mb-4">Submit COD Payment</h2>
+        <input
+          type="number"
+          placeholder="Enter amount"
+          value={amount}
+          min={1}
+          max={submitMoney}
+          onChange={(e) => setAmount(e.target.value)}
+          className="w-full p-2 border rounded mb-4"
+        />
+        <button
+          onClick={handleSubmit}
+          disabled={
+            !amount ||
+            isNaN(amount) ||
+            Number(amount) <= 0 ||
+            Number(amount) > submitMoney
+          }
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full disabled:bg-gray-400"
+        >
+          Submit via Razorpay
+        </button>
+      </div>
+      <div>
+        <p className="text-lg font-semibold mt-8 mb-4">
+          Payment History:
+        </p>
+
+        <div>
+          <div className="grid  grid-cols-1  sm:grid-cols-4 gap-4 font-semibold text-gray-700 bg-gray-100 p-2 rounded hidden sm:grid">
+            <div>Order ID</div>
+            <div>Amount</div>
+            <div>Date</div>
+            <div>Status</div>
+          </div>
+
+          {userPaymentHistory.length > 0 ? (
+            userPaymentHistory
+              .sort((a, b) => new Date(b.date) - new Date(a.date))
+              .map((order) => (
+                <div
+                  key={order._id}
+                  className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 border-b bg-white"
+                >
+                  <div className="text-sm break-all">
+                    <span className="block font-semibold sm:hidden text-gray-600 mb-1">
+                      Order ID
+                    </span>
+                    {order._id}
+                  </div>
+
+                  <div className="text-sm">
+                    <span className="block font-semibold sm:hidden text-gray-600 mb-1">
+                      Amount
+                    </span>
+                    ₹{order.amount}
+                  </div>
+
+                  <div className="text-sm">
+                    <span className="block font-semibold sm:hidden text-gray-600 mb-1">
+                      Date
+                    </span>
+                    {new Date(order.date).toLocaleDateString("en-IN", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                    })}
+                    {" (" +
+                      new Date(order.date).toLocaleTimeString("en-IN", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      }) +
+                      ")"}
+                  </div>
+
+                  <div className="text-sm">
+                    <span className="block font-semibold sm:hidden text-gray-600 mb-1">
+                      Mark
+                    </span>
+                    {order.isCodSubmitted ? (
+                      <img
+                        src={assets.mark_as_done}
+                        alt="Payment Done"
+                        className="w-6 h-6 inline-block"
+                      />
+                    ) : (
+                      <span className="text-red-500">Pending</span>
+                    )}
+                  </div>
+                </div>
+              ))
+          ) : (
+            <div className="text-center text-gray-500 p-4">
+              No payment history available.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
