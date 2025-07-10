@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 import assets from "../assets/assets.js";
-import { useContext } from "react";
 import { GlobalContext } from "../contexts/GlobalContext.jsx";
 import { UserContext } from "../contexts/UserContext.jsx";
+import { GoogleLogin } from "@react-oauth/google";
 
 const Signup = () => {
   const { backendUrl, setToken } = useContext(GlobalContext);
@@ -15,7 +15,7 @@ const Signup = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "rider", // Default role set to 'rider'
+    role: "rider", // default role
   });
 
   const handleChange = (e) => {
@@ -35,17 +35,15 @@ const Signup = () => {
     }
 
     try {
-      // Send the form data to the backend for registration
-      console.log("Form Data:", formData);
       const response = await axios.post(
         backendUrl + "/api/user/register",
         formData
       );
-      console.log("Response:", response.data);
+
       if (response.data.success) {
-        setToken(response.data.token); // Set token in context
-        localStorage.setItem("token", response.data.token); // Store token in localStorage
-        getUserData(response.data.token); // Fetch user data after signup
+        setToken(response.data.token);
+        localStorage.setItem("token", response.data.token);
+        getUserData(response.data.token);
         toast.success("Signup successful");
       } else {
         toast.error(response.data.message || "Signup failed");
@@ -56,9 +54,28 @@ const Signup = () => {
     }
   };
 
+  const handleGoogleSignupSuccess = async (credentialResponse) => {
+    try {
+      const token = credentialResponse.credential;
+      const res = await axios.post(backendUrl + "/api/user/google", { token });
+
+      if (res.data.success) {
+        setToken(res.data.token);
+        localStorage.setItem("token", res.data.token);
+        getUserData(res.data.token);
+        toast.success("Signup successful via Google");
+      } else {
+        toast.error(res.data.message || "Google signup failed");
+      }
+    } catch (error) {
+      console.error("Google signup error:", error);
+      toast.error("Google signup error");
+    }
+  };
+
   return (
     <div className="flex flex-col md:flex-row h-screen w-full">
-      {/* Left Image Section */}
+      {/* Left Image */}
       <div className="w-full md:w-[60%] lg:h-full flex items-center justify-center bg-gray-100">
         <img
           src={assets.delivery_boy}
@@ -141,6 +158,21 @@ const Signup = () => {
               Create Account
             </button>
           </form>
+
+          {/* OR Divider */}
+          <div className="flex items-center gap-2 my-4">
+            <hr className="flex-grow border-gray-300" />
+            <span className="text-gray-500 text-sm">or</span>
+            <hr className="flex-grow border-gray-300" />
+          </div>
+
+          {/* Google Signup */}
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSignupSuccess}
+              onError={() => toast.error("Google signup failed")}
+            />
+          </div>
         </div>
       </div>
     </div>

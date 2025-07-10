@@ -118,58 +118,114 @@ const getUserById = async (req, res) => {
 };
 
 const UpdateProfile = async (req, res) => {
-    try {
-        const userId = req.userId;
-        const profileImage = req.file;
+  try {
+    const userId = req.userId;
+    const profileImage = req.file;
 
-        const { firstName, lastName, email, phone, gender , dateOfBirth, vehicleNumber ,available } = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      gender,
+      dateOfBirth,
+      vehicleNumber,
+      available,
+      isChangePassword,
+      oldPassword,
+      newPassword,
+    } = req.body;
 
-    
-        let updateData = {
-            firstName,
-            lastName,
-            email,
-            phone,
-            gender,
-            dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-            vehicleNumber : vehicleNumber || "",
-            available: available === 'true', // Convert string to boolean
-            riderStatus: (available === 'true' ? "available" : "offline") // Set status based on availability
-        };
-
-        if (profileImage) {
-            const result = await cloudinary.uploader.upload(profileImage.path, { resource_type: 'image' });
-            updateData.profilePhoto = result.secure_url;
-            console.log("Image uploaded to Cloudinary:", result.secure_url);
-        }
-        
-        const updatedUser = await userModel.findByIdAndUpdate(userId, updateData, { new: true });
-
-
-        req.app
-          .get("io")
-          .emit("riderProfileUpdated", {
-            riderId: updatedUser._id,
-            updatedFields: {
-              firstName: updatedUser.firstName,
-              lastName: updatedUser.lastName,
-              phone: updatedUser.phone,
-              profilePhoto: updatedUser.profilePhoto,
-              available: updatedUser.available,
-              riderStatus: updatedUser.riderStatus,
-            },
-          });
-        
-      
-
-       return res.json({ success: true, user: updatedUser });
-
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: err.message });
+    // 1. Find User
+    const user = await userModel.findById(userId);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
-};
 
+    // 2. Handle password change if requested
+    if (isChangePassword === "true") {
+      if (!oldPassword || !newPassword) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Old and new passwords are required",
+          });
+      }
+
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isMatch) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Old password is incorrect" });
+      }
+
+      if (newPassword.length < 8) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "New password must be at least 8 characters",
+          });
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      user.password = hashedPassword;
+    }
+
+    // 3. Prepare update data
+    const updateData = {
+      firstName,
+      lastName,
+      email,
+      phone,
+      gender,
+      vehicleNumber: vehicleNumber || "",
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+      available: available === "true",
+      riderStatus: available === "true" ? "available" : "offline",
+    };
+
+    // 4. Upload profile image to Cloudinary
+    if (profileImage) {
+      const result = await cloudinary.uploader.upload(profileImage.path, {
+        resource_type: "image",
+        folder: "profilePhotos", // optional
+      });
+      updateData.profilePhoto = result.secure_url;
+      console.log("✅ Image uploaded:", result.secure_url);
+    }
+
+    // 5. Update user document
+    const updatedUser = await userModel.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    });
+    if (isChangePassword === "true") {
+      await user.save(); // save password changes
+    }
+
+    // 6. Emit socket update
+    req.app.get("io").emit("riderProfileUpdated", {
+      riderId: updatedUser._id,
+      updatedFields: {
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        phone: updatedUser.phone,
+        profilePhoto: updatedUser.profilePhoto,
+        available: updatedUser.available,
+        riderStatus: updatedUser.riderStatus,
+      },
+    });
+
+    return res.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error("UpdateProfile error:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
 const googleAuth = async (req, res) => {
     try {
         const { token } = req.body;

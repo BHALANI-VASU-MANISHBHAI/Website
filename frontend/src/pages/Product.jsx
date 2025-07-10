@@ -151,6 +151,7 @@ const Product = () => {
         setAddRating(0);
         setaddComment("");
         fetchReviews();
+  
       } else {
         toast.error(response.data.message || "Failed to add review.");
       }
@@ -284,7 +285,7 @@ const Product = () => {
             {productData.description}
           </p>
 
-          <div className="flex items-center gap-2 mt-5 flex-col ">
+          {/* <div className="flex items-center gap-2 mt-5 flex-col ">
             <p className="text-sm text-gray-500 self-start">Available Stock:</p>
             <div className="flex gap-2 self-start flex-wrap">
               {productData.sizes.map(
@@ -299,7 +300,7 @@ const Product = () => {
                   )
               )}
             </div>
-          </div>
+          </div> */}
           <div className="flex flex-col gap-4 my-8">
             <p>Select Size</p>
             <div className="flex gap-2 flex-wrap">
@@ -364,7 +365,7 @@ const Product = () => {
                 : "text-gray-600 hover:text-black hover:bg-gray-100"
             }`}
           >
-            Reviews ({productData.totalReviews || 0})
+            Reviews ({Reviews.length  || 0})
           </button>
         </div>
 

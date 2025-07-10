@@ -10,10 +10,8 @@ import { ProductContext } from "../contexts/ProductContext.jsx";
 const Add = ({ token }) => {
   const navigate = useNavigate();
   const AvailableSizes = ["S", "M", "L", "XL", "XXL"];
-  const allCategories =[ "Men", "Women", "Kids"];
+  const allCategories = ["Men", "Women", "Kids"];
   const allSubcategories = ["Topwear", "Bottomwear", "Winterwear"];
-
-
 
   const [image1, setImage1] = React.useState(null);
   const [image2, setImage2] = React.useState(null);
@@ -34,12 +32,13 @@ const Add = ({ token }) => {
   // 👉 Now stock is an array of objects: [{ size: "S", quantity: 0 }, ...]
   const [stocks, setStocks] = React.useState([]);
 
-
-const {addLastProduct}  = useContext(ProductContext);
-
   const compressImage = async (imageFile) => {
     try {
-      const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1024, useWebWorker: true };
+      const options = {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 1024,
+        useWebWorker: true,
+      };
       const compressedFile = await imageCompression(imageFile, options);
       return compressedFile;
     } catch (error) {
@@ -79,9 +78,13 @@ const {addLastProduct}  = useContext(ProductContext);
       if (compressedImages[2]) formData.append("image3", compressedImages[2]);
       if (compressedImages[3]) formData.append("image4", compressedImages[3]);
 
-      const response = await axios.post(`${backendUrl}/api/product/add`, formData, {
-        headers: { token },
-      });
+      const response = await axios.post(
+        `${backendUrl}/api/product/add`,
+        formData,
+        {
+          headers: { token },
+        }
+      );
 
       if (response.data.success) {
         toast.success(response.data.message);
@@ -99,7 +102,6 @@ const {addLastProduct}  = useContext(ProductContext);
         setBestseller(false);
         setSizes([]);
         setStocks([]);
-        
       } else {
         setAdding(false);
         toast.error(response.data.message);
@@ -125,7 +127,10 @@ const {addLastProduct}  = useContext(ProductContext);
   };
 
   return (
-    <form onSubmit={onSubmitHandler} className="flex flex-col w-full items-start gap-3">
+    <form
+      onSubmit={onSubmitHandler}
+      className="flex flex-col w-full items-start gap-3"
+    >
       {/* Image Upload Section */}
       <div>
         <p className="mb-2">Upload Image</p>
@@ -134,7 +139,11 @@ const {addLastProduct}  = useContext(ProductContext);
             <label htmlFor={`image${num}`} key={num}>
               <img
                 className="w-20"
-                src={!eval(`image${num}`) ? assets.upload_area : URL.createObjectURL(eval(`image${num}`))}
+                src={
+                  !eval(`image${num}`)
+                    ? assets.upload_area
+                    : URL.createObjectURL(eval(`image${num}`))
+                }
                 alt=""
               />
               <input
@@ -176,7 +185,10 @@ const {addLastProduct}  = useContext(ProductContext);
       <div className="flex flex-col sm:flex-row gap-2 w-full sm:gap-8">
         <div>
           <p className="mb-2">Product Category</p>
-          <select onChange={(e) => setCategory(e.target.value)} className="w-full px-3 py-2">
+          <select
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full px-3 py-2"
+          >
             <option value="Men">Men</option>
             <option value="Women">Women</option>
             <option value="Kids">Kids</option>
@@ -185,7 +197,10 @@ const {addLastProduct}  = useContext(ProductContext);
 
         <div>
           <p className="mb-2">Sub Category</p>
-          <select onChange={(e) => setSubcategory(e.target.value)} className="w-full px-3 py-2">
+          <select
+            onChange={(e) => setSubcategory(e.target.value)}
+            className="w-full px-3 py-2"
+          >
             <option value="Topwear">Topwear</option>
             <option value="Bottomwear">Bottomwear</option>
             <option value="Winterwear">Winterwear</option>
@@ -236,7 +251,9 @@ const {addLastProduct}  = useContext(ProductContext);
             <div key={size} onClick={() => handleSizeToggle(size)}>
               <p
                 className={`px-3 py-1 cursor-pointer rounded ${
-                  sizes.includes(size) ? "bg-pink-500 text-white" : "bg-slate-200 text-black"
+                  sizes.includes(size)
+                    ? "bg-pink-500 text-white"
+                    : "bg-slate-200 text-black"
                 }`}
               >
                 {size}
@@ -247,35 +264,43 @@ const {addLastProduct}  = useContext(ProductContext);
       </div>
 
       {/* Stock Inputs */}
- {sizes.length > 0 && (
-  <div>
-    <p className="mb-2">Stocks per Size</p>
-    <div className="flex flex-col gap-3">
-      {sizes.map((size) => {
-        const stockItem = stocks.find((item) => item.size === size) || { size, quantity: 0 };
+      {sizes.length > 0 && (
+        <div>
+          <p className="mb-2">Stocks per Size</p>
+          <div className="flex flex-col gap-3">
+            {sizes.map((size) => {
+              const stockItem = stocks.find((item) => item.size === size) || {
+                size,
+                quantity: 0,
+              };
 
-        return (
-          <div key={size} className="flex items-center gap-3">
-            <label className="w-10">{size}:</label>
-            <input
-              onChange={(e) =>
-                setStocks((prev) =>
-                  prev.map((item) =>
-                    item.size === size ? { ...item, quantity: parseInt(e.target.value) || 0 } : item
-                  )
-                )
-              }
-              value={stockItem.quantity}
-              className="px-3 py-1 border border-gray-300 rounded"
-              type="number"
-              placeholder="Enter stock"
-            />
+              return (
+                <div key={size} className="flex items-center gap-3">
+                  <label className="w-10">{size}:</label>
+                  <input
+                    onChange={(e) =>
+                      setStocks((prev) =>
+                        prev.map((item) =>
+                          item.size === size
+                            ? {
+                                ...item,
+                                quantity: parseInt(e.target.value) || 0,
+                              }
+                            : item
+                        )
+                      )
+                    }
+                    value={stockItem.quantity}
+                    className="px-3 py-1 border border-gray-300 rounded"
+                    type="number"
+                    placeholder="Enter stock"
+                  />
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
-    </div>
-  </div>
-)}
+        </div>
+      )}
 
       <div className="flex gap-2 mt-2">
         <input
@@ -291,7 +316,9 @@ const {addLastProduct}  = useContext(ProductContext);
 
       <button
         type="submit"
-        className={`w-28 py-3 mt-4 text-white ${adding ? "bg-gray-500 cursor-not-allowed" : "bg-black"}`}
+        className={`w-28 py-3 mt-4 text-white ${
+          adding ? "bg-gray-500 cursor-not-allowed" : "bg-black"
+        }`}
         disabled={adding}
       >
         {adding ? "Adding..." : "Add Product"}

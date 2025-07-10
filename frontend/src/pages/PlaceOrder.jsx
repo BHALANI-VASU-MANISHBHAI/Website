@@ -16,7 +16,7 @@ import { useEffect } from "react";
 const PlaceOrder = () => {
   const { navigate, backendUrl, token, delivery_fee } =
     useContext(GlobalContext);
-  const { cartItems, setCartItems, getCartAmount } = useContext(CartContext); 
+  const { cartItems, setCartItems, getCartAmount } = useContext(CartContext);
   const { products } = useContext(ProductContext);
   const { userData } = useContext(UserContext);
   const [actualAmount, setActualAmount] = React.useState(0);
@@ -30,6 +30,8 @@ const PlaceOrder = () => {
   const [otpSent, setOtpSent] = React.useState(false);
   const [otpLoading, setOtpLoading] = React.useState(false);
   const [PlaceOrder, setPlaceOrder] = React.useState(false);
+  const [lat, setLat] = React.useState("");
+  const [long, setLong] = React.useState("");
 
   const [formData, setFormData] = React.useState({
     firstName: "",
@@ -41,6 +43,9 @@ const PlaceOrder = () => {
     zipcode: "",
     country: "",
     phone: "",
+    mapLink: "",
+    latitude: "",
+    longitude: "",
   });
 
   // ✅ Load Razorpay only when needed
@@ -60,6 +65,58 @@ const PlaceOrder = () => {
       document.body.appendChild(script);
     });
   };
+  const fetchAddressFromLatLng = async () => {
+    if (lat && long) {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${long}&format=json`
+        );
+        const data = await res.json();
+        const rev = data.address;
+        const mismatchList = [];
+
+        const formCountry = formData.country?.trim().toLowerCase();
+        const formState = formData.state?.trim().toLowerCase();
+        const formCity = formData.city?.trim().toLowerCase();
+        const formZip = formData.zipcode?.trim();
+        const revCountry = rev?.country?.toLowerCase();
+        const revState = rev?.state?.toLowerCase();
+        const revCity =
+          rev?.state_district?.toLowerCase() || rev?.city?.toLowerCase();
+        const revZip = rev?.postcode?.trim();
+
+        if (formCountry && revCountry && !revCountry.includes(formCountry)) {
+          mismatchList.push("Country");
+        }
+        if (formState && revState && !revState.includes(formState)) {
+          mismatchList.push("State");
+        }
+        if (formZip && revZip && formZip !== revZip) {
+          mismatchList.push("Zipcode");
+        }
+
+        if (mismatchList.length > 0) {
+          toast.warn(
+            `Your address may not match location: ${mismatchList.join(", ")}`
+          );
+          return false;
+        } else {
+          toast.success("Location matches address ✅");
+          return true;
+        }
+      } catch (err) {
+        console.error("Reverse geocoding failed:", err);
+        toast.error("Location check failed.");
+        return false;
+      }
+    }
+    return true;
+  };
+  
+  useEffect(() => {
+    fetchAddressFromLatLng();
+  }, [lat, long, formData]);
+
   const sendOtp = async () => {
     if (!formData.phone) {
       toast.error("Please enter phone number");
@@ -85,8 +142,6 @@ const PlaceOrder = () => {
       setOtpLoading(false);
     }
   };
-
-
 
   // Verify OTP function
   const verifyOtp = async () => {
@@ -188,66 +243,72 @@ const PlaceOrder = () => {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
 
-    if (PlaceOrder) {
-      return;
-    }
+    if (PlaceOrder) return;
 
+    // 1. Validate state/city combo
     if (!isValidAddress(formData.state, formData.city)) {
       toast.error("Please enter a valid state and city combination.");
       return;
     }
 
-    const zipcode = formData.zipcode;
-    if (!/^\d{6}$/.test(zipcode)) {
+    // 2. Validate Indian Pincode
+    if (!/^\d{6}$/.test(formData.zipcode)) {
       toast.error("Please enter a valid 6-digit Indian zipcode.");
       return;
     }
 
-    setPlaceOrder(true);
+    // 3. Validate location via reverse geocoding
+    const locationValid = await fetchAddressFromLatLng();
+    if (!locationValid) return;
 
-    let orderItems = [];
-    for (const item in cartItems) {
-      for (const size in cartItems[item]) {
-        if (cartItems[item][size] > 0) {
-          const itemInfo = cloneDeep(products.find((p) => p._id === item));
-          if (itemInfo) {
-            itemInfo.size = size;
-            itemInfo.quantity = cartItems[item][size];
-            orderItems.push(itemInfo);
+    // 4. Create order payload
+    setPlaceOrder(true); // disable button
+
+    const orderItems = [];
+
+    for (const productId in cartItems) {
+      for (const size in cartItems[productId]) {
+        const quantity = cartItems[productId][size];
+        if (quantity > 0) {
+          const item = cloneDeep(products.find((p) => p._id === productId));
+          if (item) {
+            item.size = size;
+            item.quantity = quantity;
+            orderItems.push(item);
           }
         }
       }
     }
 
-    let orderData = {
+    const totalAmount =
+      getCartAmount() + delivery_fee - (Subscriber ? getCartAmount() * 0.2 : 0);
+
+    const orderData = {
       address: formData,
       items: orderItems,
-      amount:
-        getCartAmount() +
-        delivery_fee -
-        (Subscriber ? getCartAmount() * 0.2 : 0),
+      amount: totalAmount,
     };
-    console.log("Order Data:", orderData);
+
     try {
+      // 5. Place COD Order
       if (method === "cod") {
-        console.log("Placing COD order");
-       const response = await axios.post(
-  backendUrl + "/api/order/place",
-  orderData, // ✅ This is the request body
-  {
-    headers: {
-      token: token, // or Authorization: `Bearer ${token}` if using bearer tokens
-    },
-  }
-);
+        const response = await axios.post(
+          `${backendUrl}/api/order/place`,
+          orderData,
+          { headers: { token } }
+        );
 
         if (response.data.success) {
           setCartItems({});
+          toast.success("Order placed successfully.");
           navigate("/orders");
         } else {
-          toast.error(response.data.message);
+          toast.error(response.data.message || "Failed to place order.");
         }
-      } else if (method === "razorpay") {
+      }
+
+      // 6. Razorpay Payment Flow
+      else if (method === "razorpay") {
         const scriptLoaded = await loadRazorpayScript();
         if (!scriptLoaded) {
           toast.error("Failed to load Razorpay. Try again.");
@@ -255,70 +316,74 @@ const PlaceOrder = () => {
         }
 
         const razorpayResponse = await axios.post(
-          backendUrl + "/api/order/razorpay",
-          {
-            orderData,
-          },
+          `${backendUrl}/api/order/razorpay`,
+          { orderData },
           { headers: { token } }
         );
 
-        if (razorpayResponse.data.success) {
-          const options = {
-            key: razorpayKey,
-            amount: razorpayResponse.data.razorpayOrder.amount,
-            currency: "INR",
-            name: "Vasu Store",
-            description: "Order Payment",
-            order_id: razorpayResponse.data.razorpayOrder.id,
-            handler: async (response) => {
-              try {
-                const verifyResponse = await axios.post(
-                  backendUrl + "/api/order/verify-order-razorpay",
-                  {
-                    razorpay_order_id: response.razorpay_order_id,
-                    razorpay_payment_id: response.razorpay_payment_id,
-                    razorpay_signature: response.razorpay_signature,
-                    orderData: orderData,
-                  },
-                  { headers: { token } }
-                );
-
-                if (verifyResponse.data.success) {
-                  setCartItems({});
-                  navigate("/orders");
-                } else {
-                  toast.error(verifyResponse.data.message);
-                }
-              } catch (error) {
-                toast.error("Payment verification failed.");
-              } finally {
-                setPlaceOrder(false); // Reset here too
-              }
-            },
-            prefill: {
-              name: `${formData.firstName} ${formData.lastName}`,
-              email: formData.email,
-              contact: formData.phone,
-            },
-            theme: {
-              color: "#F37254",
-            },
-          };
-
-          const rzp = new window.Razorpay(options);
-          rzp.open();
-        } else {
-          toast.error(razorpayResponse.data.message);
+        if (!razorpayResponse.data.success) {
+          toast.error(
+            razorpayResponse.data.message || "Payment initialization failed."
+          );
+          return;
         }
+
+        const { razorpayOrder } = razorpayResponse.data;
+
+        const options = {
+          key: razorpayKey,
+          amount: razorpayOrder.amount,
+          currency: "INR",
+          name: "Vasu Store",
+          description: "Order Payment",
+          order_id: razorpayOrder.id,
+          prefill: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            contact: formData.phone,
+          },
+          theme: { color: "#F37254" },
+          handler: async function (response) {
+            try {
+              const verifyRes = await axios.post(
+                `${backendUrl}/api/order/verify-order-razorpay`,
+                {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  orderData,
+                },
+                { headers: { token } }
+              );
+
+              if (verifyRes.data.success) {
+                setCartItems({});
+                toast.success("Payment successful, order placed.");
+                navigate("/orders");
+              } else {
+                toast.error(
+                  verifyRes.data.message || "Payment verification failed."
+                );
+              }
+            } catch (err) {
+              toast.error("Error verifying payment.");
+            } finally {
+              setPlaceOrder(false);
+            }
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
       }
     } catch (err) {
       console.error(err);
-      toast.error("Something went wrong.");
+      toast.error("Something went wrong during order placement.");
     } finally {
-      setPlaceOrder(false); // This ensures the loading state is always reset
+      setPlaceOrder(false);
     }
   };
-
+  
   return (
     <form
       onSubmit={onSubmitHandler}
@@ -386,11 +451,13 @@ const PlaceOrder = () => {
             <option value="" disabled>
               Select City
             </option>
-            {Indian_Cities_In_States_JSON[formData.state]?.map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
+            {Indian_Cities_In_States_JSON[formData.state]?.map(
+              (city, index) => (
+                <option key={`${city}-${index}`} value={city}>
+                  {city}
+                </option>
+              )
+            )}
           </select>
           <select
             name="state"
@@ -438,7 +505,7 @@ const PlaceOrder = () => {
           type="number"
           className="border py-1.5 px-3.5 rounded-md w-full"
         />
-        {!otpSent && (
+        {/* {!otpSent && (
           <button
             type="button"
             onClick={sendOtp}
@@ -447,7 +514,7 @@ const PlaceOrder = () => {
           >
             {otpLoading ? "Sending OTP..." : "Send OTP"}
           </button>
-        )}
+        )} */}
 
         {otpSent && !otpVerified && (
           <>
@@ -468,6 +535,52 @@ const PlaceOrder = () => {
             </button>
           </>
         )}
+        <input
+          type="text"
+          name="mapLink"
+          // value={formData.mapLink}
+          onChange={(e) => {
+            setFormData((prevData) => ({
+              ...prevData,
+              mapLink: e.target.value,
+            }));
+            // take lat and log that always after first @
+            const mapLink = e.target.value;
+            if (mapLink) {
+              const latLong = mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+              if (latLong) {
+                const lat = latLong[1];
+                const long = latLong[2];
+                setFormData((prevData) => ({
+                  ...prevData,
+                  latitude: lat,
+                  longitude: long,
+                }));
+                setLat(lat);
+                setLong(long);
+                console.log(`Latitude: ${lat}, Longitude: ${long}`);
+              } else {
+                console.error("Invalid map link format");
+              }
+            } else {
+              console.log("Map link is empty");
+            }
+          }}
+          placeholder="Paste Google Map Link "
+          className="border py-1.5 px-3.5 rounded-md w-full mt-2"
+          required
+        />
+        <iframe
+          title="Google Map"
+          width="100%"
+          height="300"
+          frameBorder="0"
+          style={{ border: 0 }}
+          allowFullScreen
+          src={`https://maps.google.com/maps?q=${lat},${long}&z=15&output=embed`}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
 
         {otpVerified && (
           <p className="text-green-600 mt-2">Phone number verified ✅</p>

@@ -7,6 +7,8 @@ const Navbar = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("retryCounts");
+    
     window.location.reload();
   };
 
@@ -69,34 +71,33 @@ const Navbar = () => {
       </div>
 
       {/* Sidebar Drawer */}
+      {/* Sidebar Drawer */}
       <div
-        className={`fixed top-0 left-0 w-[50%] h-full min-h-screen z-50 bg-white transform transition-transform duration-500 ease-in-out ${
+        className={`fixed top-0 left-0 w-[100%] sm:w-[300px] h-full z-50 bg-white transform transition-transform duration-500 ease-in-out ${
           Sidebar ? "translate-x-0" : "-translate-x-full"
-        } border-r-2 border-gray-300`}
+        } shadow-lg border-r`}
       >
-        <div className="flex flex-col gap-4 pt-6 pl-[5%] text-[15px] cursor-pointer">
-          {/* Close button */}
-          <div
-            onClick={() => setSidebar(false)}
-            className="mr-auto flex items-center gap-2 ml-1 w-full"
-          >
+        {/* Header with Close button */}
+        <div className="flex items-center justify-between px-4 py-4 border-b">
+          <h2 className="text-lg font-semibold">Menu</h2>
+          <button onClick={() => setSidebar(false)}>
             <img src={assets.cross_icon} alt="close" className="w-5 h-5" />
-          </div>
+          </button>
+        </div>
 
-          {/* Nav items */}
+        {/* Nav items */}
+        <div className="flex flex-col gap-2 px-4 pt-4 text-[15px]">
           {navItems.map((item, index) => (
             <NavLink
               key={index}
               to={item.to}
               onClick={() => setSidebar(false)}
-              className="flex items-center gap-3 border border-gray-300 px-4 py-2 rounded"
+              className="flex items-center gap-3 border border-gray-200 hover:bg-gray-100 px-4 py-2 rounded transition"
             >
               <img className="w-5 h-5" src={item.icon} alt={item.label} />
-              <p className="font-bold">{item.label}</p>
+              <p className="font-medium">{item.label}</p>
             </NavLink>
           ))}
-
-         
         </div>
       </div>
     </>

@@ -82,22 +82,7 @@ const RiderContextProvider = ({ children }) => {
     }
   };
 
-  const AssignRiderToOrder = async (orderId) => {
-    try {
-      const response = await axios.post(`${backendUrl}/api/rider/assign`);
 
-      if (response.data.success) {
-        console.log("Rider assigned to order:", response.data);
-      } else {
-        toast.error(response.data.message || "Failed to assign rider to order");
-      }
-    } catch (err) {
-      console.error("Error assigning rider to order:", err);
-      toast.error(
-        err?.response?.data?.message || "Failed to assign rider to order"
-      );
-    }
-  };
 
   useEffect(() => {
     //    req.app.get("io").to("adminRoom").emit("orderPacked", {
@@ -134,8 +119,6 @@ const RiderContextProvider = ({ children }) => {
     socket.on("orderStatusUpdated", async (data) => {
       console.log("Order status updated event received:", data);
       if (data.status !== "Packing") {
-
-      
       // Handle the order status update event here, e.g., update the riderOrders state
       toast.info(`Order ${data.orderId} status updated to ${data.status}`);
       await getAllRidersOrders(); // Refresh the orders

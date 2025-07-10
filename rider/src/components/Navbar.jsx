@@ -42,7 +42,7 @@ const Navbar = () => {
     <>
       {/* Mobile Sidebar */}
       <div
-        className={`fixed z-50 top-0 left-0 w-64 h-full bg-white shadow-xl transform transition-transform duration-300 ${
+        className={`fixed z-50 top-0 left-0 w-full h-full bg-white shadow-xl transform transition-transform duration-300 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -78,7 +78,8 @@ const Navbar = () => {
       </div>
 
       {/* Top Navbar */}
-      <div className="flex justify-between items-center px-4 py-3 bg-white shadow-md sticky top-0 z-40">
+      <div className="flex justify-between items-center px-4 py-3 bg-white shadow-md sticky top-0 z-40
+      ">
         {/* Sidebar Toggle (Mobile) */}
         <div className="flex items-center gap-3">
           <img

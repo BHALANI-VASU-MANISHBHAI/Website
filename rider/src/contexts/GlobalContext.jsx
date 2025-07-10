@@ -7,7 +7,7 @@
   const GlobalContextProvider = ({ children }) => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
     const [token, setToken] = useState(() =>  localStorage.getItem("token") || null);
-      const [currentLocation, setCurrentLocation] = useState(null);
+    const [currentLocation, setCurrentLocation] = useState(null);
   
     const navigate = useNavigate();
 

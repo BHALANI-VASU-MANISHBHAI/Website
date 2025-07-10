@@ -11,6 +11,7 @@ const placeOrder = async (req, res) => {
 
   try {
     const userId = req.userId;
+    console.log("Req.body:", req.body);
     const { items, amount, address } = req.body;
     console.log("Order Request:", req.body);
     if (!userId || !items || !amount || !address) {
@@ -391,7 +392,7 @@ const cancelOrderItem = async (req, res) => {
       },
       { new: true }
     );
-
+    
     if (!updatedOrder) {
       return res
         .status(404)

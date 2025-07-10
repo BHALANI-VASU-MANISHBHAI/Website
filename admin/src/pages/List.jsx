@@ -115,7 +115,7 @@ GetList();
   return (
     <>
       <p className="mb-2 text-2xl">All Products List</p>
-   <div className="p-4  gap-10 sm:gap-4 md:gap-10 md:flex-row flex-col md:items-center md:justify-between border border-gray-200 bg-gray-100 rounded-b-md">
+   <div className="p-4  flex gap-4 sm:gap-4 md:gap-10 md:flex-row flex-col md:items-center md:justify-between border border-gray-200 bg-gray-100 rounded-b-md">
 
         {/* Category Selector */}
         <div className="flex  items-center gap-3">

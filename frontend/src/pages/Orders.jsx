@@ -126,7 +126,6 @@ const Orders = () => {
     <div className="border-t pt-16 relative">
       {/* Fullscreen loading overlay */}
 
-
       <div className="text-2xl">
         <Title text1={"MY"} text2={"ORDERS"} />
       </div>
@@ -175,10 +174,26 @@ const Orders = () => {
 
               <button
                 onClick={() =>
-                  CancelOrder(item.orderId, item.size, item._id, item.price, item.quantity)
+                  CancelOrder(
+                    item.orderId,
+                    item.size,
+                    item._id,
+                    item.price,
+                    item.quantity
+                  )
                 }
-                className={`border py-4 px-2 text-sm font-medium rounded-sm cursor-pointer ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={loading}
+                className={`border py-4 px-2 text-sm font-medium rounded-sm cursor-pointer ${
+                  loading ||
+                  item.status === "Delivered" ||
+                  item.status === "Out for Delivery"
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }`}
+                disabled={
+                  loading ||
+                  item.status === "Delivered" ||
+                  item.status === "Out for Delivery"
+                }
               >
                 Cancel Order
               </button>
@@ -191,17 +206,19 @@ const Orders = () => {
         <div className="text-center py-10 text-gray-500">No orders found.</div>
       )}
 
-      {orderData.length > 0 && (
+      {/* {orderData.length > 0 && (
         <div className="text-center flex justify-end items-center text-sm md:text-[16px]">
           <button
-            className={`bg-red-500 text-white px-4 py-2 rounded-md mt-4 cursor-pointer hover:bg-red-700 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`bg-red-500 text-white px-4 py-2 rounded-md mt-4 cursor-pointer hover:bg-red-700 ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
             onClick={CancelAllOrders}
             disabled={loading}
           >
             Cancel All Orders
           </button>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

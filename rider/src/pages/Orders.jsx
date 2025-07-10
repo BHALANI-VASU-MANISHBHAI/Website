@@ -6,27 +6,76 @@ import axios from "axios";
 
 const Orders = () => {
   const { currentOrder, setCurrentOrder } = useContext(OrderContext);
-  const { backendUrl, token } = useContext(GlobalContext);
+  const { backendUrl, token, currentLocation } = useContext(GlobalContext);
 
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [sending, setSending] = useState(false);
 
+  const [distanceFromPickup, setDistanceFromPickup] = useState(null);
+  const [timeFromPickup, setTimeFromPickup] = useState(null);
+  const [distanceFromDelivery, setDistanceFromDelivery] = useState(null);
+  const [timeFromDelivery, setTimeFromDelivery] = useState(null);
+
+  const calculateDistanceAndTime = async (from, to, setDistFn, setTimeFn) => {
+    try {
+      const url = `https://us1.locationiq.com/v1/directions/driving/${
+        from.lng
+      },${from.lat};${to.lng || to.longitude},${
+        to.lat || to.latitude
+      }?key=pk.231231dbbc3adaf8b1d5637c69074b32&overview=false&steps=false`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        const km = route.distance / 1000;
+        const timeInMin = Math.ceil(route.duration / 60);
+        setDistFn(km.toFixed(2));
+        setTimeFn(timeInMin);
+      }
+    } catch (err) {
+      console.error("❌ Failed to calculate route:", err);
+    }
+  };
+
+  // Pickup ➝ Delivery
   useEffect(() => {
     if (currentOrder) {
-      console.log("📦 Current order:", currentOrder);
+      calculateDistanceAndTime(
+        currentOrder.pickUpLocation,
+        currentOrder.address,
+        setDistanceFromDelivery,
+        setTimeFromDelivery
+      );
     }
   }, [currentOrder]);
+
+  // Current Location ➝ Pickup
+  useEffect(() => {
+    if (
+      currentOrder &&
+      currentLocation &&
+      currentLocation.lat &&
+      currentLocation.lng
+    ) {
+      calculateDistanceAndTime(
+        currentLocation,
+        currentOrder.pickUpLocation,
+        setDistanceFromPickup,
+        setTimeFromPickup
+      );
+    }
+  }, [currentOrder, currentLocation]);
 
   const sendOTP = async () => {
     setSending(true);
     try {
       const response = await axios.post(
         `${backendUrl}/api/auth/send-delivery-otp`,
-        { orderId: currentOrder._id }
+        { orderId: currentOrder._id },
+        { headers: { token } }
       );
-
       if (response.data.success) {
         setOtpSent(true);
         toast.success("OTP sent successfully!");
@@ -35,7 +84,6 @@ const Orders = () => {
       }
     } catch (error) {
       toast.error("❌ Failed to send OTP");
-      console.error("Error sending OTP:", error);
     } finally {
       setSending(false);
     }
@@ -50,9 +98,9 @@ const Orders = () => {
     try {
       const response = await axios.post(
         `${backendUrl}/api/auth/verify-delivery-otp`,
-        { orderId: currentOrder._id, otp }
+        { orderId: currentOrder._id, otp },
+        { headers: { token } }
       );
-
       if (response.data.success) {
         toast.success("✅ OTP verified successfully!");
         setCurrentOrder(null);
@@ -61,7 +109,6 @@ const Orders = () => {
       }
     } catch (error) {
       toast.error("❌ Failed to verify OTP");
-      console.error("Error verifying OTP:", error);
     } finally {
       setVerifying(false);
     }
@@ -90,41 +137,53 @@ const Orders = () => {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Orders</h1>
+      <h1 className="text-2xl font-bold mb-4">Order Details</h1>
 
-      <div className="border rounded-lg shadow-md p-4 space-y-4">
-        <h2 className="text-xl font-semibold text-blue-600">
-          🧾 Order Details
+      <div className="border rounded-lg shadow-md p-4 space-y-4 bg-white">
+        <h2 className="text-xl font-semibold text-blue-700">
+          📦 Order Summary
         </h2>
         <p>
-          <strong>Total Amount:</strong> ₹{amount}
+          <strong>Order Amount:</strong> ₹{amount}
         </p>
         <p>
-          <strong>Delivery Charge:</strong> ₹{earning.amount}
+          <strong>Rider Earnings:</strong> ₹{earning.amount}
+        </p>
+        <p>
+          <strong>Payment:</strong> {paymentMethod} ({paymentStatus})
         </p>
         <p>
           <strong>Status:</strong> {status}
         </p>
         <p>
-          <strong>Payment Method:</strong> {paymentMethod}
-        </p>
-        <p>
-          <strong>Payment Status:</strong> {paymentStatus}
-        </p>
-        <p>
-          <strong>Order Date:</strong> {new Date(date).toLocaleString()}
+          <strong>Date:</strong> {new Date(date).toLocaleString()}
         </p>
 
         <hr />
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-between">
+        <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 className="text-lg font-semibold text-purple-700">
-              🏠 Delivery Address:
-            </h3>
+            <h3 className="font-semibold text-green-700">🏭 Pickup Location</h3>
             <p>
-              {address.firstName} {address.lastName}
+              {pickUpAddress.street}, {pickUpAddress.city},{" "}
+              {pickUpAddress.state} - {pickUpAddress.pincode}
             </p>
+            <iframe
+              title="Pickup Map"
+              src={`https://maps.google.com/maps?q=${pickUpLocation.lat},${pickUpLocation.lng}&z=15&output=embed`}
+              width="100%"
+              height="370"
+              frameBorder="0"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+            />
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-purple-700">
+              🏠 Delivery Location
+            </h3>
             <p>
               {address.street}, {address.city}, {address.state} -{" "}
               {address.zipcode}
@@ -136,35 +195,62 @@ const Orders = () => {
             <p>
               <strong>Email:</strong> {address.email}
             </p>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold text-yellow-700">
-              🏭 Pickup Address:
-            </h3>
-            <p>
-              {pickUpAddress.street}, {pickUpAddress.city},{" "}
-              {pickUpAddress.state} - {pickUpAddress.pincode}
-            </p>
-            <p>{pickUpAddress.country}</p>
-            <a
-              href={`https://www.google.com/maps?q=${pickUpLocation.lat},${pickUpLocation.lng}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline"
-            >
-              View Pickup Location on Map
-            </a>
+            <iframe
+              title="Delivery Map"
+              src={`https://maps.google.com/maps?q=${address.latitude},${address.longitude}&z=15&output=embed`}
+              width="100%"
+              height="300"
+              frameBorder="0"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+            />
           </div>
         </div>
 
         <hr />
 
-        <div className="mt-6 flex flex-col sm:flex-row gap-4 items-center sm:justify-end">
+        {distanceFromPickup && (
+          <p className="text-yellow-600">
+            📍 Distance to Pickup: {distanceFromPickup} km
+            {timeFromPickup && ` (~${timeFromPickup} min)`}
+          </p>
+        )}
+
+        {distanceFromDelivery && (
+          <p className="text-pink-600">
+            🚚 Pickup ➝ Delivery: {distanceFromDelivery} km
+            {timeFromDelivery && ` (~${timeFromDelivery} min)`}
+          </p>
+        )}
+
+        {distanceFromPickup && distanceFromDelivery && (
+          <p className="text-indigo-600 font-medium">
+            📏 Total Distance:{" "}
+            {(
+              parseFloat(distanceFromPickup) + parseFloat(distanceFromDelivery)
+            ).toFixed(2)}{" "}
+            km
+          </p>
+        )}
+
+        {timeFromPickup && timeFromDelivery && (
+          <p className="text-green-700 font-medium">
+            🕐 Estimated Total Time: {timeFromPickup + timeFromDelivery} min
+          </p>
+        )}
+
+        {!currentLocation?.lat && (
+          <p className="text-red-500">⚠️ Getting your location...</p>
+        )}
+
+        <hr />
+
+        <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-end">
           <button
             onClick={sendOTP}
             disabled={sending}
-            className={`px-4 py-2 bg-green-600 text-white rounded-md w-full sm:w-[150px] transition ${
+            className={`px-4 py-2 bg-green-600 text-white rounded-md w-full sm:w-[150px] ${
               sending ? "opacity-50 cursor-not-allowed" : "hover:bg-green-700"
             }`}
           >
@@ -172,7 +258,7 @@ const Orders = () => {
           </button>
 
           {otpSent && (
-            <div className="flex gap-2 w-full sm:w-auto items-center">
+            <div className="flex flex-col sm:flex-row gap-2 items-center w-full sm:w-auto">
               <input
                 type="text"
                 value={otp}
@@ -183,7 +269,7 @@ const Orders = () => {
               <button
                 onClick={verifyOTP}
                 disabled={verifying}
-                className={`px-4 py-2 bg-yellow-600 text-white rounded-md transition ${
+                className={`px-4 py-2 bg-yellow-600 text-white rounded-md ${
                   verifying
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:bg-yellow-700"

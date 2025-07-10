@@ -4,45 +4,48 @@ import { UserContext } from "../contexts/UserContext.jsx";
 import { GlobalContext } from "../contexts/GlobalContext.jsx";
 import { toast } from "react-toastify";
 import { useEffect } from "react";
+import { useContext } from "react";
+import { OrderContext } from "../contexts/OrderContext.jsx";
 
 const Profile = () => {
+  const { currentOrder } = useContext(OrderContext);
   const [notValidFilled, setNotValidFilled] = React.useState({});
   const [profilePhoto, setProfilePhoto] = React.useState(
     "https://res.cloudinary.com/drezv2fgf/image/upload/v1748439973/Profile_avatar_placeholder_large_px5gio.png"
   );
   const [profileFile, setProfileFile] = React.useState(null);
-  const [updating , setUpdating] = React.useState(false);
+  const [updating, setUpdating] = React.useState(false);
 
   const { userData, setUserData } = React.useContext(UserContext);
   const { token, backendUrl } = React.useContext(GlobalContext);
 
   const [formData, setFormData] = React.useState(null);
   const formatDate = (dateString) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  const iso = date.toISOString();
-  return iso.split("T")[0]; // YYYY-MM-DD
-};
-useEffect(() => {
-navigator.geolocation.getCurrentPosition(
-  (position) => {
-    const lat = position.coords.latitude;
-    const lng = position.coords.longitude;
-    
-    console.log("Current Location:", { lat, lng });
-  },
-  (error) => {
-    console.error("Error getting location:", error);
-  }
-);
-}, []);
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const iso = date.toISOString();
+    return iso.split("T")[0]; // YYYY-MM-DD
+  };
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        console.log("Current Location:", { lat, lng });
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+      }
+    );
+  }, []);
 
   React.useEffect(() => {
     if (userData) {
       setFormData({
         firstName: userData.firstName || userData.name?.split(" ")[0] || "",
         lastName: userData.lastName || userData.name?.split(" ")[1] || "",
-        dateOfBirth: formatDate(userData.dateOfBirth),  // ✅ formatted here
+        dateOfBirth: formatDate(userData.dateOfBirth), // ✅ formatted here
         phone: userData.phone || "",
         vehicleNumber: userData.vehicleNumber || "",
         gender: userData.gender || "",
@@ -54,7 +57,6 @@ navigator.geolocation.getCurrentPosition(
   }, [userData]);
 
   const ValidationInput = (name, value) => {
-   
     let errors = {};
 
     if (name === "phone" && !/^[0-9]{10}$/.test(value)) {
@@ -79,58 +81,57 @@ navigator.geolocation.getCurrentPosition(
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-     console.log("Validating input:", name, value);
+    console.log("Validating input:", name, value);
     setFormData((prev) => ({ ...prev, [name]: value }));
     ValidationInput(name, value);
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  try {
-    if (updating) return;
-    setUpdating(true);
+    try {
+      if (updating) return;
+      setUpdating(true);
 
-    const data = new FormData();
-    data.append("firstName", formData.firstName);
-    data.append("lastName", formData.lastName);
-    data.append("dateOfBirth", formData.dateOfBirth);
-    data.append("phone", formData.phone);
-    data.append("vehicleNumber", formData.vehicleNumber);
-    data.append("gender", formData.gender);
-    data.append("available", formData.available);
+      const data = new FormData();
+      data.append("firstName", formData.firstName);
+      data.append("lastName", formData.lastName);
+      data.append("dateOfBirth", formData.dateOfBirth);
+      data.append("phone", formData.phone);
+      data.append("vehicleNumber", formData.vehicleNumber);
+      data.append("gender", formData.gender);
+      data.append("available", formData.available);
 
-    // ✅ Append the real file only if selected
-    if (profileFile) {
-      data.append("profileImage", profileFile);
-    }
-
-    const response = await axios.put(
-      `${backendUrl}/api/user/updateprofile`,
-      data,
-      {
-        headers: {
-          token,
-          "Content-Type": "multipart/form-data",
-        },
+      // ✅ Append the real file only if selected
+      if (profileFile) {
+        data.append("profileImage", profileFile);
       }
-    );
 
-    if (response.data.success) {
-      setUserData(response.data.user);
-      console.log("Profile updated successfully:", response.data.user);
-      toast.success("Profile updated successfully");
-    } else {
-      toast.error("Profile update failed: " + response.data.message);
+      const response = await axios.put(
+        `${backendUrl}/api/user/updateprofile`,
+        data,
+        {
+          headers: {
+            token,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setUserData(response.data.user);
+        console.log("Profile updated successfully:", response.data.user);
+        toast.success("Profile updated successfully");
+      } else {
+        toast.error("Profile update failed: " + response.data.message);
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert("Error updating profile. Please try again.");
+    } finally {
+      setUpdating(false);
     }
-  } catch (error) {
-    console.error("Error updating profile:", error);
-    alert("Error updating profile. Please try again.");
-  } finally {
-    setUpdating(false);
-  }
-};
-
+  };
 
   if (!formData) {
     return <p className="text-center py-10">Loading profile...</p>;
@@ -143,9 +144,9 @@ navigator.geolocation.getCurrentPosition(
     /^[A-Z0-9-]+$/.test(formData.vehicleNumber);
 
   return (
-    <div className="min-h-screen w-[80%] mx-auto flex flex-col mt-10">
+    <div className="min-h-screen w-[90%] sm:w-[85%] md:w-[80%] mx-auto flex flex-col mt-5 text-sm md:text-base">
       <div className="bg-gray-200 p-4">
-        <h1 className="text-2xl font-bold text-center my-6">My Profile</h1>
+        <h1 className="text-2xl font-bold text-center my-3">My Profile</h1>
       </div>
 
       <div className="flex-1 flex items-center justify-center py-10">
@@ -159,61 +160,62 @@ navigator.geolocation.getCurrentPosition(
                 <img
                   src={profilePhoto}
                   alt="Profile"
-                  className="w-24 h-24 rounded-full object-cover cursor-pointer"
+                  className="  w-26 h-26  md:w-24 md:h-24 rounded-full object-cover cursor-pointer"
                 />
               </label>
               <input
-  type="file"
-  accept="image/*"
-  onChange={(e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
 
-    const maxSizeMB = 1; // 1MB limit
-    const fileSizeMB = file.size / (1024 * 1024);
+                  const maxSizeMB = 1; // 1MB limit
+                  const fileSizeMB = file.size / (1024 * 1024);
 
-    if (fileSizeMB > maxSizeMB) {
-      toast.error("Please select an image under 1MB.");
-      return;
-    }
-
-    setProfilePhoto(URL.createObjectURL(file));
-    setProfileFile(file);
-  }}
-    id="profileImageInput"
-    className="hidden"
-/>
-
-            </div>
-            <div>
-              <p className="text-lg font-semibold">
-                {userData.firstName} {userData.lastName}
-              </p>
-              <p className="text-gray-600">{userData?.email}</p>
-              <p className="text-sm text-gray-500">Rider</p>
-            </div>
-            <div>
-              <label className="inline-flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.available}
-                  onChange={(e) =>{
-                    console.log("Checkbox changed:", e.target.checked) 
-                    setFormData((prev) => ({
-                      ...prev,
-                      available: e.target.checked,
-                    }))
+                  if (fileSizeMB > maxSizeMB) {
+                    toast.error("Please select an image under 1MB.");
+                    return;
                   }
-                  }
-                  className="form-checkbox h-5 w-5 text-blue-600"
-                />
-                <span className="ml-2 text-sm text-gray-700">
-                  Available for delivery
-                </span>
-              </label>
-              </div>  
+
+                  setProfilePhoto(URL.createObjectURL(file));
+                  setProfileFile(file);
+                }}
+                id="profileImageInput"
+                className="hidden"
+                disabled={updating || currentOrder}
+              />
+            </div>
+            <div className="flex-1 flex flex-col  md:flex-row   md:gap-10 gap-4 ">
+              <div>
+                <p className="text-lg font-semibold">
+                  {userData.firstName} {userData.lastName}
+                </p>
+                <p className="text-gray-600">{userData?.email}</p>
+                <p className="text-sm text-gray-500">Rider</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={formData.available}
+                    onChange={(e) => {
+                      console.log("Checkbox changed:", e.target.checked);
+                      setFormData((prev) => ({
+                        ...prev,
+                        available: e.target.checked,
+                      }));
+                    }}
+                    disabled={updating || currentOrder}
+                    className="form-checkbox h-5 w-5 text-blue-600"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    Available for delivery
+                  </span>
+                </label>
+              </div>
+            </div>
           </div>
-
           <div className="space-y-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">

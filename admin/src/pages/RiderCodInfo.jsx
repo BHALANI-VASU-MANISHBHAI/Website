@@ -13,12 +13,13 @@ const RiderCodInfo = () => {
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [codRangeFilter, setCodRangeFilter] = useState("all");
   const [codDoneFilter, setCodDoneFilter] = useState("all");
   const [dateRange, setDateRange] = useState("7");
-  const [customStartDate, setCustomStartDate] = useState("");
-  const [customEndDate, setCustomEndDate] = useState("");
+  const [customStartDate, setCustomStartDate] = useState(new Date().toISOString().split("T")[0]); // Default to today
+  const [customEndDate, setCustomEndDate] = useState(new Date().toISOString().split("T")[0]); // Default to today
   
 
 
@@ -41,9 +42,11 @@ const RiderCodInfo = () => {
       start.setDate(start.getDate() - 30);
     } else if (dateRange === "custom" && customStartDate && customEndDate) {
       start = new Date(customStartDate);
+      start.setHours(0, 0, 0, 0); // Set to start of day
       const end = new Date(customEndDate);
+      end.setHours(23, 59, 59, 999); // Set to end of day
       return orders.filter((order) => {
-        const created = new Date(order.createdAt);
+        const created = new Date(order.acceptedTime);
         return created >= start && created <= end;
       });
     }
@@ -125,8 +128,23 @@ const RiderCodInfo = () => {
           (codDoneFilter === "pending" && remaining > 0))
       );
     });
-  }, [groupedRiders, searchTerm, statusFilter, codRangeFilter, codDoneFilter]);
+  }, [
+    groupedRiders,
+    debouncedSearchTerm,
+    statusFilter,
+    codRangeFilter,
+    codDoneFilter,
+  ]);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 200); // 300ms debounce delay
 
+    return () => {
+      clearTimeout(handler); // cleanup
+    };
+  }, [searchTerm]);
+  
   return (
     <div className="p-4 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-6 text-center">
@@ -232,7 +250,7 @@ const RiderCodInfo = () => {
           const riderSubmitted = data.submitted;
           const remaining = riderCodAmount - riderSubmitted;
           const latestOrder = [...data.orders].sort(
-            (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+            (a, b) => new Date(b.acceptedTime) - new Date(a.acceptedTime)
           )[0];
 
           return (
@@ -291,8 +309,10 @@ const RiderCodInfo = () => {
                   </p>
                   <p>
                     <span className="font-medium">Last Assigned:</span>{" "}
-                    {latestOrder?.createdAt
-                      ? new Date(latestOrder.createdAt).toLocaleString("en-IN")
+                    {latestOrder?.acceptedTime
+                      ? new Date(latestOrder.acceptedTime).toLocaleString(
+                          "en-IN"
+                        )
                       : "N/A"}
                   </p>
                 </div>
@@ -326,7 +346,10 @@ const RiderCodInfo = () => {
                 </div>
 
                 {[...data.orders]
-                  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                  .sort(
+                    (a, b) =>
+                      new Date(b.acceptedTime) - new Date(a.acceptedTime)
+                  )
                   .map((order) => (
                     <div
                       key={order._id}
@@ -337,12 +360,15 @@ const RiderCodInfo = () => {
                         {order._id}
                         <br />
                         <span className="text-xs text-gray-400">
-                          {new Date(order.createdAt).toLocaleString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {new Date(order.acceptedTime).toLocaleString(
+                            "en-IN",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            }
+                          )}
                         </span>
                       </div>
                       <div>{order.status || "N/A"}</div>

@@ -2,11 +2,10 @@ import UserModel from "../models/userModel.js";
 import OrderModel from "../models/orderModel.js";
 import haversine from "haversine-distance";
 import { Heap } from "heap-js";
-
 import crypto from "crypto";
 import razorpayInstance from "../config/razorPay.js";
 import RiderCODHistory from "../models/riderPaymentHistory.js";
-
+import { redisClient } from "../config/redisClient.js";
 const findAllRidersByShortestTrip = async (
   deliveryLat,
   deliveryLng,
@@ -96,7 +95,7 @@ const updateRiderStatus = async (req, res) => {
   }
 };
 
-async function waitForRiderResponse(io,riderId, orderId, timeout = 30000) {
+async function waitForRiderResponse(io, riderId, orderId, timeout = 30000) {
   const startTime = Date.now();
   const POLL_INTERVAL = 1000;
   try {
@@ -134,7 +133,9 @@ async function waitForRiderResponse(io,riderId, orderId, timeout = 30000) {
 
 const riderAcceptOrder = async (req, res) => {
   try {
-    const { orderId, riderAmount } = req.body;
+    const { orderId, distanceFromPickUpLocation,
+      distanceFromDeliveryLocation
+     } = req.body;
     const userId = req.userId;
     const [rider, order] = await Promise.all([
       UserModel.findById(userId),
@@ -162,9 +163,7 @@ const riderAcceptOrder = async (req, res) => {
       });
     }
 
-    const distanceFromPickUpLocation = 10;
 
-    const distanceFromDeliveryLocation = 10;
 
     console.log("Distance from Pickup Location:", distanceFromPickUpLocation);
     console.log(
@@ -181,12 +180,8 @@ const riderAcceptOrder = async (req, res) => {
         expiresAt: null,
         distanceFromDeliveryLocation,
         distanceFromPickUpLocation,
-        earning: {
-          amount: riderAmount || 0, // Default to 0 if not provided
-          collected: 0, // Initially set to 0, can be updated later
-        },
         acceptedTime: new Date(), // Set the time when the order was accepted
-        isActive:false, // Mark order as inactive after acceptance
+        isActive: true, // Mark order as inactive after acceptance
       }),
     ]);
     const updatedOrder = await OrderModel.findById(orderId).populate(
@@ -199,7 +194,6 @@ const riderAcceptOrder = async (req, res) => {
       order: updatedOrder,
       message: "Order accepted by rider",
     });
-
 
     io.emit("orderStatusUpdated", {
       orderId: updatedOrder._id,
@@ -224,183 +218,181 @@ const riderAcceptOrder = async (req, res) => {
   }
 };
 
-const assignRider = async (req, res) => {
-  try {
-    const { deliveryLat, deliveryLng, pickupLat, pickupLng, orderId } =
-      req.body;
-    console.log(
-      "Assigning rider with data:",
-      `Delivery (${deliveryLat}, ${deliveryLng}), Pickup (${pickupLat}, ${pickupLng}), Order ID: ${orderId}`
-    );
+// const assignRider = async (req, res) => {
+//   try {
+//     const { deliveryLat, deliveryLng, pickupLat, pickupLng, orderId } =
+//       req.body;
+//     console.log(
+//       "Assigning rider with data:",
+//       `Delivery (${deliveryLat}, ${deliveryLng}), Pickup (${pickupLat}, ${pickupLng}), Order ID: ${orderId}`
+//     );
 
-    //get all packed orders
-    const packedOrders = await OrderModel.find({
-      status: "Packing",
-      isActive: true,
-      isAssigning: false,
-      riderId: null,
-    }).select("_id ");
+//     //get all packed orders
+//     const packedOrders = await OrderModel.find({
+//       status: "Packing",
+//       isActive: true,
+//       isAssigning: false,
+//       riderId: null,
+//     }).select("_id ");
 
+//     for (const order of packedOrders) {
+//       console.log("Processing packed order:", order._id);
+//       const existingOrder = await OrderModel.findById(order._id);
+//       const deliveryLat = existingOrder.deliveryLocation.lat;
+//       const deliveryLng = existingOrder.deliveryLocation.lng;
+//       const pickupLat = existingOrder.pickUpLocation.lat;
+//       const pickupLng = existingOrder.pickUpLocation.lng;
+//       const orderId = existingOrder._id;
 
-    for (const order of packedOrders) {
-      console.log("Processing packed order:", order._id);
-      const existingOrder = await OrderModel.findById(order._id);
-      const deliveryLat = existingOrder.deliveryLocation.lat;
-      const deliveryLng = existingOrder.deliveryLocation.lng;
-      const pickupLat = existingOrder.pickUpLocation.lat;
-      const pickupLng = existingOrder.pickUpLocation.lng;
-      const orderId = existingOrder._id;
+//       console.log("Packed Orders:", packedOrders);
+//       // console.log("Finding The riders PAkcend Order:", testOrder);
+//       if (!deliveryLat || !deliveryLng || !pickupLat || !pickupLng || !orderId) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "All coordinates and orderId are required",
+//         });
+//       }
 
-      console.log("Packed Orders:", packedOrders);
-      // console.log("Finding The riders PAkcend Order:", testOrder);
-      if (!deliveryLat || !deliveryLng || !pickupLat || !pickupLng || !orderId) {
-        return res.status(400).json({
-          success: false,
-          message: "All coordinates and orderId are required",
-        });
-      }
+//       console.log("Existing order:", existingOrder);
+//       if (!existingOrder) {
+//         return res.status(404).json({
+//           success: false,
+//           message: "Order not found",
+//         });
+//       }
 
-  
-      console.log("Existing order:", existingOrder);
-      if (!existingOrder) {
-        return res.status(404).json({
-          success: false,
-          message: "Order not found",
-        });
-      }
+//       if (existingOrder.riderId) {
+//         return res.status(400).json({
+//           success: false,
+//           message: "Order already assigned to a rider",
+//         });
+//       }
 
-      if (existingOrder.riderId) {
-        return res.status(400).json({
-          success: false,
-          message: "Order already assigned to a rider",
-        });
-      }
+//       // Reset order state before assignment
+//       await OrderModel.findByIdAndUpdate(orderId, {
+//         riderId: null,
+//         expiresAt: null,
+//         isAssigning: true, // Indicate that we are in the process of assigning a rider
+//       });
 
-      // Reset order state before assignment
-      await OrderModel.findByIdAndUpdate(orderId, {
-        riderId: null,
-        expiresAt: null,
-        isAssigning: true, // Indicate that we are in the process of assigning a rider
-      });
+//       const riders = await findAllRidersByShortestTrip(
+//         deliveryLat,
+//         deliveryLng,
+//         pickupLat,
+//         pickupLng
+//       );
 
-      const riders = await findAllRidersByShortestTrip(
-        deliveryLat,
-        deliveryLng,
-        pickupLat,
-        pickupLng
-      );
+//       if (!riders || riders.length === 0) {
+//         return res.status(404).json({
+//           success: false,
+//           message: "No available riders found",
+//         });
+//       }
 
-      if (!riders || riders.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "No available riders found",
-        });
-      }
+//       const io = req.app.get("io");
+//       let assignedRider = null;
+//       const distanceFromPickUpLocation = 5;
+//       const distanceFromDeliveryLocation = 10;
 
-      const io = req.app.get("io");
-      let assignedRider = null;
-      const distanceFromPickUpLocation = 5;
-      const distanceFromDeliveryLocation = 10;
+//       let riderAmount = 0;
 
-      let riderAmount = 0;
+//       if (distanceFromDeliveryLocation + distanceFromPickUpLocation < 3) {
+//         riderAmount = 40;
+//       } else if (distanceFromDeliveryLocation + distanceFromPickUpLocation < 20) {
+//         riderAmount = 60;
+//       } else if (distanceFromDeliveryLocation + distanceFromPickUpLocation < 50) {
+//         riderAmount = 80;
+//       } else {
+//         riderAmount = 100;
+//       }
 
-      if (distanceFromDeliveryLocation + distanceFromPickUpLocation < 3) {
-        riderAmount = 40;
-      } else if (distanceFromDeliveryLocation + distanceFromPickUpLocation < 20) {
-        riderAmount = 60;
-      } else if (distanceFromDeliveryLocation + distanceFromPickUpLocation < 50) {
-        riderAmount = 80;
-      } else {
-        riderAmount = 100;
-      }
+//       await OrderModel.findByIdAndUpdate(orderId, { riderAmount: riderAmount });
 
-      await OrderModel.findByIdAndUpdate(orderId, { riderAmount: riderAmount });
+//       for (const rider of riders) {
+//         try {
+//           // Set expiration for this rider's response window
+//           await OrderModel.findByIdAndUpdate(orderId, {
+//             expiresAt: new Date(Date.now() + 30000),
+//           });
+//           io.to(`riderRoom-${rider._id}`).emit("newOrder", {
+//             existingOrder,
+//             pickupLocation: { lat: pickupLat, lng: pickupLng },
+//             deliveryLocation: { lat: deliveryLat, lng: deliveryLng },
+//             expiresAt: new Date(Date.now() + 30000),
+//             riderAmount: riderAmount,
+//           });
 
-      for (const rider of riders) {
-        try {
-          // Set expiration for this rider's response window
-          await OrderModel.findByIdAndUpdate(orderId, {
-            expiresAt: new Date(Date.now() + 30000),
-          });
-          io.to(`riderRoom-${rider._id}`).emit("newOrder", {
-            existingOrder,
-            pickupLocation: { lat: pickupLat, lng: pickupLng },
-            deliveryLocation: { lat: deliveryLat, lng: deliveryLng },
-            expiresAt: new Date(Date.now() + 30000),
-            riderAmount: riderAmount,
-          });
+//           // Notify rider
+//           io.to(`riderRoom-${rider._id}`).emit("newOrder", {
+//             existingOrder,
+//             pickupLocation: { lat: pickupLat, lng: pickupLng },
+//             deliveryLocation: { lat: deliveryLat, lng: deliveryLng },
+//             expiresAt: new Date(Date.now() + 30000),
+//             riderAmount: riderAmount,
+//           });
+//           // Update rider status
+//           // await UserModel.findByIdAndUpdate(rider._id, {
+//           //   riderStatus: "notified",
+//           // });
 
-          // Notify rider
-          io.to(`riderRoom-${rider._id}`).emit("newOrder", {
-            existingOrder,
-            pickupLocation: { lat: pickupLat, lng: pickupLng },
-            deliveryLocation: { lat: deliveryLat, lng: deliveryLng },
-            expiresAt: new Date(Date.now() + 30000),
-            riderAmount: riderAmount,
-          });
-          // Update rider status
-          // await UserModel.findByIdAndUpdate(rider._id, {
-          //   riderStatus: "notified",
-          // });
+//           // Wait for response
+//           const response = await waitForRiderResponse(req.app.get("io"),
+//             rider._id, orderId);
+//           console.log(`Rider ${rider._id} response:`, response);
+//           if (response.accepted) {
+//             assignedRider = rider;
+//             break;
+//           }
 
-          // Wait for response
-          const response = await waitForRiderResponse(req.app.get("io"),
-            rider._id, orderId);
-          console.log(`Rider ${rider._id} response:`, response);
-          if (response.accepted) {
-            assignedRider = rider;
-            break;
-          }
+//           if (response.reason === "taken_by_other") {
+//             await OrderModel.findByIdAndUpdate(orderId, {
+//               expiresAt: null,
+//               isAssigning: false, // Reset assignment state
+//             });
+//             await UserModel.findByIdAndUpdate(rider._id, {
+//               riderStatus: "available",
+//             });
+//             break; // Exit loop immediately if taken by another rider
+//           }
+//         } catch (error) {
+//           console.error(`Error processing rider ${rider._id}:`, error);
+//         }
+//       }
 
-          if (response.reason === "taken_by_other") {
-            await OrderModel.findByIdAndUpdate(orderId, {
-              expiresAt: null,
-              isAssigning: false, // Reset assignment state
-            });
-            await UserModel.findByIdAndUpdate(rider._id, {
-              riderStatus: "available",
-            });
-            break; // Exit loop immediately if taken by another rider
-          }
-        } catch (error) {
-          console.error(`Error processing rider ${rider._id}:`, error);
-        }
-      }
+//       if (assignedRider) {
+//         return res.status(200).json({
+//           success: true,
+//           message: "Rider assigned",
+//           rider: {
+//             _id: assignedRider._id,
+//             name: assignedRider.name,
+//             phone: assignedRider.phone,
+//           },
+//         });
+//       }
 
-      if (assignedRider) {
-        return res.status(200).json({
-          success: true,
-          message: "Rider assigned",
-          rider: {
-            _id: assignedRider._id,
-            name: assignedRider.name,
-            phone: assignedRider.phone,
-          },
-        });
-      }
+//       // Cleanup if no rider accepted
+//       await OrderModel.findByIdAndUpdate(orderId, {
+//         riderId: null,
+//         expiresAt: null,
+//         isAssigning: false, // Reset assignment state
+//         status: "Packing", // Reset order status
+//         riderAmount: 0, // Reset rider amount
+//       });
+//     }
 
-      // Cleanup if no rider accepted
-      await OrderModel.findByIdAndUpdate(orderId, {
-        riderId: null,
-        expiresAt: null,
-        isAssigning: false, // Reset assignment state
-        status: "Packing", // Reset order status
-        riderAmount: 0, // Reset rider amount
-      });
-    }
-
-    return res.status(404).json({
-      success: false,
-      message: "No rider accepted the order",
-    });
-  } catch (error) {
-    console.error("Error assigning rider:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
+//     return res.status(404).json({
+//       success: false,
+//       message: "No rider accepted the order",
+//     });
+//   } catch (error) {
+//     console.error("Error assigning rider:", error);
+//     return res.status(500).json({
+//       success: false,
+//       message: "Internal server error",
+//     });
+//   }
+// };
 
 const updateRiderLocation = async (req, res) => {
   const { lat, lng } = req.body;
@@ -442,7 +434,11 @@ const GetcurrentRiderOrder = async (req, res) => {
     const order = await OrderModel.findOne({
       riderId: userId,
       isActive: true,
-    }).lean();
+    }).populate(
+      "riderId",
+      "name phone email riderStatus codMarkedDone earning cod codSubmittedMoney"
+    ).lean();
+
     console.log("Current rider order:", order);
 
     if (!order) {
@@ -852,6 +848,196 @@ const getRiderCODHistory = async (req, res) => {
   } catch (error) {
     console.error("Error fetching COD history:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+async function assignSingleOrder(order, io) {
+  try {
+    const existingOrder = await OrderModel.findById(order._id);
+    const deliveryLat = existingOrder.deliveryLocation.lat;
+    const deliveryLng = existingOrder.deliveryLocation.lng;
+    const pickupLat = existingOrder.pickUpLocation.lat;
+    const pickupLng = existingOrder.pickUpLocation.lng;
+    const orderId = existingOrder._id;
+
+    if (!deliveryLat || !deliveryLng || !pickupLat || !pickupLng || !orderId) {
+      return {
+        success: false,
+        message: "All coordinates and orderId are required",
+      };
+    }
+
+    if (!existingOrder || existingOrder.riderId) {
+      return { success: false, message: "Invalid or already assigned order" };
+    }
+
+    await OrderModel.findByIdAndUpdate(orderId, {
+      riderId: null,
+      expiresAt: null,
+      isAssigning: true,
+    });
+
+    const riders = await findAllRidersByShortestTrip(
+      deliveryLat,
+      deliveryLng,
+      pickupLat,
+      pickupLng
+    );
+
+    if (!riders || riders.length === 0) {
+      return { success: false, message: "No available riders found" };
+    }
+
+    const distanceFromPickUpLocation = 5;
+    const distanceFromDeliveryLocation = 10;
+    const totalDistance =
+      distanceFromDeliveryLocation + distanceFromPickUpLocation;
+    let riderAmount = 0;
+    let BaseCharge = 10;
+    if (totalDistance < 3) {
+      riderAmount = BaseCharge + 5 * totalDistance;
+    } else if (totalDistance < 20) {
+      riderAmount = BaseCharge + 10 * totalDistance;
+    } else if (totalDistance < 50) {
+      riderAmount = BaseCharge + 15 * totalDistance;
+    } else {
+      riderAmount = BaseCharge + 20 * totalDistance;
+    }
+
+    await OrderModel.findByIdAndUpdate(orderId, {
+      earning: {
+        amount: riderAmount, // Default to 0 if not provided
+        collected: 0, // Initially set to 0, can be updated later
+      },
+    });
+
+    for (const rider of riders) {
+      const lockKey = `rider-lock-${rider._id}`;
+      const lock = await redisClient.set(lockKey, "locked", {
+        EX: 30,
+        NX: true,
+      });
+      if (!lock) continue; // Rider is already locked by another assignment
+
+      try {
+        await OrderModel.findByIdAndUpdate(orderId, {
+          expiresAt: new Date(Date.now() + 30000),
+        });
+        const ORDER = await OrderModel.findById(orderId)
+          .populate(
+            "riderId",
+            "name phone email riderStatus codMarkedDone earning cod codSubmittedMoney"
+          )
+          .lean();
+        console.log("Emitting new order to rider:", existingOrder);
+        const payload = {
+          ORDER,
+        };
+
+        io.to(`riderRoom-${rider._id}`).emit("newOrder", payload);
+
+        const response = await waitForRiderResponse(io, rider._id, orderId);
+        if (response.accepted) {
+          return {
+            success: true,
+            rider: {
+              _id: rider._id,
+              name: rider.name,
+              phone: rider.phone,
+            },
+          };
+        }
+
+        if (response.reason === "taken_by_other") {
+          await OrderModel.findByIdAndUpdate(orderId, {
+            expiresAt: null,
+            isAssigning: false,
+          });
+          await UserModel.findByIdAndUpdate(rider._id, {
+            riderStatus: "available",
+          });
+          break;
+        }
+      } catch (error) {
+        console.error(`Error processing rider ${rider._id}:`, error);
+      } finally {
+        await redisClient.del(lockKey); // Always release lock
+      }
+    }
+
+    await OrderModel.findByIdAndUpdate(orderId, {
+      riderId: null,
+      expiresAt: null,
+      isAssigning: false,
+      status: "Packing",
+      riderAmount: 0,
+    });
+
+    return { success: false, message: "No rider accepted the order" };
+  } catch (error) {
+    console.error("Error in assignSingleOrder:", error);
+    return { success: false, message: "Internal error" };
+  }
+}
+
+const assignRider = async (req, res) => {
+  try {
+    const io = req.app.get("io");
+
+    // Get initial packed orders
+    let packedOrders = await OrderModel.find({
+      status: "Packing",
+      isActive: true,
+      isAssigning: false,
+      riderId: null,
+    });
+
+    const MAX_RETRIES = 3;
+    let attempt = 0;
+    let assigned = [];
+
+    while (packedOrders.length > 0 && attempt < MAX_RETRIES) {
+      console.log(
+        `Attempt ${attempt + 1} - Orders to assign: ${packedOrders.length}`
+      );
+
+      const results = await Promise.all(
+        packedOrders.map((order) => assignSingleOrder(order, io))
+      );
+      console.log("Results from assignment attempt:", results);
+      const newlyAssigned = results
+        .map((result, index) => (result?.success ? packedOrders[index] : null))
+        .filter((order) => order !== null);
+      console.log("Newly assigned orders:", newlyAssigned.length);
+      assigned.push(...newlyAssigned);
+
+      // Filter unassigned for next attempt
+      packedOrders = packedOrders.filter((_, i) => !results[i]?.success);
+      console.log(
+        `Remaining unassigned orders after attempt ${attempt + 1}: ${
+          packedOrders.length
+        }`
+      );
+      attempt++;
+    }
+
+    if (assigned.length > 0) {
+      return res.status(200).json({
+        success: true,
+        assignedCount: assigned.length,
+        message: "Riders assigned (after retries)",
+      });
+    }
+
+    return res.status(404).json({
+      success: false,
+      message: "No riders accepted any order after retries",
+    });
+  } catch (error) {
+    console.error("Error in assignRider:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 

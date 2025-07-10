@@ -5,6 +5,7 @@ import compression from "compression";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
+import { redisClient } from "./config/redisClient.js";
 import connectDB from "./config/mongodb.js";
 import cloudinary from "./config/cloudinary.js";
 import userRouter from "./routes/userRoute.js";
@@ -16,6 +17,7 @@ import SubscriberRoute from "./routes/subscriberRoute.js";
 import otpRouter from "./routes/otpRoute.js";
 import dashboardRouter from "./routes/dashboardRoute.js";
 import riderRouter from "./routes/riderRoute.js";
+
 
 // App Config
 dotenv.config();
