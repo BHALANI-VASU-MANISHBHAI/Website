@@ -18,11 +18,10 @@ import otpRouter from "./routes/otpRoute.js";
 import dashboardRouter from "./routes/dashboardRoute.js";
 import riderRouter from "./routes/riderRoute.js";
 
-
 // App Config
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 10000;
 connectDB();
 cloudinary();
 
