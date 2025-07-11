@@ -1,10 +1,10 @@
+import axios from "axios";
 import { useContext, useEffect, useRef, useState } from "react";
-import { UserContext } from "../contexts/UserContext";
+import { toast } from "react-toastify";
 import { GlobalContext } from "../contexts/GlobalContext";
 import { OrderContext } from "../contexts/OrderContext";
+import { UserContext } from "../contexts/UserContext";
 import socket from "../services/socket";
-import axios from "axios";
-import { toast } from "react-toastify";
 
 const Dashboard = () => {
   const { userData } = useContext(UserContext);

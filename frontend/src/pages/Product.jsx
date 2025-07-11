@@ -1,18 +1,18 @@
-import { useEffect, useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
-import ReletedProducts from "../components/ReletedProducts";
-import Title from "../components/Title";
+import Rating from "@mui/material/Rating";
 import axios from "axios";
 import { toast } from "react-toastify";
-import Rating from "@mui/material/Rating";
+import { assetss } from "../assets/frontend_assets/assetss";
+import ReletedProducts from "../components/ReletedProducts";
 import ReviewCard from "../components/ReviewCard";
 import StarLine from "../components/StarLine";
-import { assetss } from "../assets/frontend_assets/assetss";
-import { GlobalContext } from "../context/GlobalContext.jsx";
+import Title from "../components/Title";
 import { CartContext } from "../context/CartContext.jsx";
-import { UserContext } from "../context/UserContext.jsx";
+import { GlobalContext } from "../context/GlobalContext.jsx";
 import { ProductContext } from "../context/ProductContext.jsx";
+import { UserContext } from "../context/UserContext.jsx";
 import socket from "../services/sockets.jsx";
 
 

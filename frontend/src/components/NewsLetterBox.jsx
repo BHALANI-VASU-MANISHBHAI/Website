@@ -1,5 +1,5 @@
-import React, { use, useContext } from 'react'
 import axios from 'axios';
+import React, { useContext } from 'react';
 import { toast } from 'react-toastify';
 import { GlobalContext } from "../context/GlobalContext.jsx";
 

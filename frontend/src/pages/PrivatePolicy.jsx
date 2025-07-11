@@ -1,6 +1,6 @@
-import { Box, Typography, Paper, Divider, Link, useTheme, useMediaQuery } from "@mui/material";
+import { Cookie, Email, PrivacyTip, Security, Settings } from "@mui/icons-material";
+import { Box, Divider, Link, Paper, Typography, useMediaQuery, useTheme } from "@mui/material";
 import Title from "../components/Title";
-import { PrivacyTip, Security, Cookie, Email, Settings } from "@mui/icons-material";
 
 const PrivacyPolicy = () => {
   const theme = useTheme();

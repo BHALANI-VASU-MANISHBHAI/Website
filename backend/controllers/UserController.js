@@ -1,10 +1,9 @@
-import validator from "validator";
-import userModel from "../models/userModel.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from 'cloudinary';
 import { OAuth2Client } from 'google-auth-library';
-import UserModel from "../models/userModel.js";
+import jwt from "jsonwebtoken";
+import validator from "validator";
+import { default as userModel, default as UserModel } from "../models/userModel.js";
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const createdToken = (id, role) => {
@@ -236,39 +235,77 @@ const UpdateProfile = async (req, res) => {
 };
 
 const googleAuth = async (req, res) => {
-    try {
-        const { token ,role} = req.body;
-        console.log("Google Auth Token:", token);
+  try {
+    const { token, role } = req.body;
 
-        const ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub: googleId } = payload;
+
+    // 🔍 Check if any user with this email exists
+    let user = await userModel.findOne({ email });
+
+    if (user) {
+      // 🚫 Prevent login if role mismatch
+      if (user.role !== role) {
+        return res.status(403).json({
+          success: false,
+          message: `This email is already registered as a ${user.role}. Please log in with the correct role.`,
         });
+      }
 
-        const payload = ticket.getPayload();
-        const { email, name, picture, sub } = payload;
+      if(user.authType !== "google") {
+        return res.json({
+          success: false,
+          message: "This account is not linked with Google. Please use email/password login.",
+        });
+      }
 
-        let user = await userModel.findOne({ email });
-        if (!user) {
-            user = new userModel({
-                name,
-                email,
-                profilePhoto: picture,
-                googleId: sub,
-                role: role
-            });
-            await user.save();
-        }
-
-        const jwtToken = createdToken(user._id, user.role);
-
-        req.app.get('io').emit('customerAdded', { userId: user._id, name: user.name });
-        res.json({ success: true, token: jwtToken, role: user.role, user });
-    } catch (error) {
-        console.error("Google Auth Error:", error);
-        res.status(500).json({ success: false, message: "Google authentication failed" });
+      // ✅ If no googleId yet, link it now (first-time Google login)
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      // 🆕 New user creation
+      user = new userModel({
+        name,
+        email,
+        profilePhoto: picture,
+        googleId,
+        role,
+        authType: "google",
+      });
+      await user.save();
     }
+
+    const jwtToken = createdToken(user._id, user.role);
+
+    // 👥 Notify via socket (optional)
+    req.app.get("io").emit("customerAdded", {
+      userId: user._id,
+      name: user.name,
+    });
+
+    res.json({
+      success: true,
+      token: jwtToken,
+      role: user.role,
+      user,
+    });
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Google authentication failed",
+    });
+  }
 };
+
 
 
 const getTotalCustomers = async (req, res) => {
@@ -282,6 +319,4 @@ const getTotalCustomers = async (req, res) => {
     }
 };
 
-export { loginUser, registerUser, adminLogin, getUserById, UpdateProfile, googleAuth 
-    , getTotalCustomers
-};
+export { adminLogin, getTotalCustomers, getUserById, googleAuth, loginUser, registerUser, UpdateProfile };

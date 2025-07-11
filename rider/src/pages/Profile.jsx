@@ -1,11 +1,9 @@
-import React from "react";
 import axios from "axios";
-import { UserContext } from "../contexts/UserContext.jsx";
-import { GlobalContext } from "../contexts/GlobalContext.jsx";
+import React, { useContext, useEffect } from "react";
 import { toast } from "react-toastify";
-import { useEffect } from "react";
-import { useContext } from "react";
+import { GlobalContext } from "../contexts/GlobalContext.jsx";
 import { OrderContext } from "../contexts/OrderContext.jsx";
+import { UserContext } from "../contexts/UserContext.jsx";
 
 const Profile = () => {
   const { currentOrder } = useContext(OrderContext);

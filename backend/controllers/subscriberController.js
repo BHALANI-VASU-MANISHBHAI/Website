@@ -56,4 +56,4 @@ const checkSubscriber = async (req, res) => {
   }
 }
 
-export { checkSubscriber,addSubscriber }; 
+export { addSubscriber, checkSubscriber };

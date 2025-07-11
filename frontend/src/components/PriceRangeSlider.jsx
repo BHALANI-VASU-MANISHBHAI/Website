@@ -1,13 +1,13 @@
-import  { useState, useEffect, useCallback } from "react";
 import {
   Box,
-  Slider,
-  Typography,
   Button,
+  Divider,
+  Slider,
   Stack,
-  Divider
+  Typography
 } from "@mui/material";
 import debounce from 'lodash-es/debounce';
+import { useCallback, useEffect, useState } from "react";
 
 
 const PriceRangeSlider = ({ min = 0, max = 2000, onRangeChange }) => {

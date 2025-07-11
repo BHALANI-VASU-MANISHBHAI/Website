@@ -1,9 +1,7 @@
-  import React, { use } from "react";
   import Rating from "@mui/material/Rating";
-  import { assetss } from "../assets/frontend_assets/assetss";
-  import { useContext } from "react";
-  import { UserContext } from "../context/UserContext.jsx";
-  import { GlobalContext } from "../context/GlobalContext.jsx";
+import React, { useContext } from "react";
+import { assetss } from "../assets/frontend_assets/assetss";
+import { UserContext } from "../context/UserContext.jsx";
 
   const ReviewCard = ({ review, EditReviewFun , deleteReviewFun }) => {
     const { userData } = useContext(UserContext);

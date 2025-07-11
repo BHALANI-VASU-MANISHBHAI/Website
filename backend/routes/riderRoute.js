@@ -1,21 +1,21 @@
 import express from "express";
 
 import {
-  getAllRiders,
   assignRider,
-  updateRiderLocation,
-  riderAcceptOrder,
-  GetcurrentRiderOrder,
-  riderAcceptedOrder,
-  getAllRidersOrder,
-  getOnlineTotalRider,
-  submitRiderCOD,
   createRiderCODOrder,
-  verifyRiderCODPayment,
+  getAllRiders,
+  getAllRidersOrder,
+  GetcurrentRiderOrder,
+  getOnlineTotalRider,
   getRiderCODHistory,
+  riderAcceptedOrder,
+  riderAcceptOrder,
+  submitRiderCOD,
+  updateRiderLocation,
+  verifyRiderCODPayment,
 } from "../controllers/RiderController.js";
-import restrictToRoles from "../middleware/restrictToRole.js";
 import adminAuth from "../middleware/adminAuth.js";
+import restrictToRoles from "../middleware/restrictToRole.js";
 const riderRouter = express.Router();
 
 riderRouter.get("/all", getAllRiders);

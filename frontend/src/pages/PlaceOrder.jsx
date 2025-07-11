@@ -1,17 +1,15 @@
-import React from "react";
-import { useContext } from "react";
-import Title from "../components/Title";
-import { assetss } from "../assets/frontend_assets/assetss";
-import CartTotal from "./../components/CartTotal";
-import cloneDeep from "lodash-es/cloneDeep";
 import axios from "axios";
+import cloneDeep from "lodash-es/cloneDeep";
+import React, { useContext, useEffect } from "react";
 import { toast } from "react-toastify";
+import { assetss } from "../assets/frontend_assets/assetss";
 import Indian_Cities_In_States_JSON from "../assets/Indian_Cities_In_States_JSON.json";
-import { GlobalContext } from "../context/GlobalContext.jsx";
+import Title from "../components/Title";
 import { CartContext } from "../context/CartContext.jsx";
-import { UserContext } from "../context/UserContext.jsx";
+import { GlobalContext } from "../context/GlobalContext.jsx";
 import { ProductContext } from "../context/ProductContext.jsx";
-import { useEffect } from "react";
+import { UserContext } from "../context/UserContext.jsx";
+import CartTotal from "./../components/CartTotal";
 
 const PlaceOrder = () => {
   const { navigate, backendUrl, token, delivery_fee } =

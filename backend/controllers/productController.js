@@ -1,7 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
-import productModel from "../models/productModel.js";
 import orderModel from "../models/orderModel.js";
-import fs from "fs";
+import productModel from "../models/productModel.js";
 
 //function for adding a product
 const addProduct = async (req, res) => {
@@ -77,10 +76,6 @@ const addProduct = async (req, res) => {
 const listProducts = async (req, res) => {
   try {
     const products = await productModel.find({}).sort({ updatedAt: -1 });
-
-
-    const filepath  = "./data.txt";
-    fs.writeFileSync("Hello")
     
     res.json({ success: true, products });
   } catch (err) {
@@ -299,12 +294,8 @@ const getBestSellers = async (req, res) => {
 };
 
 export {
-  addProduct,
-  listProducts,
-  removeProduct,
+  addProduct, getBestSellers, getLowStockProduct, listProducts, MostSellerToday, removeProduct,
   singleProduct,
-  updateProduct,
-  getLowStockProduct,
-  MostSellerToday,
-  getBestSellers
+  updateProduct
 };
+

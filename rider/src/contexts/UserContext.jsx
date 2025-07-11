@@ -1,9 +1,8 @@
-import { createContext, useContext, useEffect } from 'react';
-import React, { useState } from "react";
 import axios from "axios";
+import { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from "react-toastify";
+import socket from '../services/socket';
 import { GlobalContext } from './GlobalContext';
-import socket from '../services/socket'
 
 export const UserContext = createContext();
 

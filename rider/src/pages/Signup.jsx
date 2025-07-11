@@ -1,14 +1,14 @@
-import React, { useState, useContext } from "react";
-import { toast } from "react-toastify";
+import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { useContext, useEffect, useState } from "react";
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
+import { toast } from "react-toastify";
 import assets from "../assets/assets.js";
 import { GlobalContext } from "../contexts/GlobalContext.jsx";
 import { UserContext } from "../contexts/UserContext.jsx";
-import { GoogleLogin } from "@react-oauth/google";
-import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 
 const Signup = () => {
-  const { backendUrl, setToken, navigate } = useContext(GlobalContext);
+  const { backendUrl, setToken, navigate ,token} = useContext(GlobalContext);
   const { getUserData } = useContext(UserContext);
 
   const [formData, setFormData] = useState({
@@ -24,6 +24,13 @@ const Signup = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      navigate("/dashboard");
+    }
+  }, [token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,6 +54,7 @@ const Signup = () => {
         localStorage.setItem("token", response.data.token);
         getUserData(response.data.token);
         toast.success("Signup successful");
+
       } else {
         toast.error(response.data.message || "Signup failed");
       }

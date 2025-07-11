@@ -1,9 +1,8 @@
-import { createContext, useState, useEffect } from "react";
-import cloneDeep from "lodash-es/cloneDeep";
-import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useContext } from "react";
+import cloneDeep from "lodash-es/cloneDeep";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { GlobalContext } from "./GlobalContext";
 
 export const ShopContext = createContext();

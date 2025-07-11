@@ -1,8 +1,7 @@
-import React, { use } from 'react'
-import { useEffect } from 'react'
-import Title from './Title'
-import ProductItem from './ProductItem'
+import React, { useEffect } from 'react';
 import { ProductContext } from "../context/ProductContext.jsx";
+import ProductItem from './ProductItem';
+import Title from './Title';
 
 const ReletedProducts = ({category,subCategory}) => {
   const{products} = React.useContext(ProductContext )

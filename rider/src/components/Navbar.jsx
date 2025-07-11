@@ -1,8 +1,8 @@
-import React, { useContext, useState } from "react";
-import { GlobalContext } from "../contexts/GlobalContext";
-import { UserContext } from "../contexts/UserContext";
+import { useContext, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import assets from "../assets/assets";
+import { GlobalContext } from "../contexts/GlobalContext";
+import { UserContext } from "../contexts/UserContext";
 
 const Navbar = () => {
   const { token, backendUrl, navigate, setToken } = useContext(GlobalContext);

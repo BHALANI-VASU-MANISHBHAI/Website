@@ -1,11 +1,10 @@
-  import { useContext, useState } from "react";
-  import Title from "./../components/Title";
-  import { useEffect } from "react";
-  import { assetss } from "./../assets/frontend_assets/assetss";
-  import CartTotal from "../components/CartTotal";
-import { GlobalContext } from "../context/GlobalContext.jsx";
+  import { useContext, useEffect, useState } from "react";
+import CartTotal from "../components/CartTotal";
 import { CartContext } from "../context/CartContext.jsx";
+import { GlobalContext } from "../context/GlobalContext.jsx";
 import { ProductContext } from "../context/ProductContext.jsx";
+import { assetss } from "./../assets/frontend_assets/assetss";
+import Title from "./../components/Title";
 
 
   const Cart = () => {

@@ -1,9 +1,9 @@
-import React, { useContext, useEffect, useState } from "react";
-import { assetss } from "../assets/frontend_assets/assetss";
-import Title from "../components/Title";
-import ProductItem from "../components/ProductItem";
-import PriceRangeSlider from "../components/PriceRangeSlider";
 import "nouislider/dist/nouislider.css";
+import { useContext, useEffect, useState } from "react";
+import { assetss } from "../assets/frontend_assets/assetss";
+import PriceRangeSlider from "../components/PriceRangeSlider";
+import ProductItem from "../components/ProductItem";
+import Title from "../components/Title";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { ProductContext } from "../context/ProductContext.jsx";
 

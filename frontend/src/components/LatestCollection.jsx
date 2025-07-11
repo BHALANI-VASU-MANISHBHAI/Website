@@ -1,8 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react';
-import Title from './Title';
+import { useContext, useEffect, useState } from 'react';
+import { ProductContext } from "../context/ProductContext.jsx";
 import ProductItem from './ProductItem';
 import ShimmerCard from './ShimmerCard'; // You must create this component
-import { ProductContext } from "../context/ProductContext.jsx";
+import Title from './Title';
 
 const LatestCollection = () => {
   const { products } = useContext(ProductContext);

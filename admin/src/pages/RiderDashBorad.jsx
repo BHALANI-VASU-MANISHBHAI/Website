@@ -1,12 +1,12 @@
 import React, {
+  useCallback,
   useContext,
   useEffect,
-  useState,
-  useCallback,
   useMemo,
+  useState,
 } from "react";
-import { RiderContext } from "../contexts/RiderContext.jsx";
 import { OrderContext } from "../contexts/OrderContext.jsx";
+import { RiderContext } from "../contexts/RiderContext.jsx";
 
 // Memoized StatCard component
 const StatCard = React.memo(({ title, value, color }) => {

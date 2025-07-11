@@ -1,6 +1,6 @@
-import  {  useState, useEffect } from "react";
-import { GlobalContext } from "./GlobalContext";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GlobalContext } from "./GlobalContext";
 
 const GlobalContextProvider = ({ children }) => {
   const [token, setToken] = useState("");

@@ -1,11 +1,10 @@
-import React from "react";
-import { useState } from "react";
+import { GoogleLogin } from '@react-oauth/google';
 import axios from "axios";
+import React, { useState } from "react";
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { toast } from "react-toastify";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
-import { GoogleLogin } from '@react-oauth/google';
-import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 
 
 const Login = () => {
@@ -22,6 +21,7 @@ const Login = () => {
   const [step, setStep] = useState("login");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const onSubmitHandler = async (e) => {
     e.preventDefault();
 
@@ -31,7 +31,7 @@ const Login = () => {
           name,
           email,
           password,
-          role:"rider"
+          role:"user"
         });
 
         if (response.data.success) {
@@ -60,7 +60,7 @@ const Login = () => {
         const response = await axios.post(backendUrl + "/api/user/login", {
           email,
           password,
-          role:"rider"
+          role:"user"
         });
         if (response.data.success) {
 
@@ -97,7 +97,10 @@ const Login = () => {
     try {
       const response = await axios.post(
         backendUrl + "/api/auth/forgot-password",
-        { email }
+        {
+          email 
+          ,role: "user" 
+        }
       );
       if (response.data.success) {
         setOtpSent(true);
@@ -120,7 +123,7 @@ const Login = () => {
       });
       if (response.data.success) {
         setOtpVerified(true);
-        setStep("reset"); // move to password reset step
+        setStep("reset"); 
         toast.success("OTP verified");
       } else {
         toast.error(response.data.message || "OTP verification failed");
@@ -134,6 +137,7 @@ const Login = () => {
       return toast.error("Passwords do not match");
     }
     try {
+      setLoading(true);
       const response = await axios.post(
         backendUrl + "/api/auth/reset-password",
         {
@@ -151,6 +155,8 @@ const Login = () => {
       }
     } catch (error) {
       toast.error(error.message || "Password reset error");
+    }finally {
+      setLoading(false);
     }
   };
 
@@ -159,7 +165,10 @@ const Login = () => {
     const token = credentialResponse.credential;
     console.log("Google token:", token);
     // Send this token to your backend to verify and login/register the user
-    const res = await axios.post(backendUrl + "/api/user/google", { token });
+    const res = await axios.post(backendUrl + "/api/user/google", {
+      token 
+      , role: "user"
+    });
 
     if (res.data.success) {
       setToken(res.data.token);
@@ -173,14 +182,13 @@ const Login = () => {
 
       if (profileResponse.data.success) {
         setUserData(profileResponse.data.user);
-        
       }
     } else {
       toast.error(res.data.message || "Google login failed");
     }
   } catch (error) {
     console.error("Google login error:", error);
-    toast.error("Google login error");
+    toast.error(res.data.message || "Google login error");
   }
 };
 
@@ -230,9 +238,9 @@ const Login = () => {
           />
           <button
             onClick={handleResetPassword}
-            className="bg-black text-white px-6 py-2 cursor-pointer"
+            className={`bg-black text-white px-6 py-2 cursor-pointer ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            Reset Password
+            {loading ? "Resetting..." : "Reset Password"}
           </button>
         </div>
       )}

@@ -1,12 +1,10 @@
-import { Router } from "express";
 import express from "express";
 import {
   addReview,
+  deleteReview,
   getReviews,
   updateReview,
-  deleteReview,
 } from "../controllers/reviewController.js";
-import authUser from "../middleware/auth.js";
 import restrictToRole from "../middleware/restrictToRole.js";
 
 const reviewRouter = express.Router();

@@ -1,7 +1,5 @@
-import React from 'react'
-import { useContext } from 'react'
+import { assetss } from '../assets/frontend_assets/assetss'
 import Title from '../components/Title'
-import { assetss } from'../assets/frontend_assets/assetss'
 const About = () => {
   return (
     <div>

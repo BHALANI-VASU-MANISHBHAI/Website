@@ -1,6 +1,6 @@
-import React, { useState, useContext } from "react";
-import assets from "../assets/assets.js";
+import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import assets from "../assets/assets.js";
 
 const Navbar = () => {
   const [Sidebar, setSidebar] = useState(false);

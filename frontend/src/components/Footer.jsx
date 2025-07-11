@@ -1,5 +1,5 @@
-import { assetss } from "../assets/frontend_assets/assetss";
 import { Link } from "react-router-dom";
+import { assetss } from "../assets/frontend_assets/assetss";
 
 const Footer = () => {
   return (

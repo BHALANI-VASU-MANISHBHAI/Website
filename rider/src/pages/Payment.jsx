@@ -1,10 +1,10 @@
-import React, { useState, useContext, useEffect } from "react";
 import axios from "axios";
-import { GlobalContext } from "../contexts/GlobalContext";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import assets from "../assets/assets";
+import { GlobalContext } from "../contexts/GlobalContext";
 import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
-import assets from "../assets/assets";
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {

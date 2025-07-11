@@ -1,10 +1,10 @@
-import  {  useState, useEffect, useContext } from "react";
-import cloneDeep from "lodash-es/cloneDeep";
-import { toast } from "react-toastify";
 import axios from "axios";
+import cloneDeep from "lodash-es/cloneDeep";
+import { useContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { CartContext } from "./CartContext";
 import { GlobalContext } from "./GlobalContext";
 import { ProductContext } from "./ProductContext";
-import { CartContext } from "./CartContext";
 
 const CartContextProvider = ({ children }) => {
   const { backendUrl, token } = useContext(GlobalContext);

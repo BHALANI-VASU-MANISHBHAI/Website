@@ -1,8 +1,13 @@
-import { storeOTP,
-    verifyOTP,resetPassword ,PhoneSentOTP, verifyPhoneOTP,  sendDeliveryOtp,
-  verifyDeliveryOtp} from '../controllers/otpController.js';
 import express from 'express';
-import { Router } from 'express';
+import {
+  PhoneSentOTP,
+  resetPassword,
+  sendDeliveryOtp,
+  storeOTP,
+  verifyDeliveryOtp,
+  verifyOTP,
+  verifyPhoneOTP
+} from '../controllers/otpController.js';
 
 
 const otpRouter = express.Router();

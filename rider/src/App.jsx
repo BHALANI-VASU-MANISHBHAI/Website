@@ -1,19 +1,20 @@
 import { Route, Routes, useLocation } from 'react-router-dom';
-import Signup from './pages/Signup';
-import Login from './pages/Login';
-import Home from './pages/Home';
-import Profile from './pages/Profile';
-import Orders from './pages/Orders';
-import Dashboard from './pages/DashBoard';
-import History from './pages/History';
-import Earning from './pages/Earning';
-import Payment from './pages/Payment';
 import './index.css';
+import Dashboard from './pages/DashBoard';
+import Earning from './pages/Earning';
+import ForgotPassword from './pages/ForgotPassword';
+import History from './pages/History';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Orders from './pages/Orders';
+import Payment from './pages/Payment';
+import Profile from './pages/Profile';
+import Signup from './pages/Signup';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Navbar from './components/Navbar';
 import LocationTracker from './components/LocationTracker';
+import Navbar from './components/Navbar';
 
 function App() {
   const location = useLocation(); // ✅ get current path
@@ -38,6 +39,7 @@ function App() {
         <Route path="/history" element={<History />} />
         <Route path="/earnings" element={<Earning />} />
         <Route path="/payment" element={<Payment />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         {/* Add more routes as needed */}
       </Routes>
 

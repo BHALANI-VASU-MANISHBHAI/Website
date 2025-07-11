@@ -1,8 +1,8 @@
 import express from "express";
 import {
   getMostSellingProductsByRange,
-  getTotalCustomers,
   getOrdersByRange,
+  getTotalCustomers,
 } from "../controllers/dashboardController.js";
 
 const dashboardRouter = express.Router();

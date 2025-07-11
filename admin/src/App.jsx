@@ -1,20 +1,19 @@
-import React, { useEffect } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Route, Routes } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify'
 import Login from './components/Login'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
-import { Routes, Route } from 'react-router-dom'
+import OrderContextProvider from './contexts/OrderContext'; // ✅ Import context provider
+import ProductContextProvider from './contexts/ProductContext'
 import Add from './pages/Add'
+import DashBoard from './pages/DashBoard'
+import Edit from './pages/Edit'
 import List from './pages/List'
 import Orders from './pages/Orders'
-import Edit from './pages/Edit'
-import { ToastContainer } from 'react-toastify';
-import DashBoard from './pages/DashBoard'
-import OrderContextProvider from './contexts/OrderContext' // ✅ Import context provider
 export const backendUrl = import.meta.env.VITE_BACKEND_URL
-import ProductContextProvider from './contexts/ProductContext'
 
-import RiderContextProvider from './contexts/RiderContext' // ✅ Import RiderContextProvider
+import RiderContextProvider from './contexts/RiderContext'; // ✅ Import RiderContextProvider
 import RiderCodInfo from './pages/RiderCodInfo'
 import RiderDashBorad from './pages/RiderDashBorad'
 const App = () => {

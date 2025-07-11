@@ -1,7 +1,5 @@
-import React, { useContext, useEffect, useState } from "react";
-import { GlobalContext } from "../contexts/GlobalContext";
+import { useContext, useEffect, useState } from "react";
 import { OrderContext } from "../contexts/OrderContext";
-import { toast } from "react-toastify";
 
 const QuickDateButton = ({ label, selected, onClick }) => (
   <button

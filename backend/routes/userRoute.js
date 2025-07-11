@@ -1,7 +1,6 @@
 import express from 'express';
-import { loginUser,registerUser,adminLogin,getUserById ,UpdateProfile,googleAuth,getTotalCustomers} from '../controllers/UserController.js';
+import { adminLogin, getUserById, googleAuth, loginUser, registerUser, UpdateProfile } from '../controllers/UserController.js';
 import upload from '../middleware/multer.js';
-import adminAuth from '../middleware/adminAuth.js';
 import restrictToRole from '../middleware/restrictToRole.js';
 
 
@@ -17,4 +16,4 @@ userRouter.put('/updateprofile', restrictToRole('user','rider'), upload.single("
  UpdateProfile);
 userRouter.post('/getuserbyid/:id', restrictToRole('user'), getUserById); 
 
-export default userRouter;
+export default userRouter;  
