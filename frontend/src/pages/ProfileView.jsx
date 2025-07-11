@@ -4,7 +4,7 @@ import axios from "axios";
 import imageCompression from "browser-image-compression";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
-
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 const ProfileView = () => {
   const { userData, setUserData } = useContext(UserContext);
   const { token, backendUrl } = useContext(GlobalContext);
@@ -23,6 +23,9 @@ const ProfileView = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [profileImagePhoto, setProfileImagePhoto] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   const [changePassword, setChangePassword] = useState({
     oldPassword: "",
     newPassword: "",
@@ -47,10 +50,18 @@ const ProfileView = () => {
       data.append("email", formData.email);
       data.append("phone", formData.phone);
       data.append("gender", formData.gender);
+      if(isChangePassword) {
+        data.append("isChangePassword", "true");
+        data.append("oldPassword", changePassword.oldPassword);
+        data.append("newPassword", changePassword.newPassword);
+      } else {
+        data.append("isChangePassword", "false");
+      }
+      
       if (selectedFile) {
         data.append("profileImage", selectedFile);
       }
-
+// isChangePassword;
       const response = await axios.put(
         `${backendUrl}/api/user/updateprofile`,
         data,
@@ -248,9 +259,9 @@ const ProfileView = () => {
             </div>
 
             {/* Password Fields */}
-            {isChangePassword && (
+            {isChangePassword &&  (
               <>
-                <div>
+                <div className="relative">
                   <label
                     htmlFor="oldPassword"
                     className="block mb-1 font-semibold text-black"
@@ -260,13 +271,26 @@ const ProfileView = () => {
                   <input
                     id="oldPassword"
                     name="oldPassword"
-                    type="password"
+                    type={showOldPassword ? "text" : "password"}
                     placeholder="Old password"
-                    className="w-full border border-gray-300 py-1.5 px-3.5 rounded-md"
+                    className="w-full border border-gray-300 py-1.5 px-3.5 rounded-md pr-10"
+                    value={changePassword.oldPassword}
+                    onChange={(e) =>
+                      setChangePassword({
+                        ...changePassword,
+                        oldPassword: e.target.value,
+                      })
+                    }
                   />
+                  <span
+                    onClick={() => setShowOldPassword((prev) => !prev)}
+                    className="absolute top-9 right-3 cursor-pointer text-gray-500"
+                  >
+                    {showOldPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                  </span>
                 </div>
 
-                <div>
+                <div className="relative mt-4">
                   <label
                     htmlFor="newPassword"
                     className="block mb-1 font-semibold text-black"
@@ -276,10 +300,23 @@ const ProfileView = () => {
                   <input
                     id="newPassword"
                     name="newPassword"
-                    type="password"
+                    type={showNewPassword ? "text" : "password"}
                     placeholder="New password"
-                    className="w-full border border-gray-300 py-1.5 px-3.5 rounded-md"
+                    className="w-full border border-gray-300 py-1.5 px-3.5 rounded-md pr-10"
+                    value={changePassword.newPassword}
+                    onChange={(e) =>
+                      setChangePassword({
+                        ...changePassword,
+                        newPassword: e.target.value,
+                      })
+                    }
                   />
+                  <span
+                    onClick={() => setShowNewPassword((prev) => !prev)}
+                    className="absolute top-9 right-3 cursor-pointer text-gray-500"
+                  >
+                    {showNewPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                  </span>
                 </div>
               </>
             )}
@@ -287,6 +324,7 @@ const ProfileView = () => {
 
           {/* Buttons */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+          {userData.password&&(
             <button
               type="button"
               onClick={() => {
@@ -295,11 +333,15 @@ const ProfileView = () => {
                   setChangePassword({ oldPassword: "", newPassword: "" });
                 }
               }}
-              className="w-full bg-blue-600 hover:bg-blue-800 text-white py-2 px-4 rounded-md"
+              className={`w-full bg-blue-600 hover:bg-blue-800 text-white py-2 px-4 rounded-md
+                ${loading ? "cursor-not-allowed bg-gray-400 opacity-50" : ""}
+                `}
+              disabled={loading}
             >
               {isChangePassword ? "Cancel Password Change" : "Change Password"}
-            </button>
-
+              </button>
+          )
+          }
             <button
               type="submit"
               disabled={loading}

@@ -33,7 +33,7 @@ const UserContextProvider = ({ children }) => {
       }
     } catch (e) {
       console.log("Error in get user data", e);
-      toast.error("Failed to load user data");
+      // toast.error("Failed to load user data");
     }
   };
 

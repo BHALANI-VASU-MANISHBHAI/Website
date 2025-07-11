@@ -24,11 +24,10 @@ function App() {
     <div> 
       {shouldShowNavbar && <Navbar />}
       <LocationTracker /> {/* Track location in the background */}
-
+    
       {/* Define your routes here */}
       <Routes>
         {/* Public Routes */}
-          
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         {/* Protected Routes */}

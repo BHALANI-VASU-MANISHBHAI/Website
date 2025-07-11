@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
 import { GoogleLogin } from '@react-oauth/google';
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 
 
 const Login = () => {
@@ -20,6 +21,7 @@ const Login = () => {
   const [otpVerified, setOtpVerified] = useState(false);
   const [step, setStep] = useState("login");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const onSubmitHandler = async (e) => {
     e.preventDefault();
 
@@ -29,6 +31,7 @@ const Login = () => {
           name,
           email,
           password,
+          role:"rider"
         });
 
         if (response.data.success) {
@@ -46,7 +49,7 @@ const Login = () => {
           );
  
           if (profileResponse.data.success) {
-     ;
+            toast.success("Successfully signed up");
             setUserData(profileResponse.data.user);
           }
           // setUserData(response.data.user);
@@ -57,6 +60,7 @@ const Login = () => {
         const response = await axios.post(backendUrl + "/api/user/login", {
           email,
           password,
+          role:"rider"
         });
         if (response.data.success) {
 
@@ -104,7 +108,7 @@ const Login = () => {
         toast.error(response.data.message || "Failed to send OTP");
       }
     } catch (error) {
-      console.log("Error in sending OTP", error);
+        console.log("Error in sending OTP", error);
       toast.error(error.message || "Failed to send OTP");
     }
   };
@@ -160,7 +164,6 @@ const Login = () => {
     if (res.data.success) {
       setToken(res.data.token);
       localStorage.setItem("token", res.data.token);
-
       // Get user profile data from backend
       const profileResponse = await axios.post(
         backendUrl + "/api/user/getdataofuser",
@@ -170,7 +173,7 @@ const Login = () => {
 
       if (profileResponse.data.success) {
         setUserData(profileResponse.data.user);
-
+        
       }
     } else {
       toast.error(res.data.message || "Google login failed");
@@ -202,7 +205,7 @@ const Login = () => {
           />
           <button
             onClick={handleVerifyOtp}
-            className="bg-black text-white px-6 py-2"
+            className="bg-black text-white px-6 py-2 cursor-pointer"
           >
             Verify OTP
           </button>
@@ -227,7 +230,7 @@ const Login = () => {
           />
           <button
             onClick={handleResetPassword}
-            className="bg-black text-white px-6 py-2"
+            className="bg-black text-white px-6 py-2 cursor-pointer"
           >
             Reset Password
           </button>
@@ -236,7 +239,9 @@ const Login = () => {
 
       <form
         onSubmit={onSubmitHandler}
-        className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-4 trxt-gray-800"
+        className="flex flex-col items-center w-[90%] sm:max-w-96 m-auto mt-14 gap-4 text-gray-700 bg-white p-6 rounded-lg shadow-md
+          border 
+        "
         action=""
       >
         <div className="inline-flex items-center gap-2 mb-2 mt-10">
@@ -267,19 +272,27 @@ const Login = () => {
           id="Email"
           required
         />
-        <input
-          type="password"
-          onChange={(e) => setPassword(e.target.value)}
-          value={password}
-          className="w-full px-3 py-2 border border-gray-800"
-          placeholder="Password"
-          name=""
-          id=""
-          required
-        />
+        <div className="relative w-full">
+          <input
+            type={showPassword ? "text" : "password"}
+            onChange={(e) => setPassword(e.target.value)}
+            value={password}
+            className="w-full px-3 py-2 border border-gray-800 "
+            placeholder="Password"
+            name=""
+            id=""
+            required
+          />
+          <span
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute top-3 right-3 cursor-pointer text-gray-500"
+          >
+            {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+          </span>
+        </div>
         <div className="w-full flex  justify-between text-sm mt-[-8px]">
           {currentState == "Login" ? (
-            <p onClick={handleForgetPassword} className=" cursor-pointer">
+            <p onClick={handleForgetPassword} className="cursor-pointer">
               Forget Your Password?
             </p>
           ) : (
@@ -307,14 +320,13 @@ const Login = () => {
         </button>
         <h2>or</h2>
         <div className=" flex justify-center">
-        {  
-  <GoogleLogin
-    onSuccess={handleGoogleLoginSuccess}
-    onError={() => toast.error("Google login failed")}
-  />
-        }
-</div>
-
+          {
+            <GoogleLogin
+              onSuccess={handleGoogleLoginSuccess}
+              onError={() => toast.error("Google login failed")}
+            />
+          }
+        </div>
       </form>
     </>
   );

@@ -16,7 +16,7 @@ const createdToken = (id, role) => {
 // route for user login
 const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password ,role} = req.body;
         
         const user = await userModel.findOne({ email  });
 
@@ -136,8 +136,10 @@ const UpdateProfile = async (req, res) => {
       newPassword,
     } = req.body;
 
-    // 1. Find User
-    const user = await userModel.findById(userId);
+    console.log("req.body in UpdateProfile:", req.body);
+
+    // 1. Find User (make sure password is selected if needed)
+    const user = await userModel.findById(userId).select("+password");
     if (!user) {
       return res
         .status(404)
@@ -147,33 +149,37 @@ const UpdateProfile = async (req, res) => {
     // 2. Handle password change if requested
     if (isChangePassword === "true") {
       if (!oldPassword || !newPassword) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Old and new passwords are required",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Old and new passwords are required",
+        });
+      }
+
+      // If user logged in with Google, they may not have a password
+      if (!user.password) {
+        return res.status(400).json({
+          success: false,
+          message: "Password change not allowed for Google login users",
+        });
       }
 
       const isMatch = await bcrypt.compare(oldPassword, user.password);
       if (!isMatch) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Old password is incorrect" });
+        return res.status(400).json({
+          success: false,
+          message: "Old password is incorrect",
+        });
       }
 
       if (newPassword.length < 8) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "New password must be at least 8 characters",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "New password must be at least 8 characters",
+        });
       }
 
       const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(newPassword, salt);
-      user.password = hashedPassword;
+      user.password = await bcrypt.hash(newPassword, salt);
     }
 
     // 3. Prepare update data
@@ -193,7 +199,7 @@ const UpdateProfile = async (req, res) => {
     if (profileImage) {
       const result = await cloudinary.uploader.upload(profileImage.path, {
         resource_type: "image",
-        folder: "profilePhotos", // optional
+        folder: "profilePhotos",
       });
       updateData.profilePhoto = result.secure_url;
       console.log("✅ Image uploaded:", result.secure_url);
@@ -203,8 +209,10 @@ const UpdateProfile = async (req, res) => {
     const updatedUser = await userModel.findByIdAndUpdate(userId, updateData, {
       new: true,
     });
+
+    // Save password change if done
     if (isChangePassword === "true") {
-      await user.save(); // save password changes
+      await user.save();
     }
 
     // 6. Emit socket update
@@ -226,9 +234,10 @@ const UpdateProfile = async (req, res) => {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
+
 const googleAuth = async (req, res) => {
     try {
-        const { token } = req.body;
+        const { token ,role} = req.body;
         console.log("Google Auth Token:", token);
 
         const ticket = await client.verifyIdToken({
@@ -246,7 +255,7 @@ const googleAuth = async (req, res) => {
                 email,
                 profilePhoto: picture,
                 googleId: sub,
-                role: "user",
+                role: role
             });
             await user.save();
         }

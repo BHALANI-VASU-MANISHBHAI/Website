@@ -5,9 +5,10 @@ import assets from "../assets/assets.js";
 import { GlobalContext } from "../contexts/GlobalContext.jsx";
 import { UserContext } from "../contexts/UserContext.jsx";
 import { GoogleLogin } from "@react-oauth/google";
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 
 const Signup = () => {
-  const { backendUrl, setToken } = useContext(GlobalContext);
+  const { backendUrl, setToken, navigate } = useContext(GlobalContext);
   const { getUserData } = useContext(UserContext);
 
   const [formData, setFormData] = useState({
@@ -17,7 +18,8 @@ const Signup = () => {
     confirmPassword: "",
     role: "rider", // default role
   });
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -121,12 +123,12 @@ const Signup = () => {
               />
             </div>
 
-            <div>
+            <div className="relative">
               <label className="text-sm font-semibold text-gray-600">
                 Password
               </label>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
@@ -134,14 +136,20 @@ const Signup = () => {
                 placeholder="Password"
                 className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
+              <span
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute top-10 right-3 cursor-pointer"
+              >
+                {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+              </span>
             </div>
 
-            <div>
+            <div className="relative">
               <label className="text-sm font-semibold text-gray-600">
                 Confirm Password
               </label>
               <input
-                type="password"
+                type={showPasswordConfirm ? "text" : "password"}
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
@@ -149,6 +157,12 @@ const Signup = () => {
                 placeholder="Confirm Password"
                 className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
+              <span
+                onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                className="absolute top-10 right-3 cursor-pointer"
+              >
+                {showPasswordConfirm ? <AiFillEyeInvisible /> : <AiFillEye />}
+              </span>
             </div>
 
             <button
@@ -157,6 +171,14 @@ const Signup = () => {
             >
               Create Account
             </button>
+            <p
+              onClick={() => navigate("/login")}
+              className={
+                " inline text-md mt-4 cursor-pointer hover:text-gray-700 "
+              }
+            >
+              Login Here
+            </p>
           </form>
 
           {/* OR Divider */}

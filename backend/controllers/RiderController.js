@@ -65,35 +65,7 @@ const getAllRiders = async (req, res) => {
   }
 };
 
-const updateRiderStatus = async (req, res) => {
-  const { status } = req.body;
-  try {
-    const riderId = req.userId;
-    const rider = await UserModel.findByIdAndUpdate(
-      riderId,
-      { riderStatus: status },
-      { new: true }
-    );
 
-    if (!rider) {
-      return res.status(404).json({
-        success: false,
-        message: "Rider not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: `Rider status updated to ${status}`,
-    });
-  } catch (error) {
-    console.error("Error updating rider status:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
 
 async function waitForRiderResponse(io, riderId, orderId, timeout = 30000) {
   const startTime = Date.now();
@@ -218,182 +190,6 @@ const riderAcceptOrder = async (req, res) => {
   }
 };
 
-// const assignRider = async (req, res) => {
-//   try {
-//     const { deliveryLat, deliveryLng, pickupLat, pickupLng, orderId } =
-//       req.body;
-//     console.log(
-//       "Assigning rider with data:",
-//       `Delivery (${deliveryLat}, ${deliveryLng}), Pickup (${pickupLat}, ${pickupLng}), Order ID: ${orderId}`
-//     );
-
-//     //get all packed orders
-//     const packedOrders = await OrderModel.find({
-//       status: "Packing",
-//       isActive: true,
-//       isAssigning: false,
-//       riderId: null,
-//     }).select("_id ");
-
-//     for (const order of packedOrders) {
-//       console.log("Processing packed order:", order._id);
-//       const existingOrder = await OrderModel.findById(order._id);
-//       const deliveryLat = existingOrder.deliveryLocation.lat;
-//       const deliveryLng = existingOrder.deliveryLocation.lng;
-//       const pickupLat = existingOrder.pickUpLocation.lat;
-//       const pickupLng = existingOrder.pickUpLocation.lng;
-//       const orderId = existingOrder._id;
-
-//       console.log("Packed Orders:", packedOrders);
-//       // console.log("Finding The riders PAkcend Order:", testOrder);
-//       if (!deliveryLat || !deliveryLng || !pickupLat || !pickupLng || !orderId) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "All coordinates and orderId are required",
-//         });
-//       }
-
-//       console.log("Existing order:", existingOrder);
-//       if (!existingOrder) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "Order not found",
-//         });
-//       }
-
-//       if (existingOrder.riderId) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Order already assigned to a rider",
-//         });
-//       }
-
-//       // Reset order state before assignment
-//       await OrderModel.findByIdAndUpdate(orderId, {
-//         riderId: null,
-//         expiresAt: null,
-//         isAssigning: true, // Indicate that we are in the process of assigning a rider
-//       });
-
-//       const riders = await findAllRidersByShortestTrip(
-//         deliveryLat,
-//         deliveryLng,
-//         pickupLat,
-//         pickupLng
-//       );
-
-//       if (!riders || riders.length === 0) {
-//         return res.status(404).json({
-//           success: false,
-//           message: "No available riders found",
-//         });
-//       }
-
-//       const io = req.app.get("io");
-//       let assignedRider = null;
-//       const distanceFromPickUpLocation = 5;
-//       const distanceFromDeliveryLocation = 10;
-
-//       let riderAmount = 0;
-
-//       if (distanceFromDeliveryLocation + distanceFromPickUpLocation < 3) {
-//         riderAmount = 40;
-//       } else if (distanceFromDeliveryLocation + distanceFromPickUpLocation < 20) {
-//         riderAmount = 60;
-//       } else if (distanceFromDeliveryLocation + distanceFromPickUpLocation < 50) {
-//         riderAmount = 80;
-//       } else {
-//         riderAmount = 100;
-//       }
-
-//       await OrderModel.findByIdAndUpdate(orderId, { riderAmount: riderAmount });
-
-//       for (const rider of riders) {
-//         try {
-//           // Set expiration for this rider's response window
-//           await OrderModel.findByIdAndUpdate(orderId, {
-//             expiresAt: new Date(Date.now() + 30000),
-//           });
-//           io.to(`riderRoom-${rider._id}`).emit("newOrder", {
-//             existingOrder,
-//             pickupLocation: { lat: pickupLat, lng: pickupLng },
-//             deliveryLocation: { lat: deliveryLat, lng: deliveryLng },
-//             expiresAt: new Date(Date.now() + 30000),
-//             riderAmount: riderAmount,
-//           });
-
-//           // Notify rider
-//           io.to(`riderRoom-${rider._id}`).emit("newOrder", {
-//             existingOrder,
-//             pickupLocation: { lat: pickupLat, lng: pickupLng },
-//             deliveryLocation: { lat: deliveryLat, lng: deliveryLng },
-//             expiresAt: new Date(Date.now() + 30000),
-//             riderAmount: riderAmount,
-//           });
-//           // Update rider status
-//           // await UserModel.findByIdAndUpdate(rider._id, {
-//           //   riderStatus: "notified",
-//           // });
-
-//           // Wait for response
-//           const response = await waitForRiderResponse(req.app.get("io"),
-//             rider._id, orderId);
-//           console.log(`Rider ${rider._id} response:`, response);
-//           if (response.accepted) {
-//             assignedRider = rider;
-//             break;
-//           }
-
-//           if (response.reason === "taken_by_other") {
-//             await OrderModel.findByIdAndUpdate(orderId, {
-//               expiresAt: null,
-//               isAssigning: false, // Reset assignment state
-//             });
-//             await UserModel.findByIdAndUpdate(rider._id, {
-//               riderStatus: "available",
-//             });
-//             break; // Exit loop immediately if taken by another rider
-//           }
-//         } catch (error) {
-//           console.error(`Error processing rider ${rider._id}:`, error);
-//         }
-//       }
-
-//       if (assignedRider) {
-//         return res.status(200).json({
-//           success: true,
-//           message: "Rider assigned",
-//           rider: {
-//             _id: assignedRider._id,
-//             name: assignedRider.name,
-//             phone: assignedRider.phone,
-//           },
-//         });
-//       }
-
-//       // Cleanup if no rider accepted
-//       await OrderModel.findByIdAndUpdate(orderId, {
-//         riderId: null,
-//         expiresAt: null,
-//         isAssigning: false, // Reset assignment state
-//         status: "Packing", // Reset order status
-//         riderAmount: 0, // Reset rider amount
-//       });
-//     }
-
-//     return res.status(404).json({
-//       success: false,
-//       message: "No rider accepted the order",
-//     });
-//   } catch (error) {
-//     console.error("Error assigning rider:", error);
-//     return res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//     });
-//   }
-// };
-
 const updateRiderLocation = async (req, res) => {
   const { lat, lng } = req.body;
   const userId = req.userId;
@@ -508,60 +304,7 @@ const riderAcceptedOrder = async (req, res) => {
   }
 };
 
-const riderEarningByRange = async (req, res) => {
-  try {
-    const userId = req.userId;
-    let { startDate, endDate } = req.query;
 
-    if (!startDate || !endDate) {
-      return res.status(400).json({
-        success: false,
-        message: "startDate and endDate are required",
-      });
-    }
-
-    // Parse dates and set time boundaries
-    startDate = new Date(startDate);
-    startDate.setHours(0, 0, 0, 0);
-
-    endDate = new Date(endDate);
-    endDate.setHours(23, 59, 59, 999);
-
-    // Fetch delivered and inactive orders in date range
-    const orders = await OrderModel.find({
-      riderId: userId,
-      status: "Delivered",
-      isActive: false,
-      updatedAt: { $gte: startDate, $lte: endDate },
-    }).select("earning");
-
-    if (!orders.length) {
-      return res.status(200).json({
-        success: true,
-        totalEarnings: 0,
-        message: "No delivered orders in selected range",
-      });
-    }
-
-    // Calculate total earnings
-    const totalEarnings = orders.reduce(
-      (acc, order) => acc + (order.earning?.amount || 0),
-      0
-    );
-
-    return res.status(200).json({
-      success: true,
-      totalEarnings,
-      message: "Earnings fetched successfully",
-    });
-  } catch (error) {
-    console.error("Error in riderEarningByRange:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
 
 const getAllRidersOrder = async (req, res) => {
   try {
@@ -598,48 +341,7 @@ const getAllRidersOrder = async (req, res) => {
   }
 };
 
-const getOrderStatusCounts = async (req, res) => {
-  try {
-    const { OrderStatus } = req.params;
-    const orderCounts = await OrderModel.aggregate([
-      {
-        $match: {
-          status: OrderStatus,
-          isActive: false,
-        },
-      },
-      {
-        $group: {
-          _id: "$status",
-          count: { $sum: 1 },
-        },
-      },
-    ]);
 
-    if (!orderCounts || orderCounts.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "No orders found for this status",
-      });
-    }
-
-    console.log("Order counts:", orderCounts);
-    return res.status(200).json({
-      success: true,
-      orderCounts: orderCounts.reduce((acc, curr) => {
-        acc[curr._id] = curr.count;
-        return acc;
-      }, {}),
-      message: "Order status counts fetched successfully",
-    });
-  } catch (error) {
-    console.error("Error fetching order status counts:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
 
 const getOnlineTotalRider = async (req, res) => {
   try {
@@ -685,34 +387,6 @@ const submitRiderCOD = async (req, res) => {
   }
 };
 
-const getRiderCODamount = async (req, res) => {
-  try {
-    const riderId = req.userId;
-    console.log("Rider ID:", riderId);
-    const rider = await UserModel.findById(riderId)
-      .select("codSubmittedMoney codLastSubmittedAt codMarkedDone")
-      .lean();
-
-    if (!rider) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Rider not found" });
-    }
-
-    return res.status(200).json({
-      success: true,
-      codSubmittedMoney: rider.codSubmittedMoney,
-      codLastSubmittedAt: rider.codLastSubmittedAt,
-      codMarkedDone: rider.codMarkedDone,
-    });
-  } catch (error) {
-    console.error("Error fetching rider COD amount:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
 
 const createRiderCODOrder = async (req, res) => {
   const { amount } = req.body;
@@ -1045,16 +719,12 @@ export {
   getAllRiders,
   assignRider,
   updateRiderLocation,
-  updateRiderStatus,
   riderAcceptOrder,
   GetcurrentRiderOrder,
   riderAcceptedOrder,
-  riderEarningByRange,
   getAllRidersOrder,
-  getOrderStatusCounts,
   getOnlineTotalRider,
   submitRiderCOD,
-  getRiderCODamount,
   createRiderCODOrder,
   verifyRiderCODPayment,
   getRiderCODHistory,
