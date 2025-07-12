@@ -26,7 +26,7 @@ const ProductContextProvider = ({ children }) => {
 
     // ✅ Socket listener for product updates
     socket.on("productUpdated", (data) => {
-      toast.success(data.message || "Product updated!");
+      // toast.success(data.message || "Product updated!");
       setProducts((prevProducts) =>
         prevProducts.map((product) =>
           product._id === data.productId
