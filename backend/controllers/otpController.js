@@ -211,9 +211,11 @@ const verifyDeliveryOtp = async (req, res) => {
     order.status = "Delivered";
     order.isActive = false;
     order.deliveryOtp = null;
-    order.otpExpiresAt = null;
+    order.otpExpiresAt = null;  
     order.earning.collected = order.amount;
-
+    order.paymentStatus = "success";
+    order.cancelledBy = null;
+    
     const updatedOrder = await order.save();
 
     // Update rider status

@@ -460,6 +460,7 @@ const verifyRiderCODPayment = async (req, res) => {
       riderId,
       isActive: false,
       status: "Delivered",
+      isCodSubmitted: false,
     }).lean();
     await RiderCODHistory.create({
       riderId,

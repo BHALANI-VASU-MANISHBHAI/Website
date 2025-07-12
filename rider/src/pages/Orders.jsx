@@ -249,9 +249,9 @@ const Orders = () => {
         <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-end">
           <button
             onClick={sendOTP}
-            disabled={sending}
+            disabled={sending||verifying}
             className={`px-4 py-2 bg-green-600 text-white rounded-md w-full sm:w-[150px] ${
-              sending ? "opacity-50 cursor-not-allowed" : "hover:bg-green-700"
+            (sending||verifying) ? "opacity-50 cursor-not-allowed" : "hover:bg-green-700"
             }`}
           >
             {sending ? "Sending..." : "Send OTP"}
@@ -268,9 +268,9 @@ const Orders = () => {
               />
               <button
                 onClick={verifyOTP}
-                disabled={verifying}
+                disabled={verifying|| sending}
                 className={`px-4 py-2 bg-yellow-600 text-white rounded-md ${
-                  verifying
+                  (verifying || sending)
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:bg-yellow-700"
                 }`}
