@@ -1,4 +1,3 @@
-import ProductModel from "../models/productModel.js";
 import orderModel from "../models/orderModel.js";
 import UserModel from "../models/userModel.js";
 
@@ -106,7 +105,6 @@ const getOrdersByRange = async (req, res) => {
 };
 
 export {
-  getTotalCustomers,
-  getOrdersByRange,
-  getMostSellingProductsByRange,
+  getMostSellingProductsByRange, getOrdersByRange, getTotalCustomers
 };
+

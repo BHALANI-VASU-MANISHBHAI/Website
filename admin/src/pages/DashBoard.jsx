@@ -1,19 +1,19 @@
+import axios from "axios";
 import React, {
+  useCallback,
   useContext,
   useEffect,
-  useState,
-  useCallback,
   useMemo,
+  useState,
 } from "react";
-import assets from "../assets/assets.js";
-import RoundedChart from "../components/RoundedChart.jsx";
-import { ProductContext } from "../contexts/ProductContext.jsx";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { backendUrl } from "../App.jsx";
-import socket from "../services/socket.jsx";
+import assets from "../assets/assets.js";
+import RoundedChart from "../components/RoundedChart.jsx";
 import { OrderContext } from "../contexts/OrderContext.jsx";
+import { ProductContext } from "../contexts/ProductContext.jsx";
+import socket from "../services/socket.jsx";
 
 // Memoized components moved outside to prevent unnecessary re-renders
 const DashboardCard = React.memo(({ title, value }) => (

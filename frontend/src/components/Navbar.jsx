@@ -1,8 +1,8 @@
- import { useState, useContext, useEffect } from 'react';
-import { assetss } from "../assets/frontend_assets/assetss";
+ import { useContext, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { GlobalContext } from "../context/GlobalContext.jsx";
+import { assetss } from "../assets/frontend_assets/assetss";
 import { CartContext } from "../context/CartContext.jsx";
+import { GlobalContext } from "../context/GlobalContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
 
 const Navbar = () => {
@@ -23,7 +23,7 @@ const Navbar = () => {
     localStorage.removeItem('token');
     setCartItems({});
     setUserData({});
-    setProfileOpen(false);
+    setProfileOpen(null);
     navigate('/login');
   };
 

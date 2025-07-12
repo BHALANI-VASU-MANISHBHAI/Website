@@ -1,11 +1,10 @@
-import React, { useContext } from "react";
-import assets from "../assets/assets.js";
 import axios from "axios";
-import { backendUrl } from "../App.jsx";
-import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 import imageCompression from "browser-image-compression";
-import { ProductContext } from "../contexts/ProductContext.jsx";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import { backendUrl } from "../App.jsx";
+import assets from "../assets/assets.js";
 
 const Add = ({ token }) => {
   const navigate = useNavigate();

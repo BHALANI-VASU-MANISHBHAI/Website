@@ -1,9 +1,9 @@
-import { useState, useEffect, useContext } from "react";
-import { toast } from "react-toastify";
 import axios from "axios";
+import { useContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import socket from "../services/sockets.jsx";
 import { GlobalContext } from "./GlobalContext";
 import { ProductContext } from "./ProductContext";
-import socket from "../services/sockets.jsx";
 
 const ProductContextProvider = ({ children }) => {
   const { backendUrl } = useContext(GlobalContext);

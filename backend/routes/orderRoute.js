@@ -1,16 +1,15 @@
 import express from "express";
 import {
+  allOrders,
+  cancelAllOrders,
+  cancelOrderItem,
   placeOrder,
   placeOrderRazorpay,
-  allOrders,
-  userOrders,
   updatedStatus,
+  userOrders,
   verifyOrderRazorpay,
-  cancelOrderItem,
-  cancelAllOrders,
 } from "../controllers/orderControllers.js";
 import adminAuth from "../middleware/adminAuth.js";
-import authUser from "../middleware/auth.js";
 import restrictToRole from "../middleware/restrictToRole.js";
 
 const orderRouter = express.Router();

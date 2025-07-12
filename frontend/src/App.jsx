@@ -1,19 +1,19 @@
-import { Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar"
-import Home from "./pages/Home"
-import Collection from "./pages/Collection"
-import About from "./pages/About"
-import Contact from "./pages/Contact"
-import Product from "./pages/Product"
-import Cart from "./pages/Cart"
-import Login from "./pages/Login"
-import PlaceOrder from "./pages/PlaceOrder"
-import Orders from "./pages/Orders"
-import Footer from "./components/Footer"
-import SearchBar from "./components/SearchBar"
-import PrivacyPolicy from "./pages/PrivatePolicy"
-import ProfileView from "./pages/ProfileView"
+import { Route, Routes } from "react-router-dom";
 import { ToastContainer } from 'react-toastify';
+import Footer from "./components/Footer";
+import Navbar from "./components/Navbar";
+import SearchBar from "./components/SearchBar";
+import About from "./pages/About";
+import Cart from "./pages/Cart";
+import Collection from "./pages/Collection";
+import Contact from "./pages/Contact";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Orders from "./pages/Orders";
+import PlaceOrder from "./pages/PlaceOrder";
+import PrivacyPolicy from "./pages/PrivatePolicy";
+import Product from "./pages/Product";
+import ProfileView from "./pages/ProfileView";
 
 
 

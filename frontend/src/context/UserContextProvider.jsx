@@ -1,7 +1,6 @@
-import React, {  useState } from "react";
 import axios from "axios";
+import React, { useContext, useState } from "react";
 import { toast } from "react-toastify";
-import { useContext } from "react";
 import { GlobalContext } from "./GlobalContext";
 import { UserContext } from "./UserContext";
 

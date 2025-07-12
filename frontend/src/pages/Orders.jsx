@@ -1,10 +1,10 @@
-import React, { useContext, useEffect, useState } from "react";
-import Title from "../components/Title";
 import axios from "axios";
-import { GlobalContext } from "../context/GlobalContext.jsx";
-import socket from "../services/sockets.jsx";
-import { UserContext } from "../context/UserContext.jsx";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import Title from "../components/Title";
+import { GlobalContext } from "../context/GlobalContext.jsx";
+import { UserContext } from "../context/UserContext.jsx";
+import socket from "../services/sockets.jsx";
 
 const Orders = () => {
   const { backendUrl, token, currency } = useContext(GlobalContext);

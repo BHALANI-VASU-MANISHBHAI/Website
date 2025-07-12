@@ -1,11 +1,8 @@
-import axios from 'axios'
-import React from 'react'
-import { useState } from 'react'
-import {backendUrl} from '../App'
-import {  toast } from 'react-toastify';
-import { use } from 'react';
-import { useEffect } from 'react';
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { backendUrl } from '../App';
 
 const Login = ({ setToken }) => {
     const navigate = useNavigate();

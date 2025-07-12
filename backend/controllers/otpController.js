@@ -1,18 +1,24 @@
-import OTP from "../models/otpModel.js";
-import { sendOtpEmail } from "../services/emailService.js";
-import UserModel from "../models/userModel.js";
-import bcrypt from "bcrypt";
 import axios from "axios";
+import bcrypt from "bcrypt";
 import OrderModel from "../models/orderModel.js";
+import OTP from "../models/otpModel.js";
+import UserModel from "../models/userModel.js";
+import { sendOtpEmail } from "../services/emailService.js";
 const TWOFACTOR_API_KEY = process.env.TWOFACTOR_API_KEY;
 async function storeOTP(req, res) {
   try {
-    const { email } = req.body;
+    const { email ,role } = req.body;
 
     // Check if user exists
-    const user = await UserModel.findOne({ email });
+    const user = await UserModel.findOne({ email, role });
     if (!user) {
       return res.json({ success: false, message: "User not found" });
+    }
+    if (user.authType === "google") {
+      return res.json({
+        success: false,
+        message: "Password reset not allowed for Google-authenticated accounts",
+      });
     }
 
     // Generate 6-digit OTP
@@ -60,6 +66,7 @@ async function verifyOTP(req, res) {
 const resetPassword = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
+
     if (!email || !newPassword) {
       return res.json({
         success: false,
@@ -67,26 +74,38 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    const user = await UserModel.findOne({ email });
 
-    // Update only password and updatedAt without fetching the user document
-    const updatedUser = await UserModel.findOneAndUpdate(
-      { email },
-      { password: hashedPassword, updatedAt: new Date() },
-      { new: true }
-    );
-
-    if (!updatedUser) {
+    if (!user) {
       return res.json({ success: false, message: "User not found" });
     }
 
+    // 🛑 Prevent resetting password for Google-authenticated users
+    if (user.authType === "google") {
+      return res.json({
+        success: false,
+        message: "Password reset not allowed for Google-authenticated accounts",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    user.updatedAt = new Date();
+
+    await user.save();
+
     return res.json({ success: true, message: "Password reset successfully" });
   } catch (error) {
-    console.error(error);
-    return res.json({ success: false, message: "Failed to reset password" });
+    console.error("Password reset error:", error);
+    return res.json({
+      success: false,
+      message: "Failed to reset password",
+    });
   }
 };
+
 
 const PhoneSentOTP = async (req, res) => {
   const { phone } = req.body;
@@ -240,11 +259,6 @@ const verifyDeliveryOtp = async (req, res) => {
 };
 
 export {
-  storeOTP,
-  verifyOTP,
-  resetPassword,
-  PhoneSentOTP,
-  verifyPhoneOTP,
-  sendDeliveryOtp,
-  verifyDeliveryOtp,
+  PhoneSentOTP, resetPassword, sendDeliveryOtp, storeOTP, verifyDeliveryOtp, verifyOTP, verifyPhoneOTP
 };
+

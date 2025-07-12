@@ -1,9 +1,9 @@
-import React, { useEffect } from "react";
-import assets from "../assets/assets.js";
 import axios from "axios";
-import { backendUrl } from "../App.jsx";
+import React, { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useParams, useNavigate } from "react-router-dom";
+import { backendUrl } from "../App.jsx";
+import assets from "../assets/assets.js";
 
 const Edit = ({ token }) => {
   const { id } = useParams();

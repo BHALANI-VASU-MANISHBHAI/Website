@@ -1,6 +1,6 @@
   import { useContext, useState } from 'react';
-  import { Link } from 'react-router-dom';
-  import { GlobalContext } from "../context/GlobalContext.jsx";
+import { Link } from 'react-router-dom';
+import { GlobalContext } from "../context/GlobalContext.jsx";
 
   const ProductItem = ({ id, image, name, price, loading = false }) => {
     const { currency } = useContext(GlobalContext);

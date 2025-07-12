@@ -1,8 +1,7 @@
-import React, {  useEffect } from 'react'
-import { useContext } from 'react'
-import Title from './Title';
-import { GlobalContext } from "../context/GlobalContext.jsx";
+import React, { useContext, useEffect } from 'react';
 import { CartContext } from "../context/CartContext.jsx";
+import { GlobalContext } from "../context/GlobalContext.jsx";
+import Title from './Title';
 
 
 

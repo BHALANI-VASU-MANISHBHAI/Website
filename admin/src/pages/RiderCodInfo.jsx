@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState, useMemo } from "react";
-import { RiderContext } from "../contexts/RiderContext";
+import { useContext, useEffect, useMemo, useState } from "react";
 import assets from "../assets/assets.js";
+import { RiderContext } from "../contexts/RiderContext";
 
 
 const RiderCodInfo = () => {

@@ -1,4 +1,3 @@
-import { assetss } from '../assets/frontend_assets/assetss';
 
 const Hero = () => {
   return (

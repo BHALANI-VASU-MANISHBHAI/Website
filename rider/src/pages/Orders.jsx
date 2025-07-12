@@ -1,8 +1,8 @@
-import React, { useEffect, useContext, useState } from "react";
-import { toast } from "react-toastify";
-import { OrderContext } from "../contexts/OrderContext";
-import { GlobalContext } from "../contexts/GlobalContext";
 import axios from "axios";
+import { useContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { GlobalContext } from "../contexts/GlobalContext";
+import { OrderContext } from "../contexts/OrderContext";
 
 const Orders = () => {
   const { currentOrder, setCurrentOrder } = useContext(OrderContext);

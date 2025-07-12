@@ -1,7 +1,7 @@
 import express from 'express';
-import { getBestSellers, addProduct,listProducts,removeProduct,singleProduct,updateProduct,getLowStockProduct,MostSellerToday } from '../controllers/productController.js';
-import upload from '../middleware/multer.js';
+import { addProduct, getBestSellers, getLowStockProduct, listProducts, MostSellerToday, removeProduct, singleProduct, updateProduct } from '../controllers/productController.js';
 import adminAuth from '../middleware/adminAuth.js';
+import upload from '../middleware/multer.js';
 const productRouter = express.Router();
 
 // upload.fields is used to upload multiple files with different field names

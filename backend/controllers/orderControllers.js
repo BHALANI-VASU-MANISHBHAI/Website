@@ -1,9 +1,9 @@
-import orderModel from "../models/orderModel.js";
-import UserModel from "../models/userModel.js";
-import Product from "../models/productModel.js";
-import razorpayInstance from "../config/razorPay.js";
 import crypto from "crypto";
 import mongoose from "mongoose";
+import razorpayInstance from "../config/razorPay.js";
+import orderModel from "../models/orderModel.js";
+import Product from "../models/productModel.js";
+import UserModel from "../models/userModel.js";
 
 const placeOrder = async (req, res) => {
   const session = await mongoose.startSession();
@@ -518,12 +518,7 @@ const cancelAllOrders = async (req, res) => {
 };
 
 export {
-  placeOrder,
-  placeOrderRazorpay,
-  allOrders,
-  userOrders,
-  updatedStatus,
-  verifyOrderRazorpay,
-  cancelOrderItem,
-  cancelAllOrders,
+  allOrders, cancelAllOrders, cancelOrderItem, placeOrder,
+  placeOrderRazorpay, updatedStatus, userOrders, verifyOrderRazorpay
 };
+

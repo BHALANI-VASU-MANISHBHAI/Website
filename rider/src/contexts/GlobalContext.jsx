@@ -1,5 +1,5 @@
-  import React, { createContext, useState, useEffect } from "react";
-  import { useNavigate } from "react-router-dom";
+  import { createContext, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
   // 1. Create context
   export const GlobalContext = createContext();
 

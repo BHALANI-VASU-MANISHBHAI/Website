@@ -1,12 +1,12 @@
-import { useContext, useEffect, useState } from 'react';
-import Title from './Title';
-import ProductItem from './ProductItem';
-import { ProductContext } from "../context/ProductContext.jsx";
-import ShimmerCard from './ShimmerCard'; // You must create this component
 import axios from 'axios';
-import socket from '../services/sockets.jsx'; // Ensure you have a socket connection set up
+import { useContext, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { GlobalContext } from '../context/GlobalContext.jsx';
+import { ProductContext } from "../context/ProductContext.jsx";
+import socket from '../services/sockets.jsx'; // Ensure you have a socket connection set up
+import ProductItem from './ProductItem';
+import ShimmerCard from './ShimmerCard'; // You must create this component
+import Title from './Title';
 const BestSeller = () => {
   const { products } = useContext(ProductContext);
   const { backendUrl } = useContext(GlobalContext);

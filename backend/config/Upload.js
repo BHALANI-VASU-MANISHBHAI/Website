@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import connectDB from './mongodb.js';
 import Product from '../models/productModel.js';
+import connectDB from './mongodb.js';
 
 const updateProducts = async () => {
   try {

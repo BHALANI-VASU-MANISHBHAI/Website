@@ -1,25 +1,27 @@
-import React, { useState, useContext } from "react";
-import { toast } from "react-toastify";
+import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { useContext, useEffect, useState } from "react";
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
+import { Link, } from "react-router-dom";
+import { toast } from "react-toastify";
 import assets from "../assets/assets.js";
 import { GlobalContext } from "../contexts/GlobalContext.jsx";
 import { UserContext } from "../contexts/UserContext.jsx";
-import { GoogleLogin } from "@react-oauth/google";
-import { useEffect } from "react";
-import {AiFillEye, AiFillEyeInvisible}  from "react-icons/ai";
 
 const Login = () => {
-  const { backendUrl, navigate, setToken ,token} = useContext(GlobalContext);
+  const { backendUrl, navigate, setToken, token } = useContext(GlobalContext);
   const { getUserData } = useContext(UserContext);
 
-  const [formData, setFormData] = useState({ email: "", password: "" ,role:"rider"});
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    role: "rider",
+  });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-
-
   useEffect(() => {
-    if(token) {
+    if (token) {
       navigate("/dashboard");
     }
   }, [token]);
@@ -61,7 +63,10 @@ const Login = () => {
     }
 
     try {
-      const res = await axios.post(`${backendUrl}/api/user/google`, { token });
+      const res = await axios.post(`${backendUrl}/api/user/google`, {
+        token,
+        role: "rider",
+      });
 
       if (res.data.success) {
         localStorage.setItem("token", res.data.token);
@@ -147,9 +152,13 @@ const Login = () => {
               {loading ? "Logging in..." : "Login"}
             </button>
             <div className="flex justify-between text-sm text-gray-500 mt-4">
-              <p className="cursor-pointer hover:text-gray-700">
+              <Link
+                className="cursor-pointer hover:text-gray-700"
+                to="/forgot-password"
+              >
                 forget Password ?
-              </p>
+              </Link>
+
               <p
                 className="cursor-pointer hover:text-gray-700"
                 onClick={() => navigate("/signup")}

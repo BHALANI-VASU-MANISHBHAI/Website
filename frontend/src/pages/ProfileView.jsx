@@ -1,10 +1,10 @@
-import { useContext, useState, useEffect } from "react";
-import { assetss } from "../assets/frontend_assets/assetss";
 import axios from "axios";
 import imageCompression from "browser-image-compression";
+import { useContext, useEffect, useState } from "react";
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
+import { assetss } from "../assets/frontend_assets/assetss";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
-import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 const ProfileView = () => {
   const { userData, setUserData } = useContext(UserContext);
   const { token, backendUrl } = useContext(GlobalContext);
