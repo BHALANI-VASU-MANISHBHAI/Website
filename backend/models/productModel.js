@@ -1,80 +1,83 @@
 import mongoose from "mongoose";
 
-const productSchema = mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-    originalPrice:{
-      type: Number
-    },
-  discount:{
-    type: Number,
-    default: 0,
-  },
-  price: {
-    type: Number,
-    required: true,
-  },
-  image: {
-    type: Array,
-    required: true,
-  },
-  category: {
-    type: String,
-    required: true,
-  },
-  subCategory: {
-    type: String,
-    required: true,
-  },
-  sizes: {
-    type: Array,
-    required: true,
-  },
-  bestseller: {
-    type: Boolean,
-    default: false,
-  },
-  date: {
-    type: Number,
-    default: Date.now(),
-  },
-  // 👉 New fields for ratings
-  totalSales: {
-    type: Number,
-    default: 0,
-  },
-  stock: [
+const productSchema = mongoose.Schema(
   {
-    size: {
+    name: {
       type: String,
-      required: true
+      required: true,
     },
-    quantity: {
+    description: {
+      type: String,
+      required: true,
+    },
+    originalPrice: {
+      type: Number,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+    },
+    price: {
       type: Number,
       required: true,
-      default: 0
-    }
-  }
-]
-,
-  totalRating: {
-    type: Number,
-    default: 0,
+    },
+    image: {
+      type: Array,
+      required: true,
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    subCategory: {
+      type: String,
+      required: true,
+    },
+    sizes: {
+      type: Array,
+      required: true,
+    },
+    bestseller: {
+      type: Boolean,
+      default: false,
+    },
+    date: {
+      type: Number,
+      default: Date.now(),
+    },
+    // 👉 New fields for ratings
+    totalSales: {
+      type: Number,
+      default: 0,
+    },
+    stock: [
+      {
+        size: {
+          type: String,
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
+      },
+    ],
+    totalRating: {
+      type: Number,
+      default: 0,
+    },
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
   },
-  totalReviews: {
-    type: Number,
-    default: 0,
+  {
+    timestamps: true,
   }
-}, {
-  timestamps: true,
-});
+);
 
-const ProductModel = mongoose.models.product || mongoose.model("Product", productSchema);
+const ProductModel =
+  mongoose.models.product || mongoose.model("Product", productSchema);
 
 export default ProductModel;

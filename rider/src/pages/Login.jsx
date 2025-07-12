@@ -2,7 +2,7 @@ import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { useContext, useEffect, useState } from "react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
-import { Link, } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import assets from "../assets/assets.js";
 import { GlobalContext } from "../contexts/GlobalContext.jsx";
@@ -25,6 +25,7 @@ const Login = () => {
       navigate("/dashboard");
     }
   }, [token]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -83,28 +84,42 @@ const Login = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-full">
-      {/* Left Image */}
-      <div className="w-full md:w-[60%] flex items-center justify-center bg-gray-100 ">
-        <img
-          src={assets.delivery_boy}
-          alt="Delivery"
-          className="w-full md:h-full h-auto object-contain p-4"
-        />
+    <div className="flex flex-col md:flex-row h-screen w-full bg-gray-50">
+      {/* Left Image Section */}
+      <div className="w-full md:w-[60%] flex items-center justify-center bg-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-blue-50 opacity-30"></div>
+        <div className="relative z-10 p-8 text-center">
+          <img
+            src={assets.delivery_boy}
+            alt="Delivery"
+            className="w-full max-w-lg h-auto object-contain mx-auto mb-6"
+          />
+          <div className="space-y-4">
+            <h1 className="text-4xl font-bold text-gray-800">Welcome Back!</h1>
+            <p className="text-lg text-gray-600 max-w-md mx-auto">
+              Sign in to your account to continue your delivery experience
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Right Login Form */}
-      <div className="w-full md:w-[40%] flex items-center justify-center bg-white p-6 ">
-        <div className="w-full max-w-md p-6 rounded-2xl shadow-lg">
-          <button className="text-2xl font-bold mb-6 text-center text-gray-700 cursor-pointer">
-            Login
-          </button>
+      {/* Right Login Form Section */}
+      <div className="w-full md:w-[40%] flex items-center justify-center bg-white p-6">
+        <div className="w-full max-w-md">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800 mb-2"> Login</h2>
+            <p className="text-gray-600">
+              Enter your credentials to access your account
+            </p>
+          </div>
 
-          {/* Email/Password Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-sm font-semibold text-gray-600">
-                Email
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Email Field */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 block">
+                Email Address
               </label>
               <input
                 type="email"
@@ -112,13 +127,14 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="Email Address"
-                className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder="Enter your email"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
               />
             </div>
 
-            <div>
-              <label className="text-sm font-semibold text-gray-600">
+            {/* Password Field */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 block">
                 Password
               </label>
               <div className="relative">
@@ -128,62 +144,81 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  placeholder="Password"
-                  className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 pr-10"
+                  placeholder="Enter your password"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white pr-12"
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500
-                  cursor-pointer
-                  "
+                  className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 hover:text-gray-700 transition-colors duration-200"
                   onClick={() => setShowPassword((prev) => !prev)}
                   tabIndex={-1}
                 >
-                  {showPassword ? <AiFillEyeInvisible /> : <AiFillEye />}
+                  {showPassword ? (
+                    <AiFillEyeInvisible className="w-5 h-5" />
+                  ) : (
+                    <AiFillEye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
 
+            {/* Login Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gray-700 text-white font-semibold py-2 rounded-lg hover:bg-gray-800 transition duration-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full bg-gray-600 text-white font-semibold py-3 rounded-xl hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Login....
+                </div>
+              ) : (
+                "Login"
+              )}
             </button>
-            <div className="flex justify-between text-sm text-gray-500 mt-4">
+
+            {/* Links */}
+            <div className="flex justify-between items-center text-sm">
               <Link
-                className="cursor-pointer hover:text-gray-700"
+                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
                 to="/forgot-password"
               >
-                forget Password ?
+                Forgot Password?
               </Link>
-
-              <p
-                className="cursor-pointer hover:text-gray-700"
+              <button
+                type="button"
+                className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
                 onClick={() => navigate("/signup")}
               >
-                create account
-              </p>
+                Create Account
+              </button>
             </div>
           </form>
 
           {/* Divider */}
-          <div className="my-6 flex items-center justify-center">
-            <div className="border-t w-1/4" />
-            <span className="mx-3 text-gray-500 text-sm">OR</span>
-            <div className="border-t w-1/4" />
+          <div className="my-8 flex items-center">
+            <div className="flex-1 border-t border-gray-300"></div>
+            <span className="mx-4 text-gray-500 text-sm font-medium">OR</span>
+            <div className="flex-1 border-t border-gray-300"></div>
           </div>
 
-          {/* Google Login Button */}
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleLoginSuccess}
-              onError={() => toast.error("Google login failed")}
-              theme="outline"
-              size="large"
-              width="100%"
-            />
+          {/* Google Login */}
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              <div className="w-full max-w-xs">
+                <GoogleLogin
+                  onSuccess={handleGoogleLoginSuccess}
+                  onError={() => toast.error("Google login failed")}
+                  theme="outline"
+                  size="large"
+                  width="100%"
+                />
+              </div>
+            </div>
+
+           
+           
           </div>
         </div>
       </div>

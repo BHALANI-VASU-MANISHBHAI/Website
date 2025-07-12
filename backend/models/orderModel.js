@@ -79,14 +79,14 @@ const orderSchema = new mongoose.Schema(
         lng: { type: Number, default: null },
       },
       default: {
-        lat: 21.1676,
-        lng: 72.8149,
+        lat: 21.224791,
+        lng: 72.899049,
       },
     },
     pickUpAddress: {
       type: Object,
       default: {
-        street: "Swaminarayan",
+        street: "M D Park Society ,Nana Varachha",
         city: "Surat",
         state: "Gujarat",
         pincode: "121212",
@@ -127,12 +127,28 @@ const orderSchema = new mongoose.Schema(
       default: false, // true if rider is being assigned, false if not
     },
     isCodSubmitted: {
-      type:Boolean,
+      type: Boolean,
       default: false, // true if rider has submitted money for COD orders
     },
     acceptedTime: {
       type: Date,
       default: null, // Time when the order was accepted by the rider
+    },
+    riderCodSubmittedAt: {
+      type: Date,
+      default: null, // Time when the rider submitted COD money
+    },
+    riderCodCollectedAt: {
+      type: Date,
+      default: null, // Time when the rider collected COD money
+    },
+    totalRatings: {
+      type: Number,
+      default: 0, // Total ratings given by users
+    },
+    totalReviews: {
+      type: Number,
+      default: 0, // Total reviews given by users
     },
   },
   { minimize: false, timestamps: true }

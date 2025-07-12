@@ -45,6 +45,27 @@ const PlaceOrder = () => {
     latitude: "",
     longitude: "",
   });
+ useEffect(() => {
+    const savedForm = localStorage.getItem("placeOrderForm");
+    const savedLat = localStorage.getItem("placeOrderLat");
+    const savedLong = localStorage.getItem("placeOrderLong");
+
+    if (savedForm) {
+      setFormData(JSON.parse(savedForm));
+    }
+    if (savedLat) setLat(savedLat);
+    if (savedLong) setLong(savedLong);
+  }, []);
+
+  // ✅ Save form data on change
+  useEffect(() => {
+    localStorage.setItem("placeOrderForm", JSON.stringify(formData));
+  }, [formData]);
+
+  useEffect(() => {
+    localStorage.setItem("placeOrderLat", lat);
+    localStorage.setItem("placeOrderLong", long);
+  }, [lat, long]);
 
   // ✅ Load Razorpay only when needed
   const loadRazorpayScript = () => {
@@ -564,7 +585,7 @@ const PlaceOrder = () => {
               console.log("Map link is empty");
             }
           }}
-          placeholder="Paste Google Map Link "
+          placeholder="Paste Google Map Link (after Placing Pin)"
           className="border py-1.5 px-3.5 rounded-md w-full mt-2"
           required
         />

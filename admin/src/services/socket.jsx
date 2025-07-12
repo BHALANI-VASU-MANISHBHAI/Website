@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 
 // Create a single, persistent socket connection
 const socket = io(
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:4000",
+  import.meta.env.VITE_BACKEND_URL || "http://localhost:10000",
   {
     autoConnect: true,
     reconnection: true, // Enable reconnection (default is true)

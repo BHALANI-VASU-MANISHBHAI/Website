@@ -7,7 +7,7 @@ const restrictToRoles = (...allowedRoles) => {
     
       const token = req.headers.token;
     
-      if (!token) return res.status(401).json({ error: 'No token provided' });
+      if (!token) return res.json({ error: 'No token provided' });
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
     

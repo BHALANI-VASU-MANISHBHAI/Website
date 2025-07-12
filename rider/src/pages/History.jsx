@@ -6,7 +6,6 @@ const History = () => {
   const { backendUrl, token } = useContext(GlobalContext);
   const { orderHistory } = useContext(OrderContext);
 
-
   const [allOrdersHistory, setAllOrdersHistory] = useState(orderHistory);
   useEffect(() => {
     setAllOrdersHistory(orderHistory);
@@ -22,6 +21,7 @@ const History = () => {
   const [startTime, setStartTime] = useState("12 AM");
   const [endTime, setEndTime] = useState("11 PM");
   const [codCollected, setCodCollected] = useState(0);
+  const [codStatus, setCodStatus] = useState("pending");
 
   const [datePreset, setDatePreset] = useState("Today");
 
@@ -32,9 +32,6 @@ const History = () => {
     if (period === "AM" && h === 12) h = 0;
     return h;
   };
-
-
-
 
   useEffect(() => {
     const now = new Date();
@@ -78,6 +75,11 @@ const History = () => {
     if (status !== "All") {
       filtered = filtered.filter((order) => order.status === status);
     }
+    if (codStatus === "pending") {
+      filtered = filtered.filter((order) => order.paymentStatus === "pending");
+    } else if (codStatus === "collected") {
+      filtered = filtered.filter((order) => order.paymentStatus === "success");
+    }
 
     const startHour = convertTo24Hour(startTime);
     const endHour = convertTo24Hour(endTime);
@@ -87,16 +89,14 @@ const History = () => {
 
     const endDateTime = new Date(endDate);
     endDateTime.setHours(endHour, 59, 59, 999);
-    console.log("Start DateTime:", startDateTime);
-    console.log("End DateTime:", endDateTime);
-    console.log("filtered orders:", filtered);
-    console.log("Filtered orders after date and time:", filtered);
     if (searchQuery.trim()) {
       filtered = filtered.filter((order) =>
         order._id.toLowerCase().includes(searchQuery.trim().toLowerCase())
       );
     }
-
+    filtered = filtered.sort(
+      (a, b) => new Date(b.acceptedTime) - new Date(a.acceptedTime)
+    );
     setFilteredOrders(filtered);
   };
 
@@ -121,6 +121,7 @@ const History = () => {
     startTime,
     endTime,
     searchQuery,
+    codStatus,
   ]);
 
   useEffect(() => {
@@ -154,21 +155,40 @@ const History = () => {
       </div>
 
       {/* Quick Date Presets */}
-      <div className="mb-4">
-        <label className="block mb-1 text-sm font-medium text-gray-700">
-          Quick Date Range:
-        </label>
-        <select
-          value={datePreset}
-          onChange={(e) => setDatePreset(e.target.value)}
-          className="w-full sm:w-1/2 p-2 border border-gray-300 rounded-md"
-        >
-          <option value="Today">Today</option>
-          <option value="Yesterday">Yesterday</option>
-          <option value="Last 7 Days">Last 7 Days</option>
-          <option value="This Month">This Month</option>
-          <option value="Custom">Custom</option>
-        </select>
+      <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+        <div className="w-full">
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            Quick Date Range:
+          </label>
+          <select
+            value={datePreset}
+            onChange={(e) => setDatePreset(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            <option value="Today">Today</option>
+            <option value="Yesterday">Yesterday</option>
+            <option value="Last 7 Days">Last 7 Days</option>
+            <option value="This Month">This Month</option>
+            <option value="Custom">Custom</option>
+          </select>
+        </div>
+
+        <div className="w-full">
+          {" "}
+          {/* ✅ Removed mt-2 */}
+          <label className="block mb-1 text-sm font-medium text-gray-700">
+            COD Collected Status:
+          </label>
+          <select
+            value={codStatus}
+            onChange={(e) => setCodStatus(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            <option value="pending">Pending</option>
+            <option value="collected">Collected</option>
+            <option value="all">All</option>
+          </select>
+        </div>
       </div>
 
       {/* Manual Filters (shown only for Custom) */}
@@ -321,7 +341,13 @@ const History = () => {
                 </p>
                 <p>
                   <strong>Date:</strong>{" "}
-                  {new Date(order.createdAt).toLocaleString()}
+                  {new Date(order.createdAt).toLocaleString("en-IN", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </p>
               </div>
               <div className="flex flex-col space-y-10">

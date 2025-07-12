@@ -7,7 +7,6 @@ import Title from "../components/Title";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { ProductContext } from "../context/ProductContext.jsx";
 
-
 const Collection = () => {
   const { products } = useContext(ProductContext);
   const { search, showSearch } = useContext(GlobalContext);
@@ -63,6 +62,24 @@ const Collection = () => {
       filteredProducts.sort((a, b) => a.price - b.price);
     } else if (sortValue === "high") {
       filteredProducts.sort((a, b) => b.price - a.price);
+    } else if (sortValue === "new") {
+      filteredProducts.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+    } else if (sortValue === "old") {
+      filteredProducts.sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      );
+    } else if (sortValue === "popular") {
+      filteredProducts.sort((a, b) => b.totalSales - a.totalSales);
+    } else if (sortValue === "relevent") {
+      filteredProducts.sort((a, b) => a._id - b._id);
+    } else if (sortValue === "rating") {
+      filteredProducts.sort((a, b) => {
+        const ratingA = a.totalRating / (a.totalReviews || 1);
+        const ratingB = b.totalRating / (b.totalReviews || 1);
+        return ratingB - ratingA; // Sort by highest rating first
+      });
     } else {
       filteredProducts.sort((a, b) => a._id - b._id);
     }
@@ -164,6 +181,10 @@ const Collection = () => {
             <option value="relevent">Sort by: Relevant</option>
             <option value="low">Sort by: Price Low to High</option>
             <option value="high">Sort by: Price High to Low</option>
+            <option value="new">Sort by: Newest</option>
+            <option value="old">Sort by: Oldest</option>
+            <option value="popular">Sort by: Popular</option>
+            <option value="rating">Sort by: Rating</option>
           </select>
         </div>
 
@@ -175,11 +196,16 @@ const Collection = () => {
               )
             : FilterProduct.map((product, index) => (
                 <ProductItem
-                  key={index}
-                  id={product._id}
-                  image={product.image}
-                  name={product.name}
-                  price={product.price}
+                key={index}
+                id={product._id}
+                image={product.image}
+                name={product.name}
+                price={product.price}
+                rating={
+                  product.totalReviews > 0
+                    ? (product.totalRating / product.totalReviews).toFixed(1)
+                    : 0
+                }
                 />
               ))}
         </div>

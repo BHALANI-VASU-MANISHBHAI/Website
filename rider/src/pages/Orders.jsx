@@ -6,13 +6,14 @@ import { OrderContext } from "../contexts/OrderContext";
 
 const Orders = () => {
   const { currentOrder, setCurrentOrder } = useContext(OrderContext);
-  const { backendUrl, token, currentLocation } = useContext(GlobalContext);
+  const { backendUrl, token } = useContext(GlobalContext);
 
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [sending, setSending] = useState(false);
 
+  const [riderLocation, setRiderLocation] = useState({ lat: null, lng: null });
   const [distanceFromPickup, setDistanceFromPickup] = useState(null);
   const [timeFromPickup, setTimeFromPickup] = useState(null);
   const [distanceFromDelivery, setDistanceFromDelivery] = useState(null);
@@ -27,46 +28,51 @@ const Orders = () => {
       }?key=pk.231231dbbc3adaf8b1d5637c69074b32&overview=false&steps=false`;
       const res = await fetch(url);
       const data = await res.json();
-      if (data.routes && data.routes.length > 0) {
+      if (data.routes?.length) {
         const route = data.routes[0];
-        const km = route.distance / 1000;
-        const timeInMin = Math.ceil(route.duration / 60);
-        setDistFn(km.toFixed(2));
-        setTimeFn(timeInMin);
+        setDistFn((route.distance / 1000).toFixed(2)); // in km
+        setTimeFn(Math.ceil(route.duration / 60)); // in minutes
       }
     } catch (err) {
       console.error("❌ Failed to calculate route:", err);
     }
   };
 
-  // Pickup ➝ Delivery
   useEffect(() => {
-    if (currentOrder) {
-      calculateDistanceAndTime(
-        currentOrder.pickUpLocation,
-        currentOrder.address,
-        setDistanceFromDelivery,
-        setTimeFromDelivery
-      );
-    }
-  }, [currentOrder]);
+    let watchId;
 
-  // Current Location ➝ Pickup
-  useEffect(() => {
-    if (
-      currentOrder &&
-      currentLocation &&
-      currentLocation.lat &&
-      currentLocation.lng
-    ) {
-      calculateDistanceAndTime(
-        currentLocation,
-        currentOrder.pickUpLocation,
-        setDistanceFromPickup,
-        setTimeFromPickup
+    if (currentOrder && "geolocation" in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const loc = { lat: latitude, lng: longitude };
+          setRiderLocation(loc);
+
+          calculateDistanceAndTime(
+            loc,
+            currentOrder.pickUpLocation,
+            setDistanceFromPickup,
+            setTimeFromPickup
+          );
+          calculateDistanceAndTime(
+            loc,
+            currentOrder.address,
+            setDistanceFromDelivery,
+            setTimeFromDelivery
+          );
+        },
+        (err) => {
+          console.error("Geolocation error:", err);
+          toast.error("⚠️ Unable to fetch live location.");
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
       );
     }
-  }, [currentOrder, currentLocation]);
+
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [currentOrder]);
 
   const sendOTP = async () => {
     setSending(true);
@@ -82,7 +88,7 @@ const Orders = () => {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error) {
+    } catch {
       toast.error("❌ Failed to send OTP");
     } finally {
       setSending(false);
@@ -107,7 +113,7 @@ const Orders = () => {
       } else {
         toast.error(response.data.message);
       }
-    } catch (error) {
+    } catch {
       toast.error("❌ Failed to verify OTP");
     } finally {
       setVerifying(false);
@@ -138,7 +144,6 @@ const Orders = () => {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Order Details</h1>
-
       <div className="border rounded-lg shadow-md p-4 space-y-4 bg-white">
         <h2 className="text-xl font-semibold text-blue-700">
           📦 Order Summary
@@ -172,7 +177,7 @@ const Orders = () => {
               title="Pickup Map"
               src={`https://maps.google.com/maps?q=${pickUpLocation.lat},${pickUpLocation.lng}&z=15&output=embed`}
               width="100%"
-              height="370"
+              height="300"
               frameBorder="0"
               style={{ border: 0 }}
               allowFullScreen
@@ -212,46 +217,43 @@ const Orders = () => {
 
         {distanceFromPickup && (
           <p className="text-yellow-600">
-            📍 Distance to Pickup: {distanceFromPickup} km
-            {timeFromPickup && ` (~${timeFromPickup} min)`}
+            📍 Distance to Pickup: {distanceFromPickup} km (~{timeFromPickup}{" "}
+            min)
           </p>
         )}
-
         {distanceFromDelivery && (
           <p className="text-pink-600">
-            🚚 Pickup ➝ Delivery: {distanceFromDelivery} km
-            {timeFromDelivery && ` (~${timeFromDelivery} min)`}
+            🚚 Distance to Delivery: {distanceFromDelivery} km (~
+            {timeFromDelivery} min)
           </p>
         )}
 
         {distanceFromPickup && distanceFromDelivery && (
-          <p className="text-indigo-600 font-medium">
-            📏 Total Distance:{" "}
-            {(
-              parseFloat(distanceFromPickup) + parseFloat(distanceFromDelivery)
-            ).toFixed(2)}{" "}
-            km
-          </p>
-        )}
-
-        {timeFromPickup && timeFromDelivery && (
-          <p className="text-green-700 font-medium">
-            🕐 Estimated Total Time: {timeFromPickup + timeFromDelivery} min
-          </p>
-        )}
-
-        {!currentLocation?.lat && (
-          <p className="text-red-500">⚠️ Getting your location...</p>
+          <>
+            <p className="text-indigo-600 font-medium">
+              📏 Total Distance:{" "}
+              {(
+                parseFloat(distanceFromPickup) +
+                parseFloat(distanceFromDelivery)
+              ).toFixed(2)}{" "}
+              km
+            </p>
+            <p className="text-green-700 font-medium">
+              🕐 Estimated Total Time: {timeFromPickup + timeFromDelivery} min
+            </p>
+          </>
         )}
 
         <hr />
 
-        <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-end">
+        <div className="flex flex-col sm:flex-row gap-4 justify-end">
           <button
             onClick={sendOTP}
-            disabled={sending||verifying}
+            disabled={sending || verifying}
             className={`px-4 py-2 bg-green-600 text-white rounded-md w-full sm:w-[150px] ${
-            (sending||verifying) ? "opacity-50 cursor-not-allowed" : "hover:bg-green-700"
+              sending || verifying
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-green-700"
             }`}
           >
             {sending ? "Sending..." : "Send OTP"}
@@ -268,9 +270,9 @@ const Orders = () => {
               />
               <button
                 onClick={verifyOTP}
-                disabled={verifying|| sending}
+                disabled={verifying || sending}
                 className={`px-4 py-2 bg-yellow-600 text-white rounded-md ${
-                  (verifying || sending)
+                  verifying || sending
                     ? "opacity-50 cursor-not-allowed"
                     : "hover:bg-yellow-700"
                 }`}

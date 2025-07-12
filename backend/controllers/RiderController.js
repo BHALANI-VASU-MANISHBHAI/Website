@@ -6,6 +6,33 @@ import { redisClient } from "../config/redisClient.js";
 import OrderModel from "../models/orderModel.js";
 import RiderCODHistory from "../models/riderPaymentHistory.js";
 import UserModel from "../models/userModel.js";
+
+function getHaversineDistance(lat1, lon1, lat2, lon2) {
+  const a =
+    Math.pow(Math.sin(((lat2 - lat1) * Math.PI) / 360), 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.pow(Math.sin(((lon2 - lon1) * Math.PI) / 360), 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return 6371 * c; // Distance in km
+}
+async function getRoadDistance(lat1, lon1, lat2, lon2) {
+  try {
+    const response = await fetch(
+      `http://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`
+    );
+    const data = await response.json();
+
+    if (data.code === "Ok" && data.routes?.length > 0) {
+      return data.routes[0].distance / 1000; // Convert meters to km
+    }
+    throw new Error("Failed to fetch road distance");
+  } catch (error) {
+    console.error("OSRM Error:", error);
+    // Fallback to Haversine (straight-line distance)
+    return getHaversineDistance(lat1, lon1, lat2, lon2);
+  }
+}
 const findAllRidersByShortestTrip = async (
   deliveryLat,
   deliveryLng,
@@ -65,8 +92,6 @@ const getAllRiders = async (req, res) => {
   }
 };
 
-
-
 async function waitForRiderResponse(io, riderId, orderId, timeout = 30000) {
   const startTime = Date.now();
   const POLL_INTERVAL = 1000;
@@ -105,9 +130,11 @@ async function waitForRiderResponse(io, riderId, orderId, timeout = 30000) {
 
 const riderAcceptOrder = async (req, res) => {
   try {
-    const { orderId, distanceFromPickUpLocation,
-      distanceFromDeliveryLocation
-     } = req.body;
+    const {
+      orderId,
+      distanceFromPickUpLocation,
+      distanceFromDeliveryLocation,
+    } = req.body;
     const userId = req.userId;
     const [rider, order] = await Promise.all([
       UserModel.findById(userId),
@@ -134,8 +161,6 @@ const riderAcceptOrder = async (req, res) => {
         message: "Order already assigned to another rider",
       });
     }
-
-
 
     console.log("Distance from Pickup Location:", distanceFromPickUpLocation);
     console.log(
@@ -230,10 +255,12 @@ const GetcurrentRiderOrder = async (req, res) => {
     const order = await OrderModel.findOne({
       riderId: userId,
       isActive: true,
-    }).populate(
-      "riderId",
-      "name phone email riderStatus codMarkedDone earning cod codSubmittedMoney"
-    ).lean();
+    })
+      .populate(
+        "riderId",
+        "name phone email riderStatus codMarkedDone earning cod codSubmittedMoney"
+      )
+      .lean();
 
     console.log("Current rider order:", order);
 
@@ -304,8 +331,6 @@ const riderAcceptedOrder = async (req, res) => {
   }
 };
 
-
-
 const getAllRidersOrder = async (req, res) => {
   try {
     const userId = req.userId;
@@ -340,8 +365,6 @@ const getAllRidersOrder = async (req, res) => {
     });
   }
 };
-
-
 
 const getOnlineTotalRider = async (req, res) => {
   try {
@@ -386,7 +409,6 @@ const submitRiderCOD = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
 
 const createRiderCODOrder = async (req, res) => {
   const { amount } = req.body;
@@ -476,6 +498,7 @@ const verifyRiderCODPayment = async (req, res) => {
     for (const order of allRiderOrders) {
       await OrderModel.findByIdAndUpdate(order._id, {
         isCodSubmitted: true, // Mark this order as COD submitted
+        riderCodSubmittedAt: new Date(), // Set the time when the rider submitted COD money
       });
     }
     io.to("adminRoom").emit("codSubmitted", {
@@ -528,8 +551,8 @@ const getRiderCODHistory = async (req, res) => {
 async function assignSingleOrder(order, io) {
   try {
     const existingOrder = await OrderModel.findById(order._id);
-    const deliveryLat = existingOrder.deliveryLocation.lat;
-    const deliveryLng = existingOrder.deliveryLocation.lng;
+    const deliveryLat = existingOrder.address.latitude;
+    const deliveryLng = existingOrder.address.longitude;
     const pickupLat = existingOrder.pickUpLocation.lat;
     const pickupLng = existingOrder.pickUpLocation.lng;
     const orderId = existingOrder._id;
@@ -626,6 +649,11 @@ async function assignSingleOrder(order, io) {
           await OrderModel.findByIdAndUpdate(orderId, {
             expiresAt: null,
             isAssigning: false,
+            earning: {
+              amount: 0, // Reset earning if not accepted
+              collected: 0,
+            },
+            riderId: null,
           });
           await UserModel.findByIdAndUpdate(rider._id, {
             riderStatus: "available",
@@ -678,11 +706,11 @@ const assignRider = async (req, res) => {
       const results = await Promise.all(
         packedOrders.map((order) => assignSingleOrder(order, io))
       );
-      console.log("Results from assignment attempt:", results);
+
       const newlyAssigned = results
         .map((result, index) => (result?.success ? packedOrders[index] : null))
         .filter((order) => order !== null);
-      console.log("Newly assigned orders:", newlyAssigned.length);
+
       assigned.push(...newlyAssigned);
 
       // Filter unassigned for next attempt
@@ -717,6 +745,16 @@ const assignRider = async (req, res) => {
 };
 
 export {
-  assignRider, createRiderCODOrder, getAllRiders, getAllRidersOrder, GetcurrentRiderOrder, getOnlineTotalRider, getRiderCODHistory, riderAcceptedOrder, riderAcceptOrder, submitRiderCOD, updateRiderLocation, verifyRiderCODPayment
+  assignRider,
+  createRiderCODOrder,
+  getAllRiders,
+  getAllRidersOrder,
+  GetcurrentRiderOrder,
+  getOnlineTotalRider,
+  getRiderCODHistory,
+  riderAcceptedOrder,
+  riderAcceptOrder,
+  submitRiderCOD,
+  updateRiderLocation,
+  verifyRiderCODPayment,
 };
-

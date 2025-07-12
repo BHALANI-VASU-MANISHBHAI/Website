@@ -339,7 +339,9 @@ const RiderCodInfo = () => {
               <div className="mt-6">
                 <p className="font-semibold mb-2 text-base">Orders Assigned:</p>
                 <div className="hidden sm:grid grid-cols-4 gap-3 sm:gap-20 text-sm font-semibold border-b pb-2">
-                  <div>Order ID</div>
+                  <div>
+                    Order ID
+                  </div>
                   <div>Status</div>
                   <div>Amount</div>
                   <div className="hidden sm:block">Done</div>
@@ -374,12 +376,27 @@ const RiderCodInfo = () => {
                       <div>{order.status || "N/A"}</div>
                       <div>₹{order.amount?.toFixed(2) || "N/A"}</div>
                       {order.isCodSubmitted && (
-                        <div>
+                        <div className="flex  flex-row  items-center sm:items-start sm:flex-col ">
                           <img
                             src={assets.mark_as_done}
                             alt="Done"
                             className="w-6 h-6"
                           />
+                          {order.riderCodSubmittedAt && (
+                            <span className="text-xs text-gray-400">
+                              {new Date(order.riderCodSubmittedAt).toLocaleString(
+                                "en-IN",
+                                {
+                                  day: "numeric",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                            </span>
+                          )}  
+
+
                         </div>
                       )}
                     </div>

@@ -1,4 +1,4 @@
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import React, { useState } from "react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
@@ -6,10 +6,9 @@ import { toast } from "react-toastify";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
 
-
 const Login = () => {
   const [currentState, setCurrentState] = React.useState("Login");
-  const { token, setToken, navigate, backendUrl}=
+  const { token, setToken, navigate, backendUrl } =
     React.useContext(GlobalContext);
   const { setUserData } = React.useContext(UserContext);
   const [otp, setOtp] = useState("");
@@ -31,7 +30,7 @@ const Login = () => {
           name,
           email,
           password,
-          role:"user"
+          role: "user",
         });
 
         if (response.data.success) {
@@ -47,7 +46,7 @@ const Login = () => {
               },
             }
           );
- 
+
           if (profileResponse.data.success) {
             toast.success("Successfully signed up");
             setUserData(profileResponse.data.user);
@@ -60,10 +59,9 @@ const Login = () => {
         const response = await axios.post(backendUrl + "/api/user/login", {
           email,
           password,
-          role:"user"
+          role: "user",
         });
         if (response.data.success) {
-
           setToken(response.data.token);
 
           const profileResponse = await axios.post(
@@ -76,10 +74,8 @@ const Login = () => {
             }
           );
 
-      
           if (profileResponse.data.success) {
-    
-           setUserData(profileResponse.data.user);
+            setUserData(profileResponse.data.user);
           }
           localStorage.setItem("token", response.data.token);
           toast.success("Successfully logged in");
@@ -98,8 +94,8 @@ const Login = () => {
       const response = await axios.post(
         backendUrl + "/api/auth/forgot-password",
         {
-          email 
-          ,role: "user" 
+          email,
+          role: "user",
         }
       );
       if (response.data.success) {
@@ -111,7 +107,7 @@ const Login = () => {
         toast.error(response.data.message || "Failed to send OTP");
       }
     } catch (error) {
-        console.log("Error in sending OTP", error);
+      console.log("Error in sending OTP", error);
       toast.error(error.message || "Failed to send OTP");
     }
   };
@@ -123,7 +119,7 @@ const Login = () => {
       });
       if (response.data.success) {
         setOtpVerified(true);
-        setStep("reset"); 
+        setStep("reset");
         toast.success("OTP verified");
       } else {
         toast.error(response.data.message || "OTP verification failed");
@@ -155,43 +151,42 @@ const Login = () => {
       }
     } catch (error) {
       toast.error(error.message || "Password reset error");
-    }finally {
+    } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLoginSuccess = async (credentialResponse) => {
-  try {
-    const token = credentialResponse.credential;
-    console.log("Google token:", token);
-    // Send this token to your backend to verify and login/register the user
-    const res = await axios.post(backendUrl + "/api/user/google", {
-      token 
-      , role: "user"
-    });
+    try {
+      const token = credentialResponse.credential;
+      console.log("Google token:", token);
+      // Send this token to your backend to verify and login/register the user
+      const res = await axios.post(backendUrl + "/api/user/google", {
+        token,
+        role: "user",
+      });
 
-    if (res.data.success) {
-      setToken(res.data.token);
-      localStorage.setItem("token", res.data.token);
-      // Get user profile data from backend
-      const profileResponse = await axios.post(
-        backendUrl + "/api/user/getdataofuser",
-        {},
-        { headers: { token: res.data.token } }
-      );
+      if (res.data.success) {
+        setToken(res.data.token);
+        localStorage.setItem("token", res.data.token);
+        // Get user profile data from backend
+        const profileResponse = await axios.post(
+          backendUrl + "/api/user/getdataofuser",
+          {},
+          { headers: { token: res.data.token } }
+        );
 
-      if (profileResponse.data.success) {
-        setUserData(profileResponse.data.user);
+        if (profileResponse.data.success) {
+          setUserData(profileResponse.data.user);
+        }
+      } else {
+        toast.error(res.data.message || "Google login failed");
       }
-    } else {
-      toast.error(res.data.message || "Google login failed");
+    } catch (error) {
+      console.error("Google login error:", error);
+      toast.error(res.data.message || "Google login error");
     }
-  } catch (error) {
-    console.error("Google login error:", error);
-    toast.error(res.data.message || "Google login error");
-  }
-};
-
+  };
 
   // Redirect to home page after successful login/signup
   React.useEffect(() => {
@@ -238,7 +233,9 @@ const Login = () => {
           />
           <button
             onClick={handleResetPassword}
-            className={`bg-black text-white px-6 py-2 cursor-pointer ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`bg-black text-white px-6 py-2 cursor-pointer ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             {loading ? "Resetting..." : "Reset Password"}
           </button>

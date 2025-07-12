@@ -34,7 +34,12 @@ const LatestCollection = () => {
                 id={item._id}
                 image={item.image}
                 name={item.name}
-                price={item.price}
+              price={item.price}
+                rating={
+                  item.totalReviews > 0
+                    ? (item.totalRating / item.totalReviews).toFixed(1)
+                    : 0
+                }
               />
             ))
         }

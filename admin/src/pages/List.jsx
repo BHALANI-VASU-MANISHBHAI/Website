@@ -15,16 +15,16 @@ const List = ({ token }) => {
   const [SubCategory, setSubCategory] = useState("All");
   const [OpenSubCategory, setOpenSubCategory] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-const {products} = useContext(ProductContext);
+  const { products } = useContext(ProductContext);
 
-const GetList = ()=>{
-  setOriginalList(products);
-  setList(products);
-}
+  const GetList = () => {
+    setOriginalList(products);
+    setList(products);
+  };
 
-useEffect(()=>{
-GetList();
-},[products])
+  useEffect(() => {
+    GetList();
+  }, [products]);
 
   const navigate = useNavigate();
 
@@ -70,7 +70,6 @@ GetList();
     }
   };
 
-
   useEffect(() => {
     setLoading(true);
     let filteredList = originalList;
@@ -115,8 +114,7 @@ GetList();
   return (
     <>
       <p className="mb-2 text-2xl">All Products List</p>
-   <div className="p-4  flex gap-4 sm:gap-4 md:gap-10 md:flex-row flex-col md:items-center md:justify-between border border-gray-200 bg-gray-100 rounded-b-md">
-
+      <div className="p-4  flex gap-4 sm:gap-4 md:gap-10 md:flex-row flex-col md:items-center md:justify-between border border-gray-200 bg-gray-100 rounded-b-md">
         {/* Category Selector */}
         <div className="flex  items-center gap-3">
           <p>Category</p>
@@ -202,55 +200,55 @@ GetList();
         </div>
       </div>
 
-        <div className="flex flex-col gap-2 mt-3">
-          {/* Header */}
-          <div className="hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] bg-gray-100 items-center py-1 px-2 border text-sm ">
-            <b>Image</b>
-            <b>Name</b>
-            <b>Category(subCategory)</b>
-            <b>Price</b>
-            <b className="text-center">Action</b>
-          </div>
-
-          {/* Product List or Shimmer */}
-          {loading
-            ? shimmerLoader()
-            : list.map((item, index) => (
-                <div
-                  className="grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] gap-2 py-1 px-2 border text-sm items-center"
-                  key={index}
-                >
-                  <img className="w-20" src={item.image[0]} alt="" />
-                  <p>{item.name}</p>
-                  <p>
-                    {item.category} ({item.subCategory})
-                  </p>
-                  <p>₹{item.price}</p>
-
-                  <p
-                    className="text-right md:text-center cursor-pointer text-lg hidden md:block"
-                    onClick={() => removeProduct(item._id)}
-                  >
-                    X
-                  </p>
-
-                  <p
-                    onClick={() => navigate(`/edit/${item._id}`)}
-                    className="bg-gray-500 text-white px-1 py-1 rounded-md text-center md:mx-auto sm:ml-auto md:col-start-5 sm:w-[35%] md:w-[100%] w-[50%] cursor-pointer hover:bg-gray-700"
-                  >
-                    Edit
-                  </p>
-
-                  {/* Remove Button for Small Screen */}
-                  <p
-                    onClick={() => removeProduct(item._id)}
-                    className="bg-gray-500 text-white px-1 py-1 rounded-md text-center md:mx-auto sm:ml-auto md:col-start-5 sm:w-[100%] w-[100%] cursor-pointer hover:bg-gray-700 md:hidden"
-                  >
-                    Remove
-                  </p>
-                </div>
-              ))}
+      <div className="flex flex-col gap-2 mt-3">
+        {/* Header */}
+        <div className="hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] bg-gray-100 items-center py-1 px-2 border text-sm ">
+          <b>Image</b>
+          <b>Name</b>
+          <b>Category(subCategory)</b>
+          <b>Price</b>
+          <b className="text-center">Action</b>
         </div>
+
+        {/* Product List or Shimmer */}
+        {loading
+          ? shimmerLoader()
+          : list.map((item, index) => (
+              <div
+                className="grid grid-cols-[1fr_3fr_1fr] md:grid-cols-[1fr_3fr_1fr_1fr_1fr] gap-2 py-1 px-2 border text-sm items-center"
+                key={index}
+              >
+                <img className="w-20" src={item.image[0]} alt="" />
+                <p>{item.name}</p>
+                <p>
+                  {item.category} ({item.subCategory})
+                </p>
+                <p>₹{item.price}</p>
+
+                <p
+                  className="text-right md:text-center cursor-pointer text-lg hidden md:block"
+                  onClick={() => removeProduct(item._id)}
+                >
+                  X
+                </p>
+
+                <p
+                  onClick={() => navigate(`/edit/${item._id}`)}
+                  className="bg-gray-500 text-white px-1 py-1 rounded-md text-center md:mx-auto sm:ml-auto md:col-start-5 sm:w-[35%] md:w-[100%] w-[50%] cursor-pointer hover:bg-gray-700"
+                >
+                  Edit
+                </p>
+
+                {/* Remove Button for Small Screen */}
+                <p
+                  onClick={() => removeProduct(item._id)}
+                  className="bg-gray-500 text-white px-1 py-1 rounded-md text-center md:mx-auto sm:ml-auto md:col-start-5 sm:w-[100%] w-[100%] cursor-pointer hover:bg-gray-700 md:hidden"
+                >
+                  Remove
+                </p>
+              </div>
+            ))}
+      </div>
     </>
   );
 };

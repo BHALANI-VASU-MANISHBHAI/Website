@@ -140,6 +140,7 @@ const Product = () => {
           productId: id,
           rating: addRating,
           comment: addComment,
+          productId: productData._id,
         },
         {
           headers: { token },
@@ -267,7 +268,7 @@ const Product = () => {
               precision={0.5}
               readOnly
             />
-            <p className="pl-2">({avgRating.toFixed(1)})</p>
+            <p className="pl-2">( {avgRating.toFixed(1)})</p>
           </div>
           <p className="mt-5 text-3xl font-medium">
             {currency}

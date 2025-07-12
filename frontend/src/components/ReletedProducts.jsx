@@ -1,14 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect } from "react";
 import { ProductContext } from "../context/ProductContext.jsx";
-import ProductItem from './ProductItem';
-import Title from './Title';
+import ProductItem from "./ProductItem";
+import Title from "./Title";
 
-const ReletedProducts = ({category,subCategory}) => {
-  const{products} = React.useContext(ProductContext )
-  const[releted , setReleted] = React.useState([])
+const ReletedProducts = ({ category, subCategory }) => {
+  const { products } = React.useContext(ProductContext);
+  const [releted, setReleted] = React.useState([]);
 
   useEffect(() => {
-    if(products.length>0){
+    if (products.length > 0) {
       let productcopy = [...products];
 
       productcopy = productcopy.filter((item) => {
@@ -22,28 +22,31 @@ const ReletedProducts = ({category,subCategory}) => {
       });
       setReleted(productcopy.slice(0, 5));
     }
-  },[products])
+  }, [products]);
   return (
-    <div className='my-24'>
-      <div className='text-center text-3xl py-2 ' >
-        <Title text1={'RELATED'} text2={'PRODUCTS'}></Title>
+    <div className="my-24">
+      <div className="text-center text-3xl py-2 ">
+        <Title text1={"RELATED"} text2={"PRODUCTS"}></Title>
       </div>
 
-      <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5  gap-5 gap-y-6'>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5  gap-5 gap-y-6">
         {releted.map((item, index) => (
-       <ProductItem
-              key={index}
-              id={item._id}
-              image={item.image}
-              name={item.name}
-              price={item.price}
-            />
+          <ProductItem
+            key={index}
+            id={item._id}
+            image={item.image}
+            name={item.name}
+            price={item.price}
+            rating={
+              item.totalReviews > 0
+                ? (item.totalRating / item.totalReviews).toFixed(1)
+                : 0
+            }
+          />
         ))}
-        
-
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ReletedProducts
+export default ReletedProducts;

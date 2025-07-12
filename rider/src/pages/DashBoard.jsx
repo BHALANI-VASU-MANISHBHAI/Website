@@ -64,16 +64,6 @@ const Dashboard = () => {
     }
   };
 
-  const calculateRiderAmount = (km, deliveryCharge = 0) => {
-    const amount =
-      km <= 5
-        ? deliveryCharge + km * 10
-        : km <= 10
-        ? deliveryCharge + km * 15
-        : deliveryCharge + km * 20;
-    setRiderAmount(Math.ceil(amount));
-  };
-
   const startCountdown = (order) => {
     if (!order.expiresAt) return;
     const expiresAt = new Date(order.expiresAt).getTime();
@@ -114,7 +104,6 @@ const Dashboard = () => {
           setDistance,
           setEta
         );
-        calculateRiderAmount(distance, parsed.deliveryCharge);
       } catch {
         localStorage.removeItem("activeOrder");
       }
@@ -216,7 +205,9 @@ const Dashboard = () => {
 
       <div className="mt-6 p-4 border rounded-xl bg-white shadow-lg space-y-3">
         <h2 className="text-xl font-semibold text-blue-700">Order Details</h2>
-        <p>Rider Amount (Delivery Charge): ₹{riderAmount}</p>
+        <p>Rider Amount (Delivery Charge): ₹{
+          orderData.earning.amount
+        }</p>
         <p>
           Payment Method:{" "}
           {orderData.paymentMethod === "COD" ? "Cash on Delivery" : "Online"}
@@ -224,7 +215,7 @@ const Dashboard = () => {
         <p>
           {orderData.paymentMethod === "COD"
             ? `Total Amount: ₹${orderData.amount}`
-            : null} 
+            : null}
         </p>
 
         <div className="flex flex-col md:flex-row gap-4 justify-between mt-4">
@@ -243,6 +234,16 @@ const Dashboard = () => {
             >
               View Pickup on Map
             </a>
+            {currentLocation && orderData.pickUpLocation && (
+              <a
+                href={`https://www.google.com/maps/dir/${currentLocation.lat},${currentLocation.lng}/${orderData.pickUpLocation.lat},${orderData.pickUpLocation.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline block mt-2"
+              >
+                🧭 Get Directions to Pickup
+              </a>
+            )}
 
             <iframe
               title="Pickup Map"
@@ -270,6 +271,16 @@ const Dashboard = () => {
               className="text-blue-600 underline"
             >
               View Delivery on Map
+            {currentLocation && orderData.address && (
+              <a
+                href={`https://www.google.com/maps/dir/${currentLocation.lat},${currentLocation.lng}/${orderData.address.latitude},${orderData.address.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline block mt-2"
+              >
+                🧭 Get Directions to Delivery
+              </a>
+            )}
             </a>
             <iframe
               title="Delivery Map"

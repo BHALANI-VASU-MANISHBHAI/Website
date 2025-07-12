@@ -17,7 +17,9 @@ const loginUser = async (req, res) => {
     try {
         const { email, password ,role} = req.body;
         
-        const user = await userModel.findOne({ email  });
+        const user = await userModel.findOne({ email 
+          ,role
+         });
 
         if (!user) {
             return res.json({ message: "User not found" });
@@ -42,8 +44,7 @@ const loginUser = async (req, res) => {
 const registerUser = async (req, res) => {
     try {
         const { name, email, password ,role} = req.body;
-        console.log("Received registration data:",req.body);
-        console.log("Registering user:", { name, email, password });
+        
         const exist = await userModel.findOne({ email });
         if (exist) {
             return res.json({ success: false, message: "User already exists" });

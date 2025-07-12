@@ -185,7 +185,8 @@ const Orders = () => {
                 className={`border py-4 px-2 text-sm font-medium rounded-sm cursor-pointer ${
                   loading ||
                   item.status === "Delivered" ||
-                  item.status === "Out for Delivery"
+                  item.status === "Out for Delivery" ||
+                  item.status === "Shipped"
                     ? "opacity-50 cursor-not-allowed"
                     : ""
                 }`}
@@ -193,6 +194,7 @@ const Orders = () => {
                   loading ||
                   item.status === "Delivered" ||
                   item.status === "Out for Delivery"
+                  || item.status === "Shipped"
                 }
               >
                 Cancel Order

@@ -132,7 +132,6 @@ const RiderContextProvider = ({ children }) => {
     });
     socket.on("riderProfileUpdated", async(data) => {
      await getAllRidersOrders(); // Refresh the orders
-      toast.success(`Rider ${data.riderId} profile updated successfully`);
     });
 
     return () => {

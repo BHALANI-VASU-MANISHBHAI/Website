@@ -215,7 +215,7 @@ const verifyDeliveryOtp = async (req, res) => {
     order.earning.collected = order.amount;
     order.paymentStatus = "success";
     order.cancelledBy = null;
-    
+    order.riderCodCollectedAt = new Date();
     const updatedOrder = await order.save();
 
     // Update rider status

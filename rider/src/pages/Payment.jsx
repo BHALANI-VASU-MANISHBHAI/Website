@@ -20,64 +20,40 @@ const Payment = () => {
   const { backendUrl, token } = useContext(GlobalContext);
   const { orderHistory, paymentHistory, fetchUserPaymentHistory } =
     useContext(OrderContext);
-  console.log("Order History:", orderHistory);
-  const { userData /* , fetchUserData */, } =
-    useContext(UserContext); // uncomment if you have refetch
-  const [userPaymentHistory, setUserPaymentHistory] = useState([]);
+  const { userData } = useContext(UserContext);
+
   const [amount, setAmount] = useState("");
   const [submitMoney, setSubmitMoney] = useState(0);
-  const [riderInfo, setRiderInfo] = useState(null);
-
+  const [sortBy, setSortBy] = useState("latest");
+  const [expanded, setExpanded] = useState({}); // Track expanded orders
 
   const totalCollectedMoney = () => {
     if (!orderHistory || orderHistory.length === 0) return 0;
-
     let total = orderHistory.reduce((sum, order) => {
       if (order.paymentMethod === "COD") {
         return sum + (order.earning?.collected || 0);
       }
       return sum;
     }, 0);
-
     total -= userData?.codSubmittedMoney || 0;
     return total < 0 ? 0 : total;
   };
 
-
-  // Fetch user payment history on mount
   useEffect(() => {
-    setUserPaymentHistory(paymentHistory);
-  }, [paymentHistory]);
-
-  // const
-  useEffect(() => {
-    if (
-      !orderHistory ||
-      orderHistory.length === 0 ||
-      !userData ||
-      typeof userData.codSubmittedMoney === "undefined"
-    )
-      return;
-
+    if (!orderHistory || !userData) return;
     const total = totalCollectedMoney();
     setSubmitMoney(total);
     setAmount(total.toString());
-    toast.info(`Total collected money: ₹${total}`);
+    if (total > 0) toast.info(`Total collected money: ₹${total}`);
   }, [orderHistory, userData]);
 
   const handleSubmit = async () => {
     const numericAmount = Math.round(Number(amount));
-
-    if (!numericAmount || numericAmount <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
+    if (!numericAmount || numericAmount <= 0)
+      return toast.error("Enter valid amount");
 
     const isLoaded = await loadRazorpayScript();
-    if (!isLoaded) {
-      toast.error("Failed to load Razorpay");
-      return;
-    }
+    if (!isLoaded) return toast.error("Failed to load Razorpay");
 
     try {
       const res = await axios.post(
@@ -85,7 +61,6 @@ const Payment = () => {
         { amount: numericAmount },
         { headers: { token } }
       );
-
       const { key, razorpayOrder } = res.data;
 
       const options = {
@@ -95,7 +70,7 @@ const Payment = () => {
         name: "COD Collection",
         description: "Submit collected COD",
         order_id: razorpayOrder.id,
-        handler: async function (response) {
+        handler: async (response) => {
           try {
             const verifyRes = await axios.post(
               `${backendUrl}/api/rider/verifyRiderCODPayment`,
@@ -105,47 +80,49 @@ const Payment = () => {
                 razorpay_signature: response.razorpay_signature,
                 amount: numericAmount,
               },
-              {
-                headers: { token },
-              }
+              { headers: { token } }
             );
-
             if (verifyRes.data.success) {
               toast.success("COD submitted successfully!");
               setAmount("");
               setSubmitMoney(0);
-
-             await fetchUserPaymentHistory(); // Refetch payment history
-              // refetch user payment history
-              // fetchUserData?.();
+              await fetchUserPaymentHistory();
+              setSubmitMoney(totalCollectedMoney());
             } else {
               toast.error("Payment verification failed.");
             }
           } catch (err) {
             toast.error(err.response?.data?.message || "Verification error.");
-            console.error("Verification error:", err);
           }
         },
-        prefill: {
-          name: "Rider",
-        },
-        theme: {
-          color: "#0d6efd",
-        },
+        prefill: { name: "Rider" },
+        theme: { color: "#0d6efd" },
       };
 
       const rzp = new window.Razorpay(options);
-
-      rzp.on("payment.failed", function (response) {
-        toast.error("Payment failed. Please try again.");
-        console.error("Payment failed:", response.error);
-      });
-
+      rzp.on("payment.failed", () => toast.error("Payment failed. Try again."));
       rzp.open();
     } catch (err) {
-      console.error("Payment error:", err);
       toast.error(err.response?.data?.message || "Something went wrong.");
     }
+  };
+
+  const sortedHistory = [...paymentHistory].sort((a, b) => {
+    if (sortBy === "latest")
+      return new Date(b.riderCodSubmittedAt) - new Date(a.riderCodSubmittedAt);
+    if (sortBy === "oldest")
+      return new Date(a.riderCodSubmittedAt) - new Date(b.riderCodSubmittedAt);
+    if (sortBy === "amountHigh") return b.amount - a.amount;
+    if (sortBy === "amountLow") return a.amount - b.amount;
+    if (sortBy === "pending")
+      return Number(a.isCodSubmitted) - Number(b.isCodSubmitted);
+    if (sortBy === "submitted")
+      return Number(!a.isCodSubmitted) - Number(!b.isCodSubmitted);
+    return 0;
+  });
+
+  const toggleExpand = (id) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -174,74 +151,132 @@ const Payment = () => {
           Submit via Razorpay
         </button>
       </div>
-      <div>
-        <p className="text-lg font-semibold mt-8 mb-4">
-          Payment History:
-        </p>
+
+      <div className="mt-10 px-2">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+          <p className="text-lg font-semibold">Payment History</p>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="border px-3 py-1 rounded mt-2 sm:mt-0"
+          >
+            <option value="latest">Sort: Latest</option>
+            <option value="oldest">Sort: Oldest</option>
+            <option value="amountHigh">Amount: High to Low</option>
+            <option value="amountLow">Amount: Low to High</option>
+            <option value="pending">Pending First</option>
+            <option value="submitted">Submitted First</option>
+          </select>
+        </div>
 
         <div>
-          <div className="grid  grid-cols-1  sm:grid-cols-4 gap-4 font-semibold text-gray-700 bg-gray-100 p-2 rounded hidden sm:grid">
-            <div>Order ID</div>
-            <div>Amount</div>
-            <div>Date</div>
-            <div>Status</div>
-          </div>
-
-          {userPaymentHistory.length > 0 ? (
-            userPaymentHistory
-              .sort((a, b) => new Date(b.date) - new Date(a.date))
-              .map((order) => (
-                <div
-                  key={order._id}
-                  className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 border-b bg-white"
-                >
-                  <div className="text-sm break-all">
-                    <span className="block font-semibold sm:hidden text-gray-600 mb-1">
-                      Order ID
-                    </span>
-                    {order._id}
+          {sortedHistory.length > 0 ? (
+            sortedHistory.map((order) => (
+              <div
+                key={order._id}
+                className="bg-white border rounded mb-4 p-4 space-y-2"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 text-sm font-medium text-gray-700">
+                  <div>Order ID: {order._id.slice(0, 8)}</div>
+                  <div>Amount: ₹{order.amount}</div>
+                  <div>
+                    Date:{" "}
+                    {order.riderCodSubmittedAt
+                      ? new Date(order.riderCodSubmittedAt).toLocaleString(
+                          "en-IN"
+                        )
+                      : "N/A"}
                   </div>
-
-                  <div className="text-sm">
-                    <span className="block font-semibold sm:hidden text-gray-600 mb-1">
-                      Amount
-                    </span>
-                    ₹{order.amount}
-                  </div>
-
-                  <div className="text-sm">
-                    <span className="block font-semibold sm:hidden text-gray-600 mb-1">
-                      Date
-                    </span>
-                    {new Date(order.date).toLocaleDateString("en-IN", {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                    })}
-                    {" (" +
-                      new Date(order.date).toLocaleTimeString("en-IN", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }) +
-                      ")"}
-                  </div>
-
-                  <div className="text-sm">
-                    <span className="block font-semibold sm:hidden text-gray-600 mb-1">
-                      Mark
-                    </span>
+                  <div>
+                    Status:{" "}
                     {order.isCodSubmitted ? (
                       <img
                         src={assets.mark_as_done}
-                        alt="Payment Done"
-                        className="w-6 h-6 inline-block"
+                        alt="Done"
+                        className="w-5 h-5 inline-block"
                       />
                     ) : (
                       <span className="text-red-500">Pending</span>
                     )}
                   </div>
+                  <div>
+                    <button
+                      onClick={() => toggleExpand(order._id)}
+                      className="text-blue-600 underline"
+                    >
+                      {expanded[order._id] ? "Hide Details" : "View Details"}
+                    </button>
+                  </div>
                 </div>
-              ))
+
+                {expanded[order._id] && (
+                  <div className="mt-2 flex flex-col  sm:flex-row sm:justify-between">
+                    <div className="bg-gray-50 mt-2 p-3 rounded text-sm space-y-3">
+                      {order.paymentMethod && (
+                        <p>
+                          <strong>Payment Method:</strong> {order.paymentMethod}
+                        </p>
+                      )}
+                      {order.paymentStatus && (
+                        <p>
+                          <strong>Payment Status:</strong> {order.paymentStatus}
+                        </p>
+                      )}
+                      {order.riderCodSubmittedAt && (
+                        <p>
+                          <strong>Submitted At:</strong>{" "}
+                          {new Date(order.riderCodSubmittedAt).toLocaleString(
+                            "en-IN",
+                            {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            }
+                          )}
+                        </p>
+                      )}
+                      {order.riderCodCollectedAt && (
+                        <p>
+                          <strong>Collected At:</strong>{" "}
+                          {new Date(order.riderCodCollectedAt).toLocaleString(
+                            "en-IN",
+                            {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            }
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    <div className="bg-gray-50 mt-2 p-3 rounded text-sm  space-y-3">
+                      <div className="">
+                        <strong>Pickup Address:</strong>
+                        <p>
+                          {order.pickUpAddress.street},{" "}
+                          {order.pickUpAddress.city},{" "}
+                          {order.pickUpAddress.state} -{" "}
+                          {order.pickUpAddress.pincode}
+                        </p>
+                      </div>
+                      <div className="">
+                        <strong>Delivery Address:</strong>
+                        <p>
+                          {order.address.street}, {order.address.city},{" "}
+                          {order.address.state} - {order.address.zipcode  }
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
           ) : (
             <div className="text-center text-gray-500 p-4">
               No payment history available.

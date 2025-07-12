@@ -306,6 +306,8 @@ const Profile = () => {
                 name="vehicleNumber"
                 value={formData.vehicleNumber}
                 onChange={handleChange}
+                maxLength={15}
+                pattern="[A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{4}"
                 className="mt-1 w-full border rounded px-3 py-2"
               />
               {notValidFilled.vehicleNumber && (
