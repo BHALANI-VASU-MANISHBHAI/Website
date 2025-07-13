@@ -205,9 +205,7 @@ const Dashboard = () => {
 
       <div className="mt-6 p-4 border rounded-xl bg-white shadow-lg space-y-3">
         <h2 className="text-xl font-semibold text-blue-700">Order Details</h2>
-        <p>Rider Amount (Delivery Charge): ₹{
-          orderData.earning.amount
-        }</p>
+        <p>Rider Amount (Delivery Charge): ₹{orderData.earning.amount}</p>
         <p>
           Payment Method:{" "}
           {orderData.paymentMethod === "COD" ? "Cash on Delivery" : "Online"}
@@ -271,16 +269,16 @@ const Dashboard = () => {
               className="text-blue-600 underline"
             >
               View Delivery on Map
-            {currentLocation && orderData.address && (
-              <a
-                href={`https://www.google.com/maps/dir/${currentLocation.lat},${currentLocation.lng}/${orderData.address.latitude},${orderData.address.longitude}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline block mt-2"
-              >
-                🧭 Get Directions to Delivery
-              </a>
-            )}
+              {currentLocation && orderData.address && (
+                <a
+                  href={`https://www.google.com/maps/dir/${currentLocation.lat},${currentLocation.lng}/${orderData.address.latitude},${orderData.address.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline block mt-2"
+                >
+                  🧭 Get Directions to Delivery
+                </a>
+              )}
             </a>
             <iframe
               title="Delivery Map"

@@ -6,7 +6,7 @@ const GlobalContextProvider = ({ children }) => {
   const [token, setToken] = useState("");
 
   const currency = "₹"; // Indian Rupee
-  const delivery_fee = 100;
+  const delivery_fee = 150;
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const [search, setSearch] = useState("");

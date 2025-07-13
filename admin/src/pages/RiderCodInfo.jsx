@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import assets from "../assets/assets.js";
 import { RiderContext } from "../contexts/RiderContext";
-
+import RiderCodInfoCard from "../components/RiderCodInfoCard.jsx";
 
 const RiderCodInfo = () => {
   const { riderOrders } = useContext(RiderContext);
@@ -18,16 +18,18 @@ const RiderCodInfo = () => {
   const [codRangeFilter, setCodRangeFilter] = useState("all");
   const [codDoneFilter, setCodDoneFilter] = useState("all");
   const [dateRange, setDateRange] = useState("7");
-  const [customStartDate, setCustomStartDate] = useState(new Date().toISOString().split("T")[0]); // Default to today
-  const [customEndDate, setCustomEndDate] = useState(new Date().toISOString().split("T")[0]); // Default to today
-  
-
+  const [customStartDate, setCustomStartDate] = useState(
+    new Date().toISOString().split("T")[0]
+  ); // Default to today
+  const [customEndDate, setCustomEndDate] = useState(
+    new Date().toISOString().split("T")[0]
+  ); // Default to today
 
   useEffect(() => {
     // Initialize custom date range to last 7 days
     setRiderOrders(riderOrders);
     console.log("Rider Orders:", riderOrders);
-  },[riderOrders]);
+  }, [riderOrders]);
   const filterOrdersByDateRange = (orders) => {
     if (dateRange === "all") return orders;
 
@@ -86,7 +88,7 @@ const RiderCodInfo = () => {
       map[rider._id].orders.push(order);
       map[rider._id].collected += collected;
     }
-    
+
     const groupedArray = Object.values(map);
     console.log("Grouped Riders:", groupedArray);
     const totalCOD = groupedArray.reduce((sum, r) => sum + r.collected, 0);
@@ -144,7 +146,7 @@ const RiderCodInfo = () => {
       clearTimeout(handler); // cleanup
     };
   }, [searchTerm]);
-  
+
   return (
     <div className="p-4 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-6 text-center">
@@ -339,9 +341,7 @@ const RiderCodInfo = () => {
               <div className="mt-6">
                 <p className="font-semibold mb-2 text-base">Orders Assigned:</p>
                 <div className="hidden sm:grid grid-cols-4 gap-3 sm:gap-20 text-sm font-semibold border-b pb-2">
-                  <div>
-                    Order ID
-                  </div>
+                  <div>Order ID</div>
                   <div>Status</div>
                   <div>Amount</div>
                   <div className="hidden sm:block">Done</div>
@@ -353,53 +353,7 @@ const RiderCodInfo = () => {
                       new Date(b.acceptedTime) - new Date(a.acceptedTime)
                   )
                   .map((order) => (
-                    <div
-                      key={order._id}
-                      className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-20 text-sm text-gray-700 py-2 border-b"
-                    >
-                      <div>
-                        <span className="font-medium sm:hidden">Order ID:</span>{" "}
-                        {order._id}
-                        <br />
-                        <span className="text-xs text-gray-400">
-                          {new Date(order.acceptedTime).toLocaleString(
-                            "en-IN",
-                            {
-                              day: "numeric",
-                              month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            }
-                          )}
-                        </span>
-                      </div>
-                      <div>{order.status || "N/A"}</div>
-                      <div>₹{order.amount?.toFixed(2) || "N/A"}</div>
-                      {order.isCodSubmitted && (
-                        <div className="flex  flex-row  items-center sm:items-start sm:flex-col ">
-                          <img
-                            src={assets.mark_as_done}
-                            alt="Done"
-                            className="w-6 h-6"
-                          />
-                          {order.riderCodSubmittedAt && (
-                            <span className="text-xs text-gray-400">
-                              {new Date(order.riderCodSubmittedAt).toLocaleString(
-                                "en-IN",
-                                {
-                                  day: "numeric",
-                                  month: "short",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </span>
-                          )}  
-
-
-                        </div>
-                      )}
-                    </div>
+                    <RiderCodInfoCard key={order._id} order={order} />
                   ))}
               </div>
             </div>

@@ -61,7 +61,7 @@ const addProduct = async (req, res) => {
     // ✅ Then emit to socket with the saved product (which now has _id)
     const io = req.app.get("io");
     io.emit("productAdded", { product, message: "New product added" });
-    
+
     res
       .status(200)
       .json({ success: true, message: "Product added successfully", product });
@@ -76,7 +76,11 @@ const addProduct = async (req, res) => {
 const listProducts = async (req, res) => {
   try {
     const products = await productModel.find({}).sort({ updatedAt: -1 });
-   
+    productModel.updateMany(
+      {},
+      { $set: { deliveryCharge: 0 } },
+      { multi: true }
+    );
     res.json({ success: true, products });
   } catch (err) {
     console.log(err);
@@ -168,7 +172,6 @@ const updateProduct = async (req, res) => {
       imageUrls = uploadedUrls;
     }
 
- 
     const productData = {
       name,
       price,
@@ -201,13 +204,11 @@ const updateProduct = async (req, res) => {
       message: "Product has been updated",
     });
     req.app.get("io").to("adminRoom").emit("updateStats");
-    res
-      .status(200)
-      .json({
-        success: true,
-        message: "Product updated successfully",
-        product: updatedProduct,
-      });
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      product: updatedProduct,
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ success: false, message: err.message });
@@ -281,7 +282,10 @@ const MostSellerToday = async (req, res) => {
 
 const getBestSellers = async (req, res) => {
   try {
-    const bestSellers = await productModel.find({}).sort({ totalSales: -1 }).limit(10);
+    const bestSellers = await productModel
+      .find({})
+      .sort({ totalSales: -1 })
+      .limit(10);
     console.log("Best Sellers:", bestSellers);
     res.json({
       success: true,
@@ -289,13 +293,19 @@ const getBestSellers = async (req, res) => {
     });
   } catch (error) {
     console.error("Best Seller fetch error:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch best sellers" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch best sellers" });
   }
 };
 
 export {
-  addProduct, getBestSellers, getLowStockProduct, listProducts, MostSellerToday, removeProduct,
+  addProduct,
+  getBestSellers,
+  getLowStockProduct,
+  listProducts,
+  MostSellerToday,
+  removeProduct,
   singleProduct,
-  updateProduct
+  updateProduct,
 };
-

@@ -8,7 +8,6 @@ import GlobalContextProvider from './contexts/GlobalContext.jsx';
 import UserContextProvider from './contexts/UserContext.jsx'; // Import UserContextProvider
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
     <GlobalContextProvider>    {/* 🔗 Wrap GlobalContext first */}
       <UserContextProvider>     {/* 🔗 Wrap UserContext inside GlobalContext */}
         <BrowserRouter>
@@ -16,5 +15,5 @@ createRoot(document.getElementById('root')).render(
         </BrowserRouter>
       </UserContextProvider>
     </GlobalContextProvider>
-  </StrictMode>
+
 );

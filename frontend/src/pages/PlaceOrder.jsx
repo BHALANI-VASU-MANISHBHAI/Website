@@ -10,6 +10,8 @@ import { GlobalContext } from "../context/GlobalContext.jsx";
 import { ProductContext } from "../context/ProductContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
 import CartTotal from "./../components/CartTotal";
+import { set } from "lodash";
+import { useState } from "react";
 
 const PlaceOrder = () => {
   const { navigate, backendUrl, token, delivery_fee } =
@@ -30,6 +32,8 @@ const PlaceOrder = () => {
   const [PlaceOrder, setPlaceOrder] = React.useState(false);
   const [lat, setLat] = React.useState("");
   const [long, setLong] = React.useState("");
+  const [isValidData, setIsValidData] = React.useState(false);
+  const [ incorrectData, setIncorrectData ] = useState([]); // State to hold incorrect data
 
   const [formData, setFormData] = React.useState({
     firstName: "",
@@ -45,7 +49,7 @@ const PlaceOrder = () => {
     latitude: "",
     longitude: "",
   });
- useEffect(() => {
+  useEffect(() => {
     const savedForm = localStorage.getItem("placeOrderForm");
     const savedLat = localStorage.getItem("placeOrderLat");
     const savedLong = localStorage.getItem("placeOrderLong");
@@ -86,14 +90,15 @@ const PlaceOrder = () => {
   };
   const fetchAddressFromLatLng = async () => {
     if (lat && long) {
+      setIsValidData(false);
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${long}&format=json`
         );
+        console.log("Reverse geocoding response:", res);
         const data = await res.json();
         const rev = data.address;
         const mismatchList = [];
-
         const formCountry = formData.country?.trim().toLowerCase();
         const formState = formData.state?.trim().toLowerCase();
         const formCity = formData.city?.trim().toLowerCase();
@@ -113,14 +118,16 @@ const PlaceOrder = () => {
         if (formZip && revZip && formZip !== revZip) {
           mismatchList.push("Zipcode");
         }
+        
+        
+
 
         if (mismatchList.length > 0) {
-          toast.warn(
-            `Your address may not match location: ${mismatchList.join(", ")}`
-          );
+          setIncorrectData(mismatchList);
           return false;
         } else {
-          toast.success("Location matches address ✅");
+          setIncorrectData([]);
+          setIsValidData(true);
           return true;
         }
       } catch (err) {
@@ -131,7 +138,7 @@ const PlaceOrder = () => {
     }
     return true;
   };
-  
+
   useEffect(() => {
     fetchAddressFromLatLng();
   }, [lat, long, formData]);
@@ -400,9 +407,26 @@ const PlaceOrder = () => {
       toast.error("Something went wrong during order placement.");
     } finally {
       setPlaceOrder(false);
+      localStorage.removeItem("placeOrderForm");
+      localStorage.removeItem("placeOrderLat");
+      localStorage.removeItem("placeOrderLong");
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        street: "",
+        city: "",
+        state: "",
+        zipcode: "",
+        country: "",
+        phone: "",
+        mapLink: "",
+        latitude: "",
+        longitude: "",
+      });
     }
   };
-  
+
   return (
     <form
       onSubmit={onSubmitHandler}
@@ -416,115 +440,116 @@ const PlaceOrder = () => {
           ← Back
         </button>
       </div>
-      {/* Left Section */}
-      <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
-        <div className="text-xl sm:text-2xl my-3">
-          <Title text1={"DELIVERY"} text2={"INFORMATION"} />
-        </div>
+      <fieldset className="flex-1" disabled={PlaceOrder}>
+        {/* Left Section */}
+        <div className="flex flex-col gap-4 w-full sm:max-w-[480px]">
+          <div className="text-xl sm:text-2xl my-3">
+            <Title text1={"DELIVERY"} text2={"INFORMATION"} />
+          </div>
 
-        {/* Name Fields */}
-        <div className="flex gap-3">
+          {/* Name Fields */}
+          <div className="flex gap-3">
+            <input
+              required
+              name="firstName"
+              value={formData.firstName}
+              onChange={onChangeHandler}
+              placeholder="First name"
+              className="border py-1.5 px-3.5 rounded-md w-full"
+            />
+            <input
+              required
+              name="lastName"
+              value={formData.lastName}
+              onChange={onChangeHandler}
+              placeholder="Last name"
+              className="border py-1.5 px-3.5 rounded-md w-full"
+            />
+          </div>
+
           <input
             required
-            name="firstName"
-            value={formData.firstName}
+            name="email"
+            value={formData.email}
             onChange={onChangeHandler}
-            placeholder="First name"
+            placeholder="Email Address"
             className="border py-1.5 px-3.5 rounded-md w-full"
           />
           <input
             required
-            name="lastName"
-            value={formData.lastName}
+            name="street"
+            value={formData.street}
             onChange={onChangeHandler}
-            placeholder="Last name"
+            placeholder="Street"
             className="border py-1.5 px-3.5 rounded-md w-full"
           />
-        </div>
 
-        <input
-          required
-          name="email"
-          value={formData.email}
-          onChange={onChangeHandler}
-          placeholder="Email Address"
-          className="border py-1.5 px-3.5 rounded-md w-full"
-        />
-        <input
-          required
-          name="street"
-          value={formData.street}
-          onChange={onChangeHandler}
-          placeholder="Street"
-          className="border py-1.5 px-3.5 rounded-md w-full"
-        />
-
-        <div className="flex gap-3">
-          <select
-            required
-            name="city"
-            value={formData.city}
-            onChange={onChangeHandler}
-            className="border py-1.5 px-3.5 rounded-md w-full"
-          >
-            <option value="" disabled>
-              Select City
-            </option>
-            {Indian_Cities_In_States_JSON[formData.state]?.map(
-              (city, index) => (
-                <option key={`${city}-${index}`} value={city}>
-                  {city}
-                </option>
-              )
-            )}
-          </select>
-          <select
-            name="state"
-            value={formData.state}
-            onChange={onChangeHandler}
-            className="border py-1.5 px-3.5 rounded-md w-full"
-          >
-            <option value="" disabled>
-              Select State
-            </option>
-            {Object.keys(Indian_Cities_In_States_JSON).map((state) => (
-              <option key={state} value={state}>
-                {state}
+          <div className="flex gap-3">
+            <select
+              required
+              name="city"
+              value={formData.city}
+              onChange={onChangeHandler}
+              className="border py-1.5 px-3.5 rounded-md w-full"
+            >
+              <option value="" disabled>
+                Select City
               </option>
-            ))}
-          </select>
-        </div>
+              {Indian_Cities_In_States_JSON[formData.state]?.map(
+                (city, index) => (
+                  <option key={`${city}-${index}`} value={city}>
+                    {city}
+                  </option>
+                )
+              )}
+            </select>
+            <select
+              name="state"
+              value={formData.state}
+              onChange={onChangeHandler}
+              className="border py-1.5 px-3.5 rounded-md w-full"
+            >
+              <option value="" disabled>
+                Select State
+              </option>
+              {Object.keys(Indian_Cities_In_States_JSON).map((state) => (
+                <option key={state} value={state}>
+                  {state}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="flex gap-3">
+          <div className="flex gap-3">
+            <input
+              required
+              name="zipcode"
+              value={formData.zipcode}
+              onChange={onChangeHandler}
+              placeholder="ZipCode"
+              type="number"
+              className="border py-1.5 px-3.5 rounded-md w-full"
+            />
+            <input
+              required
+              name="country"
+              value={formData.country}
+              onChange={onChangeHandler}
+              placeholder="Country"
+              className="border py-1.5 px-3.5 rounded-md w-full"
+            />
+          </div>
+
           <input
             required
-            name="zipcode"
-            value={formData.zipcode}
+            name="phone"
+            value={formData.phone}
             onChange={onChangeHandler}
-            placeholder="ZipCode"
+            placeholder="Phone"
             type="number"
             className="border py-1.5 px-3.5 rounded-md w-full"
           />
-          <input
-            required
-            name="country"
-            value={formData.country}
-            onChange={onChangeHandler}
-            placeholder="Country"
-            className="border py-1.5 px-3.5 rounded-md w-full"
-          />
-        </div>
-
-        <input
-          required
-          name="phone"
-          value={formData.phone}
-          onChange={onChangeHandler}
-          placeholder="Phone"
-          type="number"
-          className="border py-1.5 px-3.5 rounded-md w-full"
-        />
-        {/* {!otpSent && (
+          {/* {!otpSent && (
           <button
             type="button"
             onClick={sendOtp}
@@ -535,76 +560,93 @@ const PlaceOrder = () => {
           </button>
         )} */}
 
-        {otpSent && !otpVerified && (
-          <>
-            <input
-              type="text"
-              value={otpInput}
-              onChange={(e) => setOtpInput(e.target.value)}
-              placeholder="Enter OTP"
-              className="border py-1.5 px-3.5 rounded-md w-full mt-2"
-            />
-            <button
-              type="button"
-              onClick={verifyOtp}
-              disabled={otpLoading}
-              className="mt-2 bg-green-500 text-white px-4 py-2 rounded"
-            >
-              {otpLoading ? "Verifying..." : "Verify OTP"}
-            </button>
-          </>
-        )}
-        <input
-          type="text"
-          name="mapLink"
-          // value={formData.mapLink}
-          onChange={(e) => {
-            setFormData((prevData) => ({
-              ...prevData,
-              mapLink: e.target.value,
-            }));
-            // take lat and log that always after first @
-            const mapLink = e.target.value;
-            if (mapLink) {
-              const latLong = mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-              if (latLong) {
-                const lat = latLong[1];
-                const long = latLong[2];
-                setFormData((prevData) => ({
-                  ...prevData,
-                  latitude: lat,
-                  longitude: long,
-                }));
-                setLat(lat);
-                setLong(long);
-                console.log(`Latitude: ${lat}, Longitude: ${long}`);
+          {otpSent && !otpVerified && (
+            <>
+              <input
+                type="text"
+                value={otpInput}
+                onChange={(e) => setOtpInput(e.target.value)}
+                placeholder="Enter OTP"
+                className="border py-1.5 px-3.5 rounded-md w-full mt-2"
+              />
+              <button
+                type="button"
+                onClick={verifyOtp}
+                disabled={otpLoading}
+                className="mt-2 bg-green-500 text-white px-4 py-2 rounded"
+              >
+                {otpLoading ? "Verifying..." : "Verify OTP"}
+              </button>
+            </>
+          )}
+          <input
+            type="text"
+            name="mapLink"
+            // value={formData.mapLink}
+            onChange={(e) => {
+              setFormData((prevData) => ({
+                ...prevData,
+                mapLink: e.target.value,
+              }));
+              // take lat and log that always after first @
+              const mapLink = e.target.value;
+              if (mapLink) {
+                const latLong = mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+                if (latLong) {
+                  const lat = latLong[1];
+                  const long = latLong[2];
+                  setFormData((prevData) => ({
+                    ...prevData,
+                    latitude: lat,
+                    longitude: long,
+                  }));
+                  setLat(lat);
+                  setLong(long);
+                  console.log(`Latitude: ${lat}, Longitude: ${long}`);
+                } else {
+                  console.error("Invalid map link format");
+                }
               } else {
-                console.error("Invalid map link format");
+                console.log("Map link is empty");
               }
-            } else {
-              console.log("Map link is empty");
-            }
-          }}
-          placeholder="Paste Google Map Link (after Placing Pin)"
-          className="border py-1.5 px-3.5 rounded-md w-full mt-2"
-          required
-        />
-        <iframe
-          title="Google Map"
-          width="100%"
-          height="300"
-          frameBorder="0"
-          style={{ border: 0 }}
-          allowFullScreen
-          src={`https://maps.google.com/maps?q=${lat},${long}&z=15&output=embed`}
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        />
+            }}
+            placeholder="Paste Google Map Link (after Placing Pin)"
+            className="border py-1.5 px-3.5 rounded-md w-full mt-2"
+            required
+          />
 
-        {otpVerified && (
-          <p className="text-green-600 mt-2">Phone number verified ✅</p>
-        )}
-      </div>
+          {incorrectData &&
+            Object.keys(incorrectData).length > 0 && (
+              <div className="text-red-500 text-sm mt-2">
+                <p>
+                  Please check the following fields for accuracy:
+                  {incorrectData.map((field, index) => (
+                    <span key={index}>
+                      {field}
+                      {index < incorrectData.length - 1 ? ", " : ""}
+                    </span>
+                  ))}
+                </p>
+              </div>
+            )
+          }
+          <iframe
+            title="Google Map"
+            width="100%"
+            height="300"
+            frameBorder="0"
+            style={{ border: 0 }}
+            allowFullScreen
+            src={`https://maps.google.com/maps?q=${lat},${long}&z=15&output=embed`}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+
+          {otpVerified && (
+            <p className="text-green-600 mt-2">Phone number verified ✅</p>
+          )}
+        </div>
+      </fieldset>
 
       {/* Right Section */}
       <div className="mt-8">
@@ -646,7 +688,10 @@ const PlaceOrder = () => {
           <div className="w-full flex justify-end mt-8">
             <button
               type="submit"
-              className="bg-black text-white px-16 py-3 cursor-pointer text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className={`bg-gray-700 text-white px-6 py-2 cursor-pointer text-sm font-semibold flex items-center gap-2 ${
+                (PlaceOrder||incorrectData.length > 0)
+                  ? "cursor-not-allowed opacity-50" : ""
+              }`}
               disabled={PlaceOrder}
             >
               {PlaceOrder ? (
