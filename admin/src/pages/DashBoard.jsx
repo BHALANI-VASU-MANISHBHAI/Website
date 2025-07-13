@@ -215,7 +215,10 @@ const Dashboard = ({ token }) => {
 
   // Data processing
   const calculateStatsFromOrders = useCallback(() => {
-    if (!orders || orders.length === 0) return;
+    if (!orders || orders.length === 0) {
+      setDashboardData((prev) => ({ ...prev, loading: false }));
+      return;
+    }
 
     const start = new Date(filters.startDate);
     const end = new Date(filters.endDate);
@@ -272,11 +275,16 @@ const Dashboard = ({ token }) => {
 
   // Combined data fetching
   const fetchAllDashboardData = useCallback(async () => {
-    setDashboardData((prev) => ({ ...prev, loading: true }));
+    try {
+      setDashboardData((prev) => ({ ...prev, loading: true }));
 
-    await Promise.all([GetMostSellerByRanges(), TotalCustomers()]);
+      await Promise.all([GetMostSellerByRanges(), TotalCustomers()]);
 
-    calculateStatsFromOrders();
+      calculateStatsFromOrders();
+    } catch (err) {
+      toast.error(err.message);
+      setDashboardData((prev) => ({ ...prev, loading: false }));
+    }
   }, [GetMostSellerByRanges, TotalCustomers, calculateStatsFromOrders]);
 
   // Date range helpers
@@ -302,6 +310,8 @@ const Dashboard = ({ token }) => {
   useEffect(() => {
     if (orders && orders.length > 0) {
       fetchAllDashboardData();
+    } else {
+      setDashboardData((prev) => ({ ...prev, loading: false }));
     }
   }, [filters.startDate, filters.endDate, fetchAllDashboardData, orders]);
 
