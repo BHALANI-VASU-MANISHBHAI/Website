@@ -332,7 +332,7 @@ const Dashboard = ({ token }) => {
 
   if (dashboardData.loading)
     return <p className="text-center mt-10">Loading dashboard...</p>;
-
+  
   return (
     <div className="p-5">
       {/* Date Picker */}
