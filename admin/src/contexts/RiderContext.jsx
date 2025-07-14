@@ -91,7 +91,7 @@ const RiderContextProvider = ({ children }) => {
     // message: "Order is ready to assign a rider",
     //    });
 
-    socket.on("orderPacked", async (data) => {
+    socket.on("order:packed", async (data) => {
       console.log("Order packed event received:", data);
       // You can handle the order packed event here, e.g., show a notification
       toast.info(`Order ${data.orderId} is ready to assign a rider`);
@@ -99,7 +99,7 @@ const RiderContextProvider = ({ children }) => {
       await AssignOrderToRider(data.orderId);
     });
 
-    socket.on("acceptedOrder", async (data) => {
+    socket.on("order:accepted", async (data) => {
       console.log("Order accepted event received:", data);
 
       // Optimistically update order in context
@@ -114,15 +114,15 @@ const RiderContextProvider = ({ children }) => {
 
       toast.success(`Order ${data.order._id} accepted by rider`);
     });
-    
 
-    socket.on("orderStatusUpdated", async (data) => {
+    socket.on("order:status:update", async (data) => {
       console.log("Order status updated event received:", data);
-      if (data.status !== "Packing") {
-      // Handle the order status update event here, e.g., update the riderOrders state
       toast.info(`Order ${data.orderId} status updated to ${data.status}`);
-      await getAllRidersOrders(); // Refresh the orders
-    }
+      if (data.status !== "Packing") {
+        // Handle the order status update event here, e.g., update the riderOrders state
+        toast.info(`Order ${data.orderId} status updated to ${data.status}`);
+        await getAllRidersOrders(); // Refresh the orders
+      }
     });
     socket.on("codSubmitted", async (data) => {
       console.log("COD submitted event received:", data);
@@ -130,16 +130,20 @@ const RiderContextProvider = ({ children }) => {
       await getAllRidersOrders(); // Refresh the orders
       toast.success(`COD payment verified for order ${data.orderId}`);
     });
-    socket.on("riderProfileUpdated", async(data) => {
-     await getAllRidersOrders(); // Refresh the orders
+    socket.on("rider:profile:updated", async (data) => {
+      toast.success(`Rider profile updated: ${data.riderName}`);
+      // Optionally, you can fetch
+      await getAllRidersOrders(); // Refresh the orders
     });
 
     return () => {
-      socket.off("orderPacked"); // Clean up the event listener
-      socket.off("acceptedOrder"); // Clean up the event listener
+      socket.off("order:packed"); // Clean up the event listener
+      socket.off("order:status:update"); // Clean up the event listener
       socket.off("codSubmitted"); // Clean up the event listener
-      socket.off("riderProfileUpdated"); // Clean up the event listener
-      socket.off("orderStatusUpdated"); // Clean up the event listener
+      socket.off("rider:profile:updated"); // Clean up the event listener
+      // socket.off("orderStatusUpdated"); // Clean up the event listener
+      socket.off("order:status:update"); // Clean up the event listener
+      socket.off("order:accepted"); // Clean up the event listener
     };
   }, [token]);
 

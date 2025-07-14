@@ -4,13 +4,11 @@ import { assetss } from "../assets/frontend_assets/assetss";
 import { UserContext } from "../context/UserContext.jsx";
 
 const ReviewCard = ({ review, EditReviewFun, deleteReviewFun }) => {
-  console.log("ReviewCard Rendered", review);
   const { userData } = useContext(UserContext);
   const [Edit, setEdit] = React.useState(false);
   const [editedComment, setEditedComment] = React.useState("");
   const [rating, setRating] = React.useState(review.rating || 0);
   const isOwner = userData?._id === review.userId?._id;
-  console.log("isowner ", isOwner);
 
   React.useEffect(() => {
     if (Edit) {
@@ -190,7 +188,7 @@ const ReviewCard = ({ review, EditReviewFun, deleteReviewFun }) => {
                 <button
                   className="px-6 py-2  bg-blue-400 rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-105"
                   onClick={() => {
-                    console.log("Saved comment:", editedComment);
+                  
                     setEdit(false);
                     EditReviewFun(review._id, rating, editedComment);
                   }}

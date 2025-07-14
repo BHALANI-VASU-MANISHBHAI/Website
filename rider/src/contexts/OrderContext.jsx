@@ -78,9 +78,9 @@ const OrderContextProvider = ({ children }) => {
     }
   };
   useEffect(() => {
-    socket.on("orderDelivered", (data) => {
+    socket.on("order:delivered", (data) => {
       toast.success("Order accepted successfully");
-  
+
       orderHistory.push(data.order);
       // setOrderHistory([...orderHistory]);
       toast.success("COD collected successfully");
@@ -89,14 +89,14 @@ const OrderContextProvider = ({ children }) => {
       setOrderHistory((prev) => [...prev, data.order]);
       setCurrentOrder(null);
     });
-    socket.on("orderAccepted", (data) => {
+    socket.on("order:rider:accept", (data) => {
       toast.success("Order accepted successfully");
       setCurrentOrder(data.order);
     });
 
     return () => {
-      socket.off("orderDelivered");
-      
+      socket.off("order:delivered");
+      socket.off("order:rider:accept");
     };
   }, [token]);
 

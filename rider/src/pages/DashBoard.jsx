@@ -143,9 +143,9 @@ const Dashboard = () => {
       calculateRiderAmount(distance, fullOrder.earning.amount);
     };
 
-    socket.on("newOrder", handleNewOrder);
+    socket.on("order:rider:notification", handleNewOrder);
     return () => {
-      socket.off("newOrder", handleNewOrder);
+      socket.off("order:rider:notification", handleNewOrder);
       clearInterval(countdownRef.current);
     };
   }, [currentLocation]);

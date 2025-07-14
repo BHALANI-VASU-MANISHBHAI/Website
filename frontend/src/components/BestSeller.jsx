@@ -37,12 +37,12 @@ const getBestSellerProducts = async () => {
     }
 };
 useEffect(() => {
-  socket.on("bestsellerUpdated", () => {
+  socket.on("product:bestseller:updated", () => {
     toast.success("Best seller products updated!");
     getBestSellerProducts(); // refetch via API
   });
 
-  return () => socket.off("bestsellerUpdated");
+  return () => socket.off("product:bestseller:updated");
 }, []);
 
 

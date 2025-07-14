@@ -15,7 +15,6 @@ import { ProductContext } from "../context/ProductContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
 import socket from "../services/sockets.jsx";
 
-
 const Product = () => {
   //  products, currency, addToCart, backendUrl, token, userData
   const { id } = useParams();
@@ -35,14 +34,10 @@ const Product = () => {
   const [activeTab, setActiveTab] = useState("description");
   const [OriginalPrice, setOriginalPrice] = useState(0);
 
-  console.log("productData", productData);
-
   const owner = userData?._id === productData?.userId?._id;
-  console.log("owner", owner);
   // Fetch product details from local products state
 
   const calculateAvgRating = (reviews) => {
-    console.log("reviews", reviews);
     if (reviews.length === 0) return 0;
     const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
 
@@ -152,7 +147,6 @@ const Product = () => {
         setAddRating(0);
         setaddComment("");
         fetchReviews();
-  
       } else {
         toast.error(response.data.message || "Failed to add review.");
       }
@@ -160,7 +154,7 @@ const Product = () => {
       console.log("Error adding review:", error);
       toast.error("Failed to add review. Please try again later.");
     }
-  }; 
+  };
 
   const deleteReview = async (reviewId) => {
     try {
@@ -193,7 +187,8 @@ const Product = () => {
     // Join product room on mount
     socket.emit("joinProductRoom", { productId: id });
 
-    socket.on("reviewAdded", (data) => {
+    socket.on("review:add", (data) => {
+      console.log("data", data);
       if (data.productId === id) {
         toast.success("New review added!");
         setShowAddReview(false);
@@ -201,7 +196,7 @@ const Product = () => {
       }
     });
 
-    socket.on("reviewUpdated", (data) => {
+    socket.on("review:update", (data) => {
       console.log("data", data);
       console.log("id", id);
       if (data.productId === id) {
@@ -211,7 +206,7 @@ const Product = () => {
       }
     });
 
-    socket.on("reviewDeleted", (data) => {
+    socket.on("review:delete", (data) => {
       if (data.productId === id) {
         toast.success("Review deleted successfully!");
         fetchReviews();
@@ -221,9 +216,9 @@ const Product = () => {
     // Leave product room on unmount
     return () => {
       socket.emit("leaveProductRoom", { productId: id });
-      socket.off("reviewAdded");
-      socket.off("reviewUpdated");
-      socket.off("reviewDeleted");
+      socket.off("review:add");
+      socket.off("review:update");
+      socket.off("review:delete");
     };
   }, [id]);
 
@@ -286,7 +281,7 @@ const Product = () => {
             {productData.description}
           </p>
 
-          {/* <div className="flex items-center gap-2 mt-5 flex-col ">
+          <div className="flex items-center gap-2 mt-5 flex-col ">
             <p className="text-sm text-gray-500 self-start">Available Stock:</p>
             <div className="flex gap-2 self-start flex-wrap">
               {productData.sizes.map(
@@ -301,7 +296,7 @@ const Product = () => {
                   )
               )}
             </div>
-          </div> */}
+          </div>
           <div className="flex flex-col gap-4 my-8">
             <p>Select Size</p>
             <div className="flex gap-2 flex-wrap">
@@ -366,7 +361,7 @@ const Product = () => {
                 : "text-gray-600 hover:text-black hover:bg-gray-100"
             }`}
           >
-            Reviews ({Reviews.length  || 0})
+            Reviews ({Reviews.length || 0})
           </button>
         </div>
 

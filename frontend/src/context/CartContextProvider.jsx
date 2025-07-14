@@ -85,7 +85,7 @@ const CartContextProvider = ({ children }) => {
     let cartData = cloneDeep(cartItems);
     cartData[itemId][size] = quantity;
     setCartItems(cartData);
-
+    
     if (token) {
       try {
         await axios.post(

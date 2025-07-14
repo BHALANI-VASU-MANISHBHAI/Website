@@ -4,16 +4,20 @@ import razorpayInstance from "../config/razorPay.js";
 import orderModel from "../models/orderModel.js";
 import Product from "../models/productModel.js";
 import UserModel from "../models/userModel.js";
+import orderHandler from "../socketHandlers/orderHandler.js";
+import stockHandler from "../socketHandlers/stockHandler.js";
+import productHandler from "../socketHandlers/productHandler.js";
 
 const placeOrder = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
+    const io = req.app.get("io"); // ✅ Get io instance
     const userId = req.userId;
-    console.log("Req.body:", req.body);
+
     const { items, amount, address } = req.body;
-    console.log("Order Request:", req.body);
+
     if (!userId || !items || !amount || !address) {
       await session.abortTransaction();
       return res.json({ success: false, message: "All fields are required" });
@@ -101,16 +105,50 @@ const placeOrder = async (req, res) => {
     session.endSession();
 
     // ✅ Emit Order Placed Event to Admin Room
-    req.app
-      .get("io")
-      .to("adminRoom")
-      .emit("orderPlaced", { orderId: newOrder[0]._id, userId });
-    req.app.get("io").emit("stockUpdated", {
-      productId: items[0]._id,
-      size: items[0].size,
-      quantitySold: items[0].quantity,
-    });
-    req.app.get("io").emit("bestsellerUpdated");
+    // req.app
+    //   .get("io")
+    //   .to("adminRoom")
+    //   .emit("orderPlaced", { orderId: newOrder[0]._id, userId });
+    console.log("Order placed successfully:", newOrder[0]._id);
+    orderHandler(
+      io,
+      "adminRoom",
+      {
+        data: { orderId: newOrder[0]._id, userId },
+      },
+      "order:placed"
+    );
+
+    // req.app.get("io").emit("stockUpdated", {
+    //   productId: items[0]._id,
+    //   size: items[0].size,
+    //   quantitySold: items[0].quantity,
+    // });
+
+    stockHandler(
+      io,
+      null,
+      {
+        data: {
+          productId: items[0]._id,
+          size: items[0].size,
+          quantitySold: items[0].quantity,
+        },
+      },
+      "stock:updated"
+    );
+    productHandler(
+      io,
+      null,
+      {
+        data: {
+          productId: items[0]._id,
+          size: items[0].size,
+          quantitySold: items[0].quantity,
+        },
+      },
+      "product:bestseller:updated"
+    );
     // ✅ Emit Order Placed Event to User Room
     return res.json({ success: true, message: "Order placed successfully" });
   } catch (err) {
@@ -251,15 +289,28 @@ const verifyOrderRazorpay = async (req, res) => {
     });
 
     await newOrder.save();
+    const io = req.app.get("io"); // ✅ Get io instance
     orderData.items.forEach((item) => {
-      req.app
-        .get("io")
-        .to("stockRoom")
-        .emit("stockUpdated", {
-          productId: item._id,
-          size: item.size,
-          quantitySold: item.quantity,
-        });
+      // req.app
+      //   .get("io")
+      //   .to("stockRoom")
+      //   .emit("stockUpdated", {
+      //     productId: item._id,
+      //     size: item.size,
+      //     quantitySold: item.quantity,
+      //   });
+      stockHandler(
+        io,
+        "stockRoom",
+        {
+          data: {
+            productId: item._id,
+            size: item.size,
+            quantitySold: item.quantity,
+          },
+        },
+        "stock:updated"
+      );
     });
 
     res
@@ -308,9 +359,8 @@ const userOrders = async (req, res) => {
 
 const updatedStatus = async (req, res) => {
   try {
-
-      const { orderId, status } = req.body;
-
+    const { orderId, status } = req.body;
+    const io = req.app.get("io"); // ✅ Get io instance
     // Update status and get updated order in one step
     const updatedOrder = await orderModel.findByIdAndUpdate(
       orderId,
@@ -326,27 +376,52 @@ const updatedStatus = async (req, res) => {
     console.log("Updated order:", updatedOrder.status);
     if (updatedOrder.status === "Packing") {
       // Notify admin when order is packed
-      req.app.get("io").to("adminRoom").emit("orderPacked", {
-        orderId: updatedOrder._id,
-        status: "Packing",
-        message: "Order is ready to assign a rider",
-      });
+      // req.app.get("io").to("adminRoom").emit("orderPacked", {
+      //   orderId: updatedOrder._id,
+      //   status: "Packing",
+      //   message: "Order is ready to assign a rider",
+      // });
+
+      orderHandler(
+        io,
+        "adminRoom",
+        {
+          data: {
+            orderId: updatedOrder._id,
+            status: "Packing",
+            message: "Order is ready to assign a rider",
+          },
+        },
+        "order:packed"
+      );
     }
     // if it is deliverd then update the quantity
     if (updatedOrder.status == "Delivered") {
-      req.app
-        .get("io")
-        .to("riderRoom")
-        .emit("orderPacked", { orderId: updatedOrder._id });
+      // req.app
+      //   .get("io")
+      //   .to("riderRoom")
+      //   .emit("orderPacked", { orderId: updatedOrder._id });
+      orderHandler(
+        io,
+        "riderRoom",
+        {
+          data: { orderId: updatedOrder._id },
+        },
+        "order:packed"
+      );
     }
 
     console.log("Updated order status to:", status);
     console.log("Order ID (user ID for socket):", updatedOrder.userId);
 
-    // Notify specific user via socket
-    req.app
-      .get("io")
-      .emit("orderStatusUpdated", { orderId, status });
+    orderHandler(
+      req.app.get("io"),
+      null,
+      {
+        data: { orderId: updatedOrder._id, status },
+      },
+      "order:status:update"
+    );
 
     res.json({ success: true, message: "Order status updated successfully" });
   } catch (err) {
@@ -392,7 +467,7 @@ const cancelOrderItem = async (req, res) => {
       },
       { new: true }
     );
-    
+
     if (!updatedOrder) {
       return res
         .status(404)
@@ -415,27 +490,58 @@ const cancelOrderItem = async (req, res) => {
       updatedOrder.status = "Cancelled";
       await updatedOrder.save();
     }
+    const io = req.app.get("io"); // ✅ Get io instance
 
     // ✅ Emit Order Cancel Event
-    req.app
-      .get("io")
-      .to("adminRoom")
-      .emit("orderCancelled", {
-        orderId: updatedOrder._id,
-        userId: req.userId,
-      });
-    req.app
-      .get("io")
-      .to(req.userId.toString())
-      .emit("orderCancelled", { orderId, itemId });
-    req.app
-      .get("io")
-      .to("stockRoom")
-      .emit("stockUpdated", {
-        productId: itemId,
-        size,
-        quantitySold: -itemToDelete.quantity,
-      });
+    // req.app
+    //   .get("io")
+    //   .to("adminRoom")
+    //   .emit("orderCancelled", {
+    //     orderId: updatedOrder._id,
+    //     userId: req.userId,
+    //   });
+
+    orderHandler(
+      io,
+      "adminRoom",
+      {
+        data: { orderId: updatedOrder._id, userId: req.userId },
+      },
+      "order:cancelled"
+    );
+    // req.app
+    //   .get("io")
+    //   .to(req.userId.toString())
+    //   .emit("orderCancelled", { orderId, itemId });
+    orderHandler(
+      io,
+      req.userId.toString(),
+      {
+        data: { orderId, itemId },
+      },
+      "order:cancelled"
+    );
+    // req.app
+    //   .get("io")
+    //   .to("stockRoom")
+    //   .emit("stockUpdated", {
+    //     productId: itemId,
+    //     size,
+    //     quantitySold: -itemToDelete.quantity,
+    //   });
+
+    stockHandler(
+      io,
+      "stockRoom",
+      {
+        data: {
+          productId: itemId,
+          size,
+          quantitySold: -itemToDelete.quantity,
+        },
+      },
+      "stock:updated"
+    );
 
     return res.json({ success: true, message: "Item cancelled successfully" });
   } catch (error) {
@@ -449,7 +555,7 @@ const cancelOrderItem = async (req, res) => {
 const cancelAllOrders = async (req, res) => {
   try {
     const userId = req.userId;
-
+    const io = req.app.get("io"); // ✅ Get io instance
     // Find all active orders for the user
     const orders = await orderModel.find({
       userId,
@@ -473,15 +579,28 @@ const cancelAllOrders = async (req, res) => {
           }
         );
 
-        // ✅ Emit stock update for each item
-        req.app
-          .get("io")
-          .to("stockRoom")
-          .emit("stockUpdated", {
-            productId: item._id,
-            size: item.size,
-            quantitySold: -item.quantity,
-          });
+        // // ✅ Emit stock update for each item
+        // req.app
+        //   .get("io")
+        //   .to("stockRoom")
+        //   .emit("stockUpdated", {
+        //     productId: item._id,
+        //     size: item.size,
+        //     quantitySold: -item.quantity,
+        //   });
+
+        stockHandler(
+          io,
+          "stockRoom",
+          {
+            data: {
+              productId: item._id,
+              size: item.size,
+              quantitySold: -item.quantity,
+            },
+          },
+          "stock:updated"
+        );
       }
 
       // Cancel the order
@@ -492,21 +611,40 @@ const cancelAllOrders = async (req, res) => {
       });
 
       // Emit order cancellation to admin
-      req.app
-        .get("io")
-        .to("adminRoom")
-        .emit("orderCancelled", { orderId: order._id, userId });
+      // req.app
+      //   .get("io")
+      //   .to("adminRoom")
+      //   .emit("orderCancelled", { orderId: order._id, userId });
+      orderHandler(
+        io,
+        "adminRoom",
+        {
+          data: { orderId: order._id, userId },
+        },
+        "order:cancelled"
+      );
     }
 
     // Emit bulk cancellation event
-    req.app
-      .get("io")
-      .to("adminRoom")
-      .emit("AllOrderCancelled", {
-        userId,
-        message: "All orders cancelled by user",
-      });
-   
+    // req.app
+    //   .get("io")
+    //   .to("adminRoom")
+    //   .emit("AllOrderCancelled", {
+    //     userId,
+    //     message: "All orders cancelled by user",
+    //   });
+
+    orderHandler(
+      io,
+      "adminRoom",
+      {
+        data: {
+          userId,
+          message: "All orders cancelled by user",
+        },
+      },
+      "order:all:cancelled"
+    );
 
     res.json({ success: true, message: "All orders cancelled successfully" });
   } catch (error) {
@@ -518,7 +656,12 @@ const cancelAllOrders = async (req, res) => {
 };
 
 export {
-  allOrders, cancelAllOrders, cancelOrderItem, placeOrder,
-  placeOrderRazorpay, updatedStatus, userOrders, verifyOrderRazorpay
+  allOrders,
+  cancelAllOrders,
+  cancelOrderItem,
+  placeOrder,
+  placeOrderRazorpay,
+  updatedStatus,
+  userOrders,
+  verifyOrderRazorpay,
 };
-

@@ -1,7 +1,8 @@
 import Review from "../models/reviewModel.js";
 import Order from "../models/orderModel.js";
 import Product from "../models/productModel.js";
-
+import reviewHandler from "../socketHandlers/reviewHandler.js";
+import productHandler from "../socketHandlers/productHandler.js";
 // Post a review
 const addReview = async (req, res) => {
   try {
@@ -38,21 +39,43 @@ const addReview = async (req, res) => {
     await newReview.save();
 
     // Only notify users viewing this product
-    req.app
-      .get("io")
-      .to(productId.toString())
-      .emit("reviewAdded", { productId });
-
-    // Emit product update event
-    req.app.get("io").emit("productUpdated", {
-      productId: productId,
-      updatedFields: {
-        totalRating: product.totalRating,
-        totalReviews: product.totalReviews,
+    // req.app
+    //   .get("io")
+    //   .to(productId.toString())
+    //   .emit("reviewAdded", { productId });
+    reviewHandler(
+      io,
+      productId.toString(),
+      {
+        data: { productId },
       },
-      message: "Product rating updated after new review",
-    });
+      "review:add"
+    );
+    // Emit product update event
+    // io.emit("productUpdated", {
+    //   productId: productId,
+    //   updatedFields: {
+    //     totalRating: product.totalRating,
+    //     totalReviews: product.totalReviews,
+    //   },
+    //   message: "Product rating updated after new review",
+    // });
 
+    productHandler(
+      io,
+      null,
+      {
+        data: {
+          productId: productId,
+          updatedFields: {
+            totalRating: product.totalRating,
+            totalReviews: product.totalReviews,
+          },
+          message: "Product rating updated after new review",
+        },
+      },
+      "product:updated"
+    )
     return res.json({ success: true, order });
   } catch (err) {
     console.error(err);
@@ -85,37 +108,58 @@ const updateReview = async (req, res) => {
     const { rating, comment, reviewId, productId } = req.body;
 
     const updatedReview = await Review.findByIdAndUpdate(reviewId);
-    console.error("Updated Review:", updatedReview);
+
     const OldRating = updatedReview.rating;
     updatedReview.rating = rating;
     updatedReview.comment = comment;
 
     const Myreview = await updatedReview.save();
-    console.error("Myreview:", Myreview);
+
     req.app
       .get("io")
       .to(updatedReview.productId.toString())
       .emit("reviewUpdated", { productId: updatedReview.productId });
     // Update product rating
 
+    reviewHandler(
+      io,
+      updatedReview.productId.toString(),
+      {
+        data: { productId: updatedReview.productId },
+      },
+      "review:update"
+    );
+
     const product = await Product.findById(updatedReview.productId);
-    console.error("Product:", product.totalRating);
-    console.error("Old Rating:", OldRating);
-    console.error("New Rating:", rating);
 
     product.totalRating = product.totalRating + rating - OldRating;
     product.totalReviews = product.totalReviews; // Total reviews remain the same
     const updatedProduct = await product.save();
-    console.error("Updated Product:", updatedProduct.totalRating);
-    req.app.get("io").emit("productUpdated", {
-      productId: updatedReview.productId,
-      updatedFields: {
-        totalRating: updatedProduct.totalRating,
-        totalReviews: updatedProduct.totalReviews,
-      },
-      message: "Product rating updated after review update",
-    });
 
+    // req.app.get("io").emit("productUpdated", {
+    //   productId: updatedReview.productId,
+    //   updatedFields: {
+    //     totalRating: updatedProduct.totalRating,
+    //     totalReviews: updatedProduct.totalReviews,
+    //   },
+    //   message: "Product rating updated after review update",
+    // });
+
+    productHandler(
+      io,
+      null,
+      {
+        data: {
+          productId: updatedReview.productId,
+          updatedFields: {
+            totalRating: updatedProduct.totalRating,
+            totalReviews: updatedProduct.totalReviews,
+          },
+          message: "Product rating updated after review update",
+        },
+      },
+      "product:updated"
+    );
     return res.json({ success: true, message: "Review updated successfully" });
   } catch (err) {
     console.error(err);
@@ -127,6 +171,7 @@ const deleteReview = async (req, res) => {
   try {
     const { reviewId } = req.params;
     let updatedProduct;
+    const io = req.app.get("io"); // ✅ Get io instance
     const review = await Review.findByIdAndDelete(reviewId);
     if (!review) {
       return res.json({ success: false, message: "Review not found" });
@@ -138,20 +183,43 @@ const deleteReview = async (req, res) => {
       updatedProduct = await product.save();
     }
 
-    req.app.get("io").emit("productUpdated", {
-      productId: review.productId,
-      updatedFields: {
-        totalRating: updatedProduct.totalRating,
-        totalReviews: updatedProduct.totalReviews,
+    // req.app.get("io").emit("productUpdated", {
+    //   productId: review.productId,
+    //   updatedFields: {
+    //     totalRating: updatedProduct.totalRating,
+    //     totalReviews: updatedProduct.totalReviews,
+    //   },
+    //   message: "Product rating updated after review deletion",
+    // });
+    productHandler(
+      io,
+      null,
+      {
+        data: {
+          productId: review.productId,
+          updatedFields: {
+            totalRating: updatedProduct.totalRating,
+            totalReviews: updatedProduct.totalReviews,
+          },
+          message: "Product rating updated after review deletion",
+        },
       },
-      message: "Product rating updated after review deletion",
-    });
+      "product:updated"
+    );
 
     // Emit socket event to notify users about the review deletion
-    req.app
-      .get("io")
-      .to(review.productId.toString())
-      .emit("reviewDeleted", { productId: review.productId });
+    // req.app
+    //   .get("io")
+    //   .to(review.productId.toString())
+    //   .emit("reviewDeleted", { productId: review.productId });
+    reviewHandler(
+      io,
+      review.productId.toString(),
+      {
+        data: { productId: review.productId },
+      },
+      "review:delete"
+    );
     return res.json({ success: true, message: "Review deleted successfully" });
   } catch (err) {
     console.error(err);

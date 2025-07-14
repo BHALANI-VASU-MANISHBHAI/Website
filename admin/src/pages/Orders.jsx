@@ -337,6 +337,7 @@ const Orders = ({ token }) => {
                   {order.address.firstName + " " + order.address.lastName}
                 </p>
                 <div>
+                  
                   <p>
                     {order.address.street}, {order.address.city}
                   </p>

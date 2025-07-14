@@ -1,120 +1,126 @@
 import bcrypt from "bcrypt";
-import { v2 as cloudinary } from 'cloudinary';
-import { OAuth2Client } from 'google-auth-library';
+import { v2 as cloudinary } from "cloudinary";
+import { OAuth2Client } from "google-auth-library";
 import jwt from "jsonwebtoken";
 import validator from "validator";
-import { default as userModel, default as UserModel } from "../models/userModel.js";
+import {
+  default as userModel,
+  default as UserModel,
+} from "../models/userModel.js";
+import riderHandler from "../socketHandlers/riderHandler.js";
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const createdToken = (id, role) => {
-    return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-        expiresIn: process.env.JWT_EXPIRES_IN,
-    });
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  });
 };
 
 // route for user login
 const loginUser = async (req, res) => {
-    try {
-        const { email, password ,role} = req.body;
-        
-        const user = await userModel.findOne({ email 
-          ,role
-         });
+  try {
+    const { email, password, role } = req.body;
 
-        if (!user) {
-            return res.json({ message: "User not found" });
-        }
+    const user = await userModel.findOne({ email, role });
 
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (isMatch) {
-            const token = createdToken(user._id, user.role);
-            return res.status(200).json({ success: true, token, role: user.role });
-        } else {
-            return res.json({ success: false, message: "Invalid credentials" });
-        }
-
-    } catch (err) {
-        console.log(err);
-        return res.json({ success: false, message: err.message });
+    if (!user) {
+      return res.json({ message: "User not found" });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (isMatch) {
+      const token = createdToken(user._id, user.role);
+      return res.status(200).json({ success: true, token, role: user.role });
+    } else {
+      return res.json({ success: false, message: "Invalid credentials" });
+    }
+  } catch (err) {
+    console.log(err);
+    return res.json({ success: false, message: err.message });
+  }
 };
 
 // route for user registration
 const registerUser = async (req, res) => {
-    try {
-        const { name, email, password ,role} = req.body;
-        
-        const exist = await userModel.findOne({ email });
-        if (exist) {
-            return res.json({ success: false, message: "User already exists" });
-        }
+  try {
+    const { name, email, password, role } = req.body;
 
-        // validate email format
-        if (!validator.isEmail(email)) {
-            return res.json({ success: false, message: "Invalid email format" });
-        }
-
-        if (password.length < 8) {
-            return res.json({
-                success: false,
-                message: "Password must be at least 8 characters",
-            });
-        }
-
-        // hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const newUser = new userModel({
-            name,
-            email,
-            password: hashedPassword,
-            role: role || "user", // Default to 'user' if no role is provided
-        });
-
-        const user = await newUser.save();
-
-        const token = createdToken(user._id, user.role);
-
-            req.app.get('io').emit('customerAdded', { userId: user._id, name: user.name });
-         
-        res.json({ success: true, token, role: user.role });
-
-    } catch (err) {
-        console.log(err);
-        return res.status(500).json({ message: "Internal server error" });
+    const exist = await userModel.findOne({ email });
+    if (exist) {
+      return res.json({ success: false, message: "User already exists" });
     }
+
+    // validate email format
+    if (!validator.isEmail(email)) {
+      return res.json({ success: false, message: "Invalid email format" });
+    }
+
+    if (password.length < 8) {
+      return res.json({
+        success: false,
+        message: "Password must be at least 8 characters",
+      });
+    }
+
+    // hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = new userModel({
+      name,
+      email,
+      password: hashedPassword,
+      role: role || "user", // Default to 'user' if no role is provided
+    });
+
+    const user = await newUser.save();
+
+    const token = createdToken(user._id, user.role);
+
+    req.app
+      .get("io")
+      .emit("customerAdded", { userId: user._id, name: user.name });
+
+    res.json({ success: true, token, role: user.role });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 // route for admin login
 const adminLogin = async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    if (email == process.env.ADMIN_EMAIL && password == process.env.ADMIN_PASSWORD) {
-        const token = createdToken(email + password, "admin");
-        return res.status(200).json({ success: true, token, role: "admin" });
-    } else {
-        return res.status(400).json({ success: false, message: "Invalid credentials" });
-    }
+  if (
+    email == process.env.ADMIN_EMAIL &&
+    password == process.env.ADMIN_PASSWORD
+  ) {
+    const token = createdToken(email + password, "admin");
+    return res.status(200).json({ success: true, token, role: "admin" });
+  } else {
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid credentials" });
+  }
 };
 
 // Get user data by Id
 const getUserById = async (req, res) => {
-    try {
-        const userId = req.userId;
+  try {
+    const userId = req.userId;
 
-        const user = await userModel.findById(userId);
+    const user = await userModel.findById(userId);
 
-        if (!user) {
-            return res.json({ success: false, message: "User not found" });
-        }
-        return res.json({ success: true, user });
-
-    } catch (err) {
-        console.log(err);
-        return res.json({ success: false, message: err.message });
+    if (!user) {
+      return res.json({ success: false, message: "User not found" });
     }
+    return res.json({ success: true, user });
+  } catch (err) {
+    console.log(err);
+    return res.json({ success: false, message: err.message });
+  }
 };
 
 const UpdateProfile = async (req, res) => {
@@ -214,20 +220,56 @@ const UpdateProfile = async (req, res) => {
     if (isChangePassword === "true") {
       await user.save();
     }
-
+    const io = req.app.get("io");
     // 6. Emit socket update
-    req.app.get("io").emit("riderProfileUpdated", {
-      riderId: updatedUser._id,
-      updatedFields: {
-        firstName: updatedUser.firstName,
-        lastName: updatedUser.lastName,
-        phone: updatedUser.phone,
-        profilePhoto: updatedUser.profilePhoto,
-        available: updatedUser.available,
-        riderStatus: updatedUser.riderStatus,
+    // req.app.get("io").emit("riderProfileUpdated", {
+    //   riderId: updatedUser._id,
+    //   updatedFields: {
+    //     firstName: updatedUser.firstName,
+    //     lastName: updatedUser.lastName,
+    //     phone: updatedUser.phone,
+    //     profilePhoto: updatedUser.profilePhoto,
+    //     available: updatedUser.available,
+    //     riderStatus: updatedUser.riderStatus,
+    //   },
+    // });
+    riderHandler(
+      io,
+      "riderRoom",
+      {
+        data: {
+          riderId: updatedUser._id,
+          updatedFields: {
+            firstName: updatedUser.firstName,
+            lastName: updatedUser.lastName,
+            phone: updatedUser.phone,
+            profilePhoto: updatedUser.profilePhoto,
+            available: updatedUser.available,
+            riderStatus: updatedUser.riderStatus,
+          },
+        },
       },
-    });
-
+      "rider:profile:updated"
+    );
+    // Emit to admin room
+    riderHandler(
+      io,
+      "adminRoom",
+      {
+        data: {
+          riderId: updatedUser._id,
+          updatedFields: {
+            firstName: updatedUser.firstName,
+            lastName: updatedUser.lastName,
+            phone: updatedUser.phone,
+            profilePhoto: updatedUser.profilePhoto,
+            available: updatedUser.available,
+            riderStatus: updatedUser.riderStatus,
+          },
+        },
+      },
+      "rider:profile:updated"
+    );
     return res.json({ success: true, user: updatedUser });
   } catch (err) {
     console.error("UpdateProfile error:", err);
@@ -259,10 +301,11 @@ const googleAuth = async (req, res) => {
         });
       }
 
-      if(user.authType !== "google") {
+      if (user.authType !== "google") {
         return res.json({
           success: false,
-          message: "This account is not linked with Google. Please use email/password login.",
+          message:
+            "This account is not linked with Google. Please use email/password login.",
         });
       }
 
@@ -307,17 +350,25 @@ const googleAuth = async (req, res) => {
   }
 };
 
-
-
 const getTotalCustomers = async (req, res) => {
-    try {
-        const totalCustomers = await UserModel.countDocuments({ role: "user" });
+  try {
+    const totalCustomers = await UserModel.countDocuments({ role: "user" });
 
-        res.json({ success: true, totalCustomers });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Error fetching customers.' });
-    }
+    res.json({ success: true, totalCustomers });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ success: false, message: "Error fetching customers." });
+  }
 };
 
-export { adminLogin, getTotalCustomers, getUserById, googleAuth, loginUser, registerUser, UpdateProfile };
+export {
+  adminLogin,
+  getTotalCustomers,
+  getUserById,
+  googleAuth,
+  loginUser,
+  registerUser,
+  UpdateProfile,
+};

@@ -6,6 +6,8 @@ import { redisClient } from "../config/redisClient.js";
 import OrderModel from "../models/orderModel.js";
 import RiderCODHistory from "../models/riderPaymentHistory.js";
 import UserModel from "../models/userModel.js";
+import orderHandler from "../socketHandlers/orderHandler.js";
+import riderHandler from "../socketHandlers/riderHandler.js";
 
 function getHaversineDistance(lat1, lon1, lat2, lon2) {
   const a =
@@ -187,18 +189,37 @@ const riderAcceptOrder = async (req, res) => {
     );
 
     const io = req.app.get("io");
-    io.to(`adminRoom`).emit("acceptedOrder", {
-      order: updatedOrder,
-      message: "Order accepted by rider",
-    });
+    // io.to(`adminRoom`).emit("acceptedOrder", {
+    //   order: updatedOrder,
+    //   message: "Order accepted by rider",
+    // });
 
-    io.emit("orderStatusUpdated", {
-      orderId: updatedOrder._id,
-      status: "Shipped",
-      message: "Order status updated to Shipped",
-    });
+    orderHandler(
+      io,
+      null,
+      {
+        data: {
+          orderId: updatedOrder._id,
+          status: "Shipped",
+          message: "Order accepted by rider",
+        },
+      },
+      "order:status:update"
+    );
+    orderHandler(
+      io,
+      "adminRoom",
+      {
+        data: {
+          order: updatedOrder,
 
-    io.to(`riderRoom-${userId}`).emit("orderAccepted", {
+          message: "Order accepted by rider",
+        },
+      },
+      "order:accepted"
+    );
+
+    io.to(`riderRoom-${userId}`).emit("order:rider:accept", {
       order: updatedOrder,
       message: "Order accepted successfully",
     });
@@ -631,7 +652,17 @@ async function assignSingleOrder(order, io) {
           ORDER,
         };
 
-        io.to(`riderRoom-${rider._id}`).emit("newOrder", payload);
+        // io.to(`riderRoom-${rider._id}`).emit(
+        //   "order:rider:notification",
+        //   payload
+        // );
+
+        riderHandler(
+          io,
+          `riderRoom-${rider._id}`,
+          { data: payload },
+          "order:rider:notification"
+        );
 
         const response = await waitForRiderResponse(io, rider._id, orderId);
         if (response.accepted) {

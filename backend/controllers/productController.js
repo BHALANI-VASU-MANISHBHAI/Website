@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import orderModel from "../models/orderModel.js";
 import productModel from "../models/productModel.js";
+import productHandler from "../socketHandlers/productHandler.js";
 
 //function for adding a product
 const addProduct = async (req, res) => {
@@ -60,8 +61,20 @@ const addProduct = async (req, res) => {
 
     // ✅ Then emit to socket with the saved product (which now has _id)
     const io = req.app.get("io");
-    io.emit("productAdded", { product, message: "New product added" });
+    io.emit("product:added", { product, message: "New product added" });
 
+    productHandler(
+      io,
+      null,
+      {
+        data: {
+          productId: product._id,
+          product: product, // ✅ Send the whole product object
+          message: "New product added",
+        },
+      },
+      "product:added"
+    );
     res
       .status(200)
       .json({ success: true, message: "Product added successfully", product });
@@ -96,10 +109,21 @@ const removeProduct = async (req, res) => {
     // Emit product removal event to all users viewing this product
     const io = req.app.get("io");
     // Example: In your delete product route
-    io.emit("productDeleted", {
-      productId: req.body.id,
-      message: "Product deleted successfully",
-    });
+    // io.emit("productDeleted", {
+    //   productId: req.body.id,
+    //   message: "Product deleted successfully",
+    // });
+    productHandler(
+      io,
+      null,
+      {
+        data: {
+          productId: req.body.id,
+          message: "Product deleted successfully",
+        },
+      },
+      "product:deleted"
+    );
     req.app.get("io").to("adminRoom").emit("updateStats");
     res.json({ success: true, message: "Product removed successfully" });
   } catch (err) {
@@ -193,16 +217,28 @@ const updateProduct = async (req, res) => {
       productData,
       { new: true }
     );
-
     console.log("updatedProduct ", updatedProduct);
 
     // ✅ Then emit updated product to the room
     const io = req.app.get("io");
-    io.to(productId.toString()).emit("productUpdated", {
-      productId,
-      product: updatedProduct, // ✅ Send the updated product
-      message: "Product has been updated",
-    });
+    // io.to(productId.toString()).emit("productUpdated", {
+    //   productId,
+    //   product: updatedProduct, // ✅ Send the updated product
+    //   message: "Product has been updated",
+    // });
+    productHandler(
+      io,
+      productId.toString(),
+      {
+        data: {
+          productId,
+          product: updatedProduct, // ✅ Send the updated product
+          message: "Product has been updated",
+        },
+      },
+      "product:updated"
+    );
+
     req.app.get("io").to("adminRoom").emit("updateStats");
     res.status(200).json({
       success: true,

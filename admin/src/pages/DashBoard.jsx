@@ -319,13 +319,13 @@ const Dashboard = ({ token }) => {
     const handleUpdate = () => fetchAllDashboardData();
     const handleCustomerAdded = () => TotalCustomers();
 
-    socket.on("orderPlaced", handleUpdate);
-    socket.on("orderCancelled", handleUpdate);
+    socket.on("order:placed", handleUpdate);
+    socket.on("order:cancelled", handleUpdate);
     socket.on("customerAdded", handleCustomerAdded);
 
     return () => {
-      socket.off("orderPlaced", handleUpdate);
-      socket.off("orderCancelled", handleUpdate);
+      socket.off("order:placed", handleUpdate);
+      socket.off("order:cancelled", handleUpdate);
       socket.off("customerAdded", handleCustomerAdded);
     };
   }, [fetchAllDashboardData, TotalCustomers]);

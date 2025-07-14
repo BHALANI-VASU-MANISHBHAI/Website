@@ -79,10 +79,10 @@ useEffect(() => {
     }
   };
 
-  socket.on("riderProfileUpdated", handleProfileUpdate);
+  socket.on("rider:profile:updated", handleProfileUpdate);
 
   return () => {
-    socket.off("riderProfileUpdated", handleProfileUpdate);
+    socket.off("rider:profile:updated", handleProfileUpdate);
   };
 }, [userData]);
 

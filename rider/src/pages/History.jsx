@@ -21,7 +21,7 @@ const History = () => {
   const [startTime, setStartTime] = useState("12 AM");
   const [endTime, setEndTime] = useState("11 PM");
   const [codCollected, setCodCollected] = useState(0);
-  const [codStatus, setCodStatus] = useState("pending");
+  const [codStatus, setCodStatus] = useState("All");
 
   const [datePreset, setDatePreset] = useState("Today");
 

@@ -3,6 +3,7 @@ import axios from "axios";
 import { createContext, useEffect, useState } from "react";
 import { backendUrl } from "../App";
 import socket from "../services/socket";
+import { toast } from "react-toastify";
 // ✅ Create context here (this was wrong in your code)
 export const OrderContext = createContext();
 
@@ -34,35 +35,43 @@ const OrderContextProvider = ({ children, token }) => {
 
   // Listen to socket updates
   useEffect(() => {
-    socket.on("orderCancelled", (data) => {
+    socket.on("order:cancelled", (data) => {
       console.log("Order cancelled:", data);
+      toast.error("Order cancelled successfully!");
       // Remove the cancelled order from the list
-      setOrders((prevOrders) => prevOrders.map((order) => order._id !== data.orderId));
+      // setOrders((prevOrders) =>
+      //   prevOrders.map((order) => order._id !== data.orderId)
+      // );
+      fetchAllOrders();
       // Optionally, you can also fetch all orders again
     });
 
-    socket.on("orderPlaced", () => {
+    socket.on("order:placed", () => {
+      toast.success("Order placed successfully!wowowoowowowo");
       fetchAllOrders();
     });
 
-    socket.on("AllOrderCancelled", () => {
+    socket.on("order:all:cancelled", () => {
       fetchAllOrders();
     });
 
-    socket.on("orderDelivered", (data) => {
+    socket.on("order:delivered", (data) => {
       console.log("Order delivered: From OrderContect ", data);
       fetchAllOrders();
     });
 
-    socket.on("orderStatusUpdated", (data) => {
+    socket.on("order:status:update", (data) => {
       console.log("Order status updated:", data);
+      toast.info("Orader status must be updated");
       fetchAllOrders();
     });
     return () => {
-      socket.off("orderCancelled");
-      socket.off("orderPlaced");
-      socket.off("AllOrderCancelled");
-      socket.off("orderStatusUpdated");
+      socket.off("order:cancelled");
+      // socket.off("orderPlaced");
+      socket.off("order:placed");
+      socket.off("order:all:cancelled");
+      socket.off("order:status:update");
+      socket.off("order:delivered");
     };
   }, []);
 
@@ -70,12 +79,10 @@ const OrderContextProvider = ({ children, token }) => {
     orders,
     setOrders,
     fetchAllOrders,
-  }
+  };
 
   return (
-    <OrderContext.Provider value={value}>
-      {children}
-    </OrderContext.Provider>
+    <OrderContext.Provider value={value}>{children}</OrderContext.Provider>
   );
 };
 

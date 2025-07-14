@@ -4,6 +4,7 @@ import OrderModel from "../models/orderModel.js";
 import OTP from "../models/otpModel.js";
 import UserModel from "../models/userModel.js";
 import { sendOtpEmail } from "../services/emailService.js";
+import orderHandler from "../socketHandlers/orderHandler.js";
 const TWOFACTOR_API_KEY = process.env.TWOFACTOR_API_KEY;
 async function storeOTP(req, res) {
   try {
@@ -225,27 +226,60 @@ const verifyDeliveryOtp = async (req, res) => {
 
     // Emit event to the rider's room
     const io = req.app.get("io");
-    io.to(`riderRoom-${order.riderId}`).emit("orderDelivered", {
-      orderId: updatedOrder._id,
-      order: updatedOrder,
-      message: "Order marked as delivered",
-    });
+    // io.to(`riderRoom-${order.riderId}`).emit("order:delivered", {
+    //   orderId: updatedOrder._id,
+    //   order: updatedOrder,
+    //   message: "Order marked as delivered",
+    // });
 
-    io.to(`riderRoom-${order.riderId}`).emit("CollectedCOD", {
-      orderId: updatedOrder._id,
-      order: updatedOrder,
-      message: "COD collected successfully",
-    });
-    io.to("adminRoom").emit("orderDelivered", {
-      orderId: updatedOrder._id,
-      order: updatedOrder,
-      message: "Order marked as delivered",
-    });
-    io.emit("orderStatusUpdated", {
-      orderId: updatedOrder._id,
-      status: "Delivered",
-      message: "Order marked as delivered",
-    });
+
+    // io.to(`riderRoom-${order.riderId}`).emit("CollectedCOD", {
+    //   orderId: updatedOrder._id,
+    //   order: updatedOrder,
+    //   message: "COD collected successfully",
+    // });
+    // io.to("adminRoom").emit("orderDelivered", {
+    //   orderId: updatedOrder._id,
+    //   order: updatedOrder,
+    //   message: "Order marked as delivered",
+    // });
+    // io.emit("orderStatusUpdated", {
+    //   orderId: updatedOrder._id,
+    //   status: "Delivered",
+    //   message: "Order marked as delivered",
+    // });
+    orderHandler(
+      io,
+      `riderRoom-${order.riderId}`,
+      {
+        data: {
+          orderId: updatedOrder._id,
+          order: updatedOrder,
+          message: "Order marked as delivered",
+        },
+      },
+      "order:delivered"
+    );
+    orderHandler(
+      io,
+      null,
+      {
+        data: { orderId: updatedOrder._id, status: "Delivered" },
+      },
+      "order:status:update"
+    );
+    orderHandler(
+      io,
+      "adminRoom",
+      {
+        data: {
+          orderId: updatedOrder._id,
+          order: updatedOrder,
+          message: "Order marked as delivered",
+        },
+      },
+     "order:delivered"
+    );
     return res.status(200).json({
       success: true,
       message: "OTP verified, order marked as delivered",

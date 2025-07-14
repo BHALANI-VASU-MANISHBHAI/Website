@@ -19,13 +19,13 @@ const ProductContextProvider = ({ children }) => {
     socket.emit('joinStockRoom');
 
     // ✅ Socket listener for new product addition
-    socket.on('productAdded', (data) => {
+    socket.on("product:added", (data) => {
       toast.success(data.message || "New product added!");
       setProducts((prevProducts) => [...prevProducts, data.product]);
     });
 
     // ✅ Socket listener for product updates
-    socket.on("productUpdated", (data) => {
+    socket.on("product:updated", (data) => {
       // toast.success(data.message || "Product updated!");
       setProducts((prevProducts) =>
         prevProducts.map((product) =>
@@ -37,7 +37,7 @@ const ProductContextProvider = ({ children }) => {
     });
 
     // ✅ Socket listener for product deletion
-    socket.on('productDeleted', (data) => {
+    socket.on("product:deleted", (data) => {
       toast.success(data.message || "Product deleted!");
       setProducts((prevProducts) =>
         prevProducts.filter((product) => product._id !== data.productId)
@@ -45,13 +45,16 @@ const ProductContextProvider = ({ children }) => {
     });
 
     // ✅ Real-time stock update listener
-    socket.on('stockUpdated', (data) => {
+    socket.on("stock:updated", (data) => {
       setProducts((prevProducts) =>
         prevProducts.map((product) => {
           if (product._id === data.productId) {
             const updatedStock = product.stock.map((stockItem) => {
               if (stockItem.size === data.size) {
-                return { ...stockItem, quantity: stockItem.quantity - data.quantitySold };
+                return {
+                  ...stockItem,
+                  quantity: stockItem.quantity - data.quantitySold,
+                };
               }
               return stockItem;
             });
@@ -60,15 +63,15 @@ const ProductContextProvider = ({ children }) => {
           return product;
         })
       );
-    });
-
+    }); 
+    
     // ✅ Cleanup on unmount
     return () => {
       socket.emit('leaveStockRoom');
-      socket.off('productAdded');
-      socket.off('productUpdated');
-      socket.off('productDeleted');
-      socket.off('stockUpdated');
+      socket.off("product:added");
+      socket.off("product:updated");
+      socket.off("product:deleted");
+      socket.off("stock:updated");
     };
   }, []);
 

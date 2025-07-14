@@ -68,7 +68,6 @@ const Orders = () => {
 
   const CancelAllOrders = async () => {
     try {
-  
       setLoading(true);
       const response = await axios.post(
         backendUrl + "/api/order/cancelAll",
@@ -100,25 +99,25 @@ const Orders = () => {
   useEffect(() => {
     socket.emit("joinUserRoom", userData._id);
 
-    socket.on("orderStatusUpdated", () => {
+    socket.on("order:status:update", () => {
       loadOrderData();
     });
 
-    socket.on("orderCancelled", (data) => {
+    socket.on("order:cancelled", (data) => {
       toast.info("Order Cancelled");
       console.log("Order Cancelled:", data);
       loadOrderData();
     });
 
-    socket.on("AllOrderCancelled", (data) => {
+    socket.on("order:all:cancelled", (data) => {
       toast.info(data.message);
       loadOrderData();
     });
 
     return () => {
-      socket.off("orderStatusUpdated");
-      socket.off("orderCancelled");
-      socket.off("AllOrderCancelled");
+      socket.off("order:status:update");
+      socket.off("order:cancelled");
+      socket.off("order:all:cancelled");
     };
   }, [userData]);
 
@@ -193,8 +192,8 @@ const Orders = () => {
                 disabled={
                   loading ||
                   item.status === "Delivered" ||
-                  item.status === "Out for Delivery"
-                  || item.status === "Shipped"
+                  item.status === "Out for Delivery" ||
+                  item.status === "Shipped"
                 }
               >
                 Cancel Order
