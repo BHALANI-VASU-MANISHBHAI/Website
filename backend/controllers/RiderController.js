@@ -577,24 +577,27 @@ async function assignSingleOrder(order, io) {
     const pickupLat = existingOrder.pickUpLocation.lat;
     const pickupLng = existingOrder.pickUpLocation.lng;
     const orderId = existingOrder._id;
-
+    console.log("Assigning order:",
+      existingOrder
+    );
     if (!deliveryLat || !deliveryLng || !pickupLat || !pickupLng || !orderId) {
       return {
         success: false,
         message: "All coordinates and orderId are required",
       };
     }
-
+    console.log("data available for assigning order:");
     if (!existingOrder || existingOrder.riderId) {
       return { success: false, message: "Invalid or already assigned order" };
-    }
+    } 
+    console.log("Order data: not repeated");
 
     await OrderModel.findByIdAndUpdate(orderId, {
       riderId: null,
       expiresAt: null,
       isAssigning: true,
     });
-
+    console.log("Finding riders for order:", orderId);
     const riders = await findAllRidersByShortestTrip(
       deliveryLat,
       deliveryLng,
@@ -724,7 +727,9 @@ const assignRider = async (req, res) => {
       isAssigning: false,
       riderId: null,
     });
-
+    console.log(
+      `Initial packed orders count: ${packedOrders.length}`
+    );
     const MAX_RETRIES = 3;
     let attempt = 0;
     let assigned = [];

@@ -24,7 +24,7 @@ const RiderCodInfo = () => {
   const [customEndDate, setCustomEndDate] = useState(
     new Date().toISOString().split("T")[0]
   ); // Default to today
-
+  const [orderSearchMap, setOrderSearchMap] = useState({});
   useEffect(() => {
     // Initialize custom date range to last 7 days
     setRiderOrders(riderOrders);
@@ -82,8 +82,7 @@ const RiderCodInfo = () => {
           submitted: rider.codSubmittedMoney || 0,
         };
       }
-      console.log("Rider ID:", rider._id);
-      console.log("Order ID:", order._id);
+
       const collected = order.earning?.collected || 0;
       map[rider._id].orders.push(order);
       map[rider._id].collected += collected;
@@ -339,7 +338,23 @@ const RiderCodInfo = () => {
               </div>
 
               <div className="mt-6">
-                <p className="font-semibold mb-2 text-base">Orders Assigned:</p>
+                <div>
+                  <p className="font-semibold mb-2 text-base">
+                    Orders Assigned:
+                  </p>
+                  <input
+                    type="text"
+                    placeholder="Search order by ID or status"
+                    value={orderSearchMap[riderId] || ""}
+                    onChange={(e) =>
+                      setOrderSearchMap((prev) => ({
+                        ...prev,
+                        [riderId]: e.target.value,
+                      }))
+                    }
+                    className="border px-3 py-1.5 rounded-md mb-4 w-full sm:w-1/2"
+                  />
+                </div>
                 <div className="hidden sm:grid grid-cols-4 gap-3 sm:gap-20 text-sm font-semibold border-b pb-2">
                   <div>Order ID</div>
                   <div>Status</div>
@@ -348,6 +363,13 @@ const RiderCodInfo = () => {
                 </div>
 
                 {[...data.orders]
+                  .filter((order) => {
+                    const search = orderSearchMap[riderId]?.toLowerCase() || "";
+                    return (
+                      order._id.toLowerCase().includes(search) ||
+                      order.status?.toLowerCase().includes(search)
+                    );
+                  })
                   .sort(
                     (a, b) =>
                       new Date(b.acceptedTime) - new Date(a.acceptedTime)

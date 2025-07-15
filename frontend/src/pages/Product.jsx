@@ -132,7 +132,6 @@ const Product = () => {
       const response = await axios.post(
         `${backendUrl}/api/review/add`,
         {
-          productId: id,
           rating: addRating,
           comment: addComment,
           productId: productData._id,

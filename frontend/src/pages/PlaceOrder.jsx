@@ -1,6 +1,6 @@
 import axios from "axios";
 import cloneDeep from "lodash-es/cloneDeep";
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { assetss } from "../assets/frontend_assets/assetss";
 import Indian_Cities_In_States_JSON from "../assets/Indian_Cities_In_States_JSON.json";
@@ -10,8 +10,6 @@ import { GlobalContext } from "../context/GlobalContext.jsx";
 import { ProductContext } from "../context/ProductContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
 import CartTotal from "./../components/CartTotal";
-import { set } from "lodash";
-import { useState } from "react";
 
 const PlaceOrder = () => {
   const { navigate, backendUrl, token, delivery_fee } =
@@ -33,7 +31,7 @@ const PlaceOrder = () => {
   const [lat, setLat] = React.useState("");
   const [long, setLong] = React.useState("");
   const [isValidData, setIsValidData] = React.useState(false);
-  const [ incorrectData, setIncorrectData ] = useState([]); // State to hold incorrect data
+  const [incorrectData, setIncorrectData] = useState([]); // State to hold incorrect data
 
   const [formData, setFormData] = React.useState({
     firstName: "",
@@ -118,9 +116,6 @@ const PlaceOrder = () => {
         if (formZip && revZip && formZip !== revZip) {
           mismatchList.push("Zipcode");
         }
-        
-        
-
 
         if (mismatchList.length > 0) {
           setIncorrectData(mismatchList);
@@ -604,7 +599,9 @@ const PlaceOrder = () => {
                   setLong(long);
                   console.log(`Latitude: ${lat}, Longitude: ${long}`);
                 } else {
-                  console.error("Invalid map link format");
+                  incorrectData.push(
+                    "Map Link Should be copy after Placing Pin"
+                  );
                 }
               } else {
                 console.log("Map link is empty");
@@ -615,21 +612,19 @@ const PlaceOrder = () => {
             required
           />
 
-          {incorrectData &&
-            Object.keys(incorrectData).length > 0 && (
-              <div className="text-red-500 text-sm mt-2">
-                <p>
-                  Please check the following fields for accuracy:
-                  {incorrectData.map((field, index) => (
-                    <span key={index}>
-                      {field}
-                      {index < incorrectData.length - 1 ? ", " : ""}
-                    </span>
-                  ))}
-                </p>
-              </div>
-            )
-          }
+          {incorrectData && Object.keys(incorrectData).length > 0 && (
+            <div className="text-red-500 text-sm mt-2">
+              <p>
+                Please check the following fields for accuracy:
+                {incorrectData.map((field, index) => (
+                  <span key={index}>
+                    {field}
+                    {index < incorrectData.length - 1 ? ", " : ""}
+                  </span>
+                ))}
+              </p>
+            </div>
+          )}
           <iframe
             title="Google Map"
             width="100%"
@@ -689,10 +684,11 @@ const PlaceOrder = () => {
             <button
               type="submit"
               className={`bg-gray-700 text-white px-6 py-2 cursor-pointer text-sm font-semibold flex items-center gap-2 ${
-                (PlaceOrder||incorrectData.length > 0)
-                  ? "cursor-not-allowed opacity-50" : ""
+                PlaceOrder || incorrectData.length > 0
+                  ? "cursor-not-allowed opacity-50"
+                  : ""
               }`}
-              disabled={PlaceOrder}
+              disabled={PlaceOrder || incorrectData.length > 0}
             >
               {PlaceOrder ? (
                 <div className="flex items-center gap-2">

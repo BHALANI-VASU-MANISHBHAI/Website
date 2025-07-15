@@ -5,8 +5,8 @@ import orderModel from "../models/orderModel.js";
 import Product from "../models/productModel.js";
 import UserModel from "../models/userModel.js";
 import orderHandler from "../socketHandlers/orderHandler.js";
-import stockHandler from "../socketHandlers/stockHandler.js";
 import productHandler from "../socketHandlers/productHandler.js";
+import stockHandler from "../socketHandlers/stockHandler.js";
 
 const placeOrder = async (req, res) => {
   const session = await mongoose.startSession();
@@ -348,7 +348,14 @@ const userOrders = async (req, res) => {
         userId,
         status: { $ne: "Cancelled" }, // Exclude cancelled orders
       })
+      .populate("riderId", "location.lat location.lng")
       .sort({ date: -1 });
+
+    // here we take the each rider id and then use poplate for location
+    // const allorder = await Promise.all(
+    //   orders.map(async (order) => {
+    //     const riderID = order.riderId;
+    //     if (riderID) {
 
     res.json({ success: true, orders });
   } catch (err) {
@@ -654,6 +661,33 @@ const cancelAllOrders = async (req, res) => {
       .json({ success: false, message: "Internal server error" });
   }
 };
+const singleorder = async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    const userId = req.userId;
+
+    if (!orderId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Order ID is required" });
+    }
+
+    const order = await orderModel
+      .findOne({ _id: orderId, userId })
+      .populate("riderId", "location.lat location.lng");
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
+    }
+
+    res.json({ success: true, order });
+  } catch (err) {
+    console.error("Error fetching single order:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
 
 export {
   allOrders,
@@ -661,6 +695,7 @@ export {
   cancelOrderItem,
   placeOrder,
   placeOrderRazorpay,
+  singleorder,
   updatedStatus,
   userOrders,
   verifyOrderRazorpay,

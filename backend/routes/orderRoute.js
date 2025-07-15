@@ -8,6 +8,7 @@ import {
   updatedStatus,
   userOrders,
   verifyOrderRazorpay,
+  singleorder,
 } from "../controllers/orderControllers.js";
 import adminAuth from "../middleware/adminAuth.js";
 import restrictToRole from "../middleware/restrictToRole.js";
@@ -29,6 +30,7 @@ orderRouter.post(
 ); //create razorpay order
 
 //User Features
+orderRouter.get("/:orderId", restrictToRole("user"), singleorder); //get single order by id
 orderRouter.post("/userorders", restrictToRole("user"), userOrders); //get user orders
 orderRouter.post("/cancel", restrictToRole("user"), cancelOrderItem); //cancel order
 orderRouter.post("/cancelAll", restrictToRole("user"), cancelAllOrders); //cancel all orders
