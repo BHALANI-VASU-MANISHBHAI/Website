@@ -50,18 +50,18 @@ const ProfileView = () => {
       data.append("email", formData.email);
       data.append("phone", formData.phone);
       data.append("gender", formData.gender);
-      if(isChangePassword) {
+      if (isChangePassword) {
         data.append("isChangePassword", "true");
         data.append("oldPassword", changePassword.oldPassword);
         data.append("newPassword", changePassword.newPassword);
       } else {
         data.append("isChangePassword", "false");
       }
-      
+
       if (selectedFile) {
         data.append("profileImage", selectedFile);
       }
-// isChangePassword;
+      // isChangePassword;
       const response = await axios.put(
         `${backendUrl}/api/user/updateprofile`,
         data,
@@ -229,6 +229,8 @@ const ProfileView = () => {
                 name="phone"
                 type="tel"
                 value={formData.phone}
+                pattern="[0-9]{10}"
+                maxLength="10"
                 onChange={onChangeHandler}
                 placeholder="Phone number"
                 className="w-full border border-gray-300 py-1.5 px-3.5 rounded-md"
@@ -251,7 +253,7 @@ const ProfileView = () => {
                 required
                 className="w-full border border-gray-300 py-1.5 px-3.5 rounded-md"
               >
-                <option value="">Select gender</option>
+                <option value="" disabled>Select gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
                 <option value="other">Other</option>
@@ -259,7 +261,7 @@ const ProfileView = () => {
             </div>
 
             {/* Password Fields */}
-            {isChangePassword &&  (
+            {isChangePassword && (
               <>
                 <div className="relative">
                   <label
@@ -324,24 +326,25 @@ const ProfileView = () => {
 
           {/* Buttons */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {userData.password&&(
-            <button
-              type="button"
-              onClick={() => {
-                setIsChangePassword(!isChangePassword);
-                if (isChangePassword) {
-                  setChangePassword({ oldPassword: "", newPassword: "" });
-                }
-              }}
-              className={`w-full bg-blue-600 hover:bg-blue-800 text-white py-2 px-4 rounded-md
+            {userData.password && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsChangePassword(!isChangePassword);
+                  if (isChangePassword) {
+                    setChangePassword({ oldPassword: "", newPassword: "" });
+                  }
+                }}
+                className={`w-full bg-blue-600 hover:bg-blue-800 text-white py-2 px-4 rounded-md
                 ${loading ? "cursor-not-allowed bg-gray-400 opacity-50" : ""}
                 `}
-              disabled={loading}
-            >
-              {isChangePassword ? "Cancel Password Change" : "Change Password"}
+                disabled={loading}
+              >
+                {isChangePassword
+                  ? "Cancel Password Change"
+                  : "Change Password"}
               </button>
-          )
-          }
+            )}
             <button
               type="submit"
               disabled={loading}

@@ -8,31 +8,33 @@ import { ProductContext } from "./ProductContext";
 
 const CartContextProvider = ({ children }) => {
   const { backendUrl, token } = useContext(GlobalContext);
-  const {products} = useContext(ProductContext);
+  const { products } = useContext(ProductContext);
   const [cartItems, setCartItems] = useState({});
 
   // Automatically fetch cart when token changes
   useEffect(() => {
-  
     const fetchCart = async () => {
-      if (!token) return;
-       try {
-      const response = await axios.post(
-        backendUrl + "/api/cart/get",
-        { userId: token },
-        { headers: { token } }
-      );
-
-      if (response.data.success) {
-        setCartItems(response.data.cartData);
+      console.log("Fetching cart items for token:", token);
+      if (!token) {
+        setCartItems({});
+        return;
       }
-    } catch (e) {
-      console.log("Error in get cart items", e);
-      toast.error("Failed to load cart items");
-    }
-    }; 
+      try {
+        const response = await axios.post(
+          backendUrl + "/api/cart/get",
+          { userId: token },
+          { headers: { token } }
+        );
+
+        if (response.data.success) {
+          setCartItems(response.data.cartData);
+        }
+      } catch (e) {
+        console.log("Error in get cart items", e);
+        toast.error("Failed to load cart items");
+      }
+    };
     fetchCart();
-  
   }, [token]);
 
   const addToCart = async (itemId, size) => {
@@ -44,8 +46,8 @@ const CartContextProvider = ({ children }) => {
     }
     const product = products.find((product) => product._id === itemId);
     const Stock = product.stock.find((stock) => stock.size === size);
-    if (cartData[itemId] ) {
-      if(cartData[itemId][size] && cartData[itemId][size] >= Stock.quantity) {
+    if (cartData[itemId]) {
+      if (cartData[itemId][size] && cartData[itemId][size] >= Stock.quantity) {
         toast.error("You have already added maximum quantity of this item");
         return;
       }
@@ -79,13 +81,11 @@ const CartContextProvider = ({ children }) => {
     return totalCount;
   };
 
- 
-
   const updateQuantity = async ({ itemId, size, quantity }) => {
     let cartData = cloneDeep(cartItems);
     cartData[itemId][size] = quantity;
     setCartItems(cartData);
-    
+
     if (token) {
       try {
         await axios.post(
@@ -101,7 +101,7 @@ const CartContextProvider = ({ children }) => {
   };
 
   const getCartAmount = () => {
-   if (!products.length) return 0;
+    if (!products.length) return 0;
 
     let totalAmount = 0;
     for (const itemId in cartItems) {
@@ -110,7 +110,9 @@ const CartContextProvider = ({ children }) => {
         try {
           if (cartItems[itemId][size]) {
             totalAmount +=
-              product.price * cartItems[itemId][size] *(product.discount ? (1 - product.discount / 100) : 1);
+              product.price *
+              cartItems[itemId][size] *
+              (product.discount ? 1 - product.discount / 100 : 1);
           }
         } catch (e) {
           console.log("Error in cart amount", e);
@@ -120,21 +122,16 @@ const CartContextProvider = ({ children }) => {
     return totalAmount;
   };
 
-  
   const value = {
     cartItems,
     setCartItems,
     addToCart,
     getCartCount,
     updateQuantity,
-    getCartAmount
+    getCartAmount,
   };
 
-  return (
-    <CartContext.Provider value={value}>
-      {children}
-    </CartContext.Provider>
-  );
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
 
 export default CartContextProvider;

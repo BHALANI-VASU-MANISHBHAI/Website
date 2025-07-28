@@ -89,11 +89,7 @@ const addProduct = async (req, res) => {
 const listProducts = async (req, res) => {
   try {
     const products = await productModel.find({}).sort({ updatedAt: -1 });
-    productModel.updateMany(
-      {},
-      { $set: { deliveryCharge: 0 } },
-      { multi: true }
-    );
+
     res.json({ success: true, products });
   } catch (err) {
     console.log(err);

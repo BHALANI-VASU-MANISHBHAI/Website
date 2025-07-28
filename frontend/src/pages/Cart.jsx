@@ -8,7 +8,7 @@ import Title from "./../components/Title";
 
 const Cart = () => {
   // products, currency, cartItems, updateQuantity,navigate ,getCartCount
-  const { currency, navigate } = useContext(GlobalContext);
+  const { currency, navigate ,token} = useContext(GlobalContext);
   const { cartItems, updateQuantity, getCartCount } = useContext(CartContext);
   const { products } = useContext(ProductContext);
   // console.log("cartItems", cartItems);
@@ -18,6 +18,7 @@ const Cart = () => {
   useEffect(() => {
     if (products.length > 0) {
       const tempdata = [];
+      localStorage.setItem("cartData", JSON.stringify(cartItems));
       for (const items in cartItems) {
         for (const item in cartItems[items]) {
           if (cartItems[items][item]) {
@@ -30,8 +31,11 @@ const Cart = () => {
         }
       }
       setCartData(tempdata);
-      const cartCount = getCartCount();
+    } else {
+      setCartData([]);
+      localStorage.setItem("cartData", JSON.stringify([]));
     }
+    const cartCount = getCartCount();
   }, [cartItems, products]);
   console.log("products", cartItems);
   return (
@@ -150,9 +154,15 @@ const Cart = () => {
               <button
                 onClick={() => {
                   const cartCount = getCartCount();
+                  console.log("Cart count:", cartCount);
                   if (cartCount === 0) {
                     return;
                   }
+                  if (!token) {
+                    navigate("/login");
+                    return;
+                  }
+
                   navigate("/place-order");
                 }}
                 className="bg-black text-white text-sm my-8 py-3 px-2 cursor-pointer hover:bg-orange-400 transition-all duration-300 ease-in-out w-full sm:w-[200px]"

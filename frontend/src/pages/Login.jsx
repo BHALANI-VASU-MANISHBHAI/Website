@@ -5,11 +5,14 @@ import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { toast } from "react-toastify";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
+import { CartContext } from "../context/CartContext.jsx";
 
 const Login = () => {
   const [currentState, setCurrentState] = React.useState("Login");
   const { token, setToken, navigate, backendUrl } =
     React.useContext(GlobalContext);
+  const { setCartItems } = React.useContext(CartContext);
+
   const { setUserData } = React.useContext(UserContext);
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
@@ -31,6 +34,7 @@ const Login = () => {
           email,
           password,
           role: "user",
+          cartData: JSON.parse(localStorage.getItem("cartData")) || [],
         });
 
         if (response.data.success) {
@@ -60,10 +64,11 @@ const Login = () => {
           email,
           password,
           role: "user",
+          cartData: JSON.parse(localStorage.getItem("cartData")) || [],
         });
         if (response.data.success) {
           setToken(response.data.token);
-
+          setCartItems(response.data.cartData || {});
           const profileResponse = await axios.post(
             backendUrl + "/api/user/getdataofuser",
             {}, // request body, if any
@@ -80,7 +85,8 @@ const Login = () => {
           localStorage.setItem("token", response.data.token);
           toast.success("Successfully logged in");
         } else {
-          toast.error(response.data.message || "Failed to log in");
+          console.log("Login error:", response.data);
+          toast.error(response.data.message || "Failed to login");
         }
       }
     } catch (e) {
@@ -164,6 +170,7 @@ const Login = () => {
       const res = await axios.post(backendUrl + "/api/user/google", {
         token,
         role: "user",
+        cartData: JSON.parse(localStorage.getItem("cartData")) || [],
       });
 
       if (res.data.success) {
@@ -191,7 +198,11 @@ const Login = () => {
   // Redirect to home page after successful login/signup
   React.useEffect(() => {
     if (token) {
-      navigate("/");
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        navigate("/");
+      }
     }
   }, [token]);
 

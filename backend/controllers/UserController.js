@@ -19,32 +19,72 @@ const createdToken = (id, role) => {
 // route for user login
 const loginUser = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, cartData } = req.body;
+    console.log("Login request body:", req.body);
+    // Basic validation
+    if (!email || !password || !role) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, password, and role are required",
+      });
+    }
 
-    const user = await userModel.findOne({ email, role });
+    const user = await userModel.findOne({ email, role, authType: "local" });
 
     if (!user) {
-      return res.json({ message: "User not found" });
+      return res.json({
+        success: false,
+        message: "User not found with the provided credentials",
+      });
     }
 
+    // add new cart data to user that store in local storage
+    if (cartData) {
+      // we want to add to prev  means not direct changed
+      user.cartData = {
+        ...user.cartData,
+        ...cartData,
+      };
+      console.log("Updated cartData:", user.cartData);
+
+      await userModel.findByIdAndUpdate(user._id, {
+        cartData: user.cartData,
+      });
+      console.log("Cart data updated in database");
+    }
+
+    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
 
-    if (isMatch) {
-      const token = createdToken(user._id, user.role);
-      return res.status(200).json({ success: true, token, role: user.role });
-    } else {
-      return res.json({ success: false, message: "Invalid credentials" });
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
     }
+
+    // Create token
+    const token = createdToken(user._id, user.role);
+
+    return res.status(200).json({
+      success: true,
+      token,
+      role: user.role,
+      userId: user._id, // Often useful to return user ID
+    });
   } catch (err) {
-    console.log(err);
-    return res.json({ success: false, message: err.message });
+    console.error("Login error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error during login",
+    });
   }
 };
 
 // route for user registration
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, cartData } = req.body;
 
     const exist = await userModel.findOne({ email });
     if (exist) {
@@ -72,6 +112,7 @@ const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       role: role || "user", // Default to 'user' if no role is provided
+      cartData: cartData || {}, // Initialize with empty object if no cartData is provided
     });
 
     const user = await newUser.save();
@@ -279,7 +320,7 @@ const UpdateProfile = async (req, res) => {
 
 const googleAuth = async (req, res) => {
   try {
-    const { token, role } = req.body;
+    const { token, role, cartData } = req.body;
 
     const ticket = await client.verifyIdToken({
       idToken: token,
@@ -294,6 +335,7 @@ const googleAuth = async (req, res) => {
 
     if (user) {
       // 🚫 Prevent login if role mismatch
+
       if (user.role !== role) {
         return res.status(403).json({
           success: false,
@@ -314,6 +356,17 @@ const googleAuth = async (req, res) => {
         user.googleId = googleId;
         await user.save();
       }
+      const cartDatas = {
+        ...user.cartData,
+        ...cartData,
+      };
+      // Update cartData if provided
+      if (cartData) {
+        user.cartData = cartDatas;
+        await userModel.findByIdAndUpdate(user._id, {
+          cartData: user.cartData,
+        });
+      }
     } else {
       // 🆕 New user creation
       user = new userModel({
@@ -323,6 +376,7 @@ const googleAuth = async (req, res) => {
         googleId,
         role,
         authType: "google",
+        cartData: cartData || {}, // Initialize with empty object if no cartData is provided
       });
       await user.save();
     }

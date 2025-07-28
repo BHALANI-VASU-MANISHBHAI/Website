@@ -10,6 +10,7 @@ import { GlobalContext } from "../context/GlobalContext.jsx";
 import { ProductContext } from "../context/ProductContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
 import CartTotal from "./../components/CartTotal";
+import { set } from "lodash";
 
 const PlaceOrder = () => {
   const { navigate, backendUrl, token, delivery_fee } =
@@ -17,7 +18,6 @@ const PlaceOrder = () => {
   const { cartItems, setCartItems, getCartAmount } = useContext(CartContext);
   const { products } = useContext(ProductContext);
   const { userData } = useContext(UserContext);
-  const [actualAmount, setActualAmount] = React.useState(0);
   const [Subscriber, setSubscriber] = React.useState(false);
   const [method, setMethod] = React.useState("cod");
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY;
@@ -40,34 +40,53 @@ const PlaceOrder = () => {
     street: "",
     city: "",
     state: "",
-    zipcode: "",
+    pincode: "",
     country: "",
     phone: "",
     mapLink: "",
     latitude: "",
     longitude: "",
   });
-  useEffect(() => {
-    const savedForm = localStorage.getItem("placeOrderForm");
-    const savedLat = localStorage.getItem("placeOrderLat");
-    const savedLong = localStorage.getItem("placeOrderLong");
 
-    if (savedForm) {
-      setFormData(JSON.parse(savedForm));
+  const handleMapLinkChange = (e) => {
+    const mapLink = e.target.value.trim();
+    if (!mapLink) {
+      setFormData((prev) => ({
+        ...prev,
+        mapLink: "",
+        latitude: "",
+        longitude: "",
+      }));
+      setLat("");
+      setLong("");
+      setIncorrectData([]);
+      setIsValidData(false);
+      return;
     }
-    if (savedLat) setLat(savedLat);
-    if (savedLong) setLong(savedLong);
-  }, []);
+    setFormData((prev) => ({ ...prev, mapLink }));
 
-  // ✅ Save form data on change
-  useEffect(() => {
-    localStorage.setItem("placeOrderForm", JSON.stringify(formData));
-  }, [formData]);
+    const atMatch = mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    const qMatch = mapLink.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
 
-  useEffect(() => {
-    localStorage.setItem("placeOrderLat", lat);
-    localStorage.setItem("placeOrderLong", long);
-  }, [lat, long]);
+    const latitude = atMatch?.[1] || qMatch?.[1] || "";
+    const longitude = atMatch?.[2] || qMatch?.[2] || "";
+
+    console.log("Parsed latitude:", latitude, "longitude:", longitude);
+    if (latitude && longitude) {
+      setFormData((prev) => ({
+        ...prev,
+        latitude,
+        longitude,
+      }));
+      setLat(latitude);
+      setLong(longitude);
+    } else {
+      setIncorrectData([
+        "Please provide a valid Google Maps link with @lat,long or ?q=lat,long format.",
+      ]);
+      setIsValidData(false);
+    }
+  };
 
   // ✅ Load Razorpay only when needed
   const loadRazorpayScript = () => {
@@ -90,17 +109,23 @@ const PlaceOrder = () => {
     if (lat && long) {
       setIsValidData(false);
       try {
+        if (!formData.mapLink) {
+          setIncorrectData([]);
+          setIsValidData(true);
+          return; 
+        }
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${long}&format=json`
         );
         console.log("Reverse geocoding response:", res);
         const data = await res.json();
+        console.log("Reverse geocoding data:", data);
         const rev = data.address;
         const mismatchList = [];
         const formCountry = formData.country?.trim().toLowerCase();
         const formState = formData.state?.trim().toLowerCase();
         const formCity = formData.city?.trim().toLowerCase();
-        const formZip = formData.zipcode?.trim();
+        const formZip = formData.pincode?.trim();
         const revCountry = rev?.country?.toLowerCase();
         const revState = rev?.state?.toLowerCase();
         const revCity =
@@ -113,12 +138,18 @@ const PlaceOrder = () => {
         if (formState && revState && !revState.includes(formState)) {
           mismatchList.push("State");
         }
+        console.log("formZip", formZip, " revZip", revZip);
         if (formZip && revZip && formZip !== revZip) {
-          mismatchList.push("Zipcode");
+          mismatchList.push("pincode should be " + revZip);
+          // setFormData((prevData) => ({
+          //   ...prevData,
+          //   pincode: revZip, // Update formData with correct pincode
+          // }));
         }
 
         if (mismatchList.length > 0) {
           setIncorrectData(mismatchList);
+          setIsValidData(false);
           return false;
         } else {
           setIncorrectData([]);
@@ -126,13 +157,53 @@ const PlaceOrder = () => {
           return true;
         }
       } catch (err) {
-        console.error("Reverse geocoding failed:", err);
-        toast.error("Location check failed.");
+        // console.error("Reverse geocoding failed:", err);
+        setIncorrectData([
+          "Failed to fetch address from coordinates. Please check your map link.",
+        ]);
+        setIsValidData(false);
         return false;
       }
     }
     return true;
   };
+
+  const fetchCityLanandLong = async (city, state) => {
+    try {
+      if (!city || (!state && !lat && !long)) {
+        setLat("");
+        setLong("");
+      }
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?city=${city}&state=${state}&format=json&limit=1`
+      );
+      const data = await response.json();
+      console.log("City search response:", data);
+      if (data.length > 0) {
+        const { lat, lon } = data[0];
+        setLat(lat);
+        setLong(lon);
+        setFormData((prev) => ({
+          ...prev,
+          latitude: lat,
+          longitude: lon,
+        }));
+      } else {
+        console.error("No results found for the city/state combination.");
+      }
+    } catch (error) {
+      console.error("Error fetching city coordinates:", error);
+      setLat("");
+      setLong("");
+      toast.error("Failed to fetch city coordinates. Please check your input.");
+    }
+  };
+
+  useEffect(() => {
+    if (formData.city && formData.state) {
+      fetchCityLanandLong(formData.city, formData.state);
+    }
+  }, [formData.city, formData.state]);
 
   useEffect(() => {
     fetchAddressFromLatLng();
@@ -273,8 +344,8 @@ const PlaceOrder = () => {
     }
 
     // 2. Validate Indian Pincode
-    if (!/^\d{6}$/.test(formData.zipcode)) {
-      toast.error("Please enter a valid 6-digit Indian zipcode.");
+    if (!/^\d{6}$/.test(formData.pincode)) {
+      toast.error("Please enter a valid 6-digit Indian pincode.");
       return;
     }
 
@@ -402,9 +473,7 @@ const PlaceOrder = () => {
       toast.error("Something went wrong during order placement.");
     } finally {
       setPlaceOrder(false);
-      localStorage.removeItem("placeOrderForm");
-      localStorage.removeItem("placeOrderLat");
-      localStorage.removeItem("placeOrderLong");
+
       setFormData({
         firstName: "",
         lastName: "",
@@ -412,7 +481,7 @@ const PlaceOrder = () => {
         street: "",
         city: "",
         state: "",
-        zipcode: "",
+        pincode: "",
         country: "",
         phone: "",
         mapLink: "",
@@ -518,11 +587,23 @@ const PlaceOrder = () => {
           <div className="flex gap-3">
             <input
               required
-              name="zipcode"
-              value={formData.zipcode}
-              onChange={onChangeHandler}
-              placeholder="ZipCode"
-              type="number"
+              name="pincode"
+              value={formData.pincode}
+              onChange={(e) => {
+                // Allow only numbers and limit to 6 digits
+                const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                onChangeHandler({
+                  target: {
+                    name: e.target.name,
+                    value: value,
+                  },
+                });
+              }}
+              placeholder="6-digit pincode"
+              type="text" // Using text instead of number for better control
+              inputMode="numeric" // Shows numeric keyboard on mobile
+              pattern="[0-9]{6}" // HTML5 pattern validation
+              maxLength="6" // Limits to 6 characters
               className="border py-1.5 px-3.5 rounded-md w-full"
             />
             <input
@@ -541,7 +622,10 @@ const PlaceOrder = () => {
             value={formData.phone}
             onChange={onChangeHandler}
             placeholder="Phone"
-            type="number"
+            max="9999999999"
+            type="tel"
+            pattern="[0-9]{10}"
+            maxLength="10"
             className="border py-1.5 px-3.5 rounded-md w-full"
           />
           {/* {!otpSent && (
@@ -575,42 +659,21 @@ const PlaceOrder = () => {
             </>
           )}
           <input
+            id="mapLink"
             type="text"
-            name="mapLink"
-            // value={formData.mapLink}
-            onChange={(e) => {
-              setFormData((prevData) => ({
-                ...prevData,
-                mapLink: e.target.value,
-              }));
-              // take lat and log that always after first @
-              const mapLink = e.target.value;
-              if (mapLink) {
-                const latLong = mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-                if (latLong) {
-                  const lat = latLong[1];
-                  const long = latLong[2];
-                  setFormData((prevData) => ({
-                    ...prevData,
-                    latitude: lat,
-                    longitude: long,
-                  }));
-                  setLat(lat);
-                  setLong(long);
-                  console.log(`Latitude: ${lat}, Longitude: ${long}`);
-                } else {
-                  incorrectData.push(
-                    "Map Link Should be copy after Placing Pin"
-                  );
-                }
-              } else {
-                console.log("Map link is empty");
-              }
-            }}
-            placeholder="Paste Google Map Link (after Placing Pin)"
-            className="border py-1.5 px-3.5 rounded-md w-full mt-2"
-            required
+            className={`w-full rounded-md border px-3 py-2 text-sm shadow-sm outline-none ${
+              incorrectData.mapLink ? "border-red-500" : "border-gray-300"
+            }`}
+            placeholder="Paste Google Maps link (with @lat,long)"
+            value={formData.mapLink}
+            onChange={handleMapLinkChange}
           />
+
+          {incorrectData.mapLink && (
+            <p className="text-red-500 text-xs mt-1 whitespace-pre-line">
+              {incorrectData.mapLink}
+            </p>
+          )}
 
           {incorrectData && Object.keys(incorrectData).length > 0 && (
             <div className="text-red-500 text-sm mt-2">

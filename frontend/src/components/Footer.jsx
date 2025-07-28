@@ -51,7 +51,7 @@ const Footer = () => {
       <div>
         <hr />
         <p className="text-center text-gray-600 mt-5 mb-5">
-          Copyright © 2023. All rights reserved.
+          Copyright © 2025. All rights reserved.
         </p>
       </div>
     </div>
