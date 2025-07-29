@@ -53,7 +53,7 @@ const addProduct = async (req, res) => {
       stock: JSON.parse(stock),
     };
 
-    console.log(productData);
+
 
     // ✅ First save product to DB
     const product = await productModel.create(productData);
@@ -213,7 +213,6 @@ const updateProduct = async (req, res) => {
       productData,
       { new: true }
     );
-    console.log("updatedProduct ", updatedProduct);
 
     // ✅ Then emit updated product to the room
     const io = req.app.get("io");
@@ -318,7 +317,6 @@ const getBestSellers = async (req, res) => {
       .find({})
       .sort({ totalSales: -1 })
       .limit(10);
-    console.log("Best Sellers:", bestSellers);
     res.json({
       success: true,
       products: bestSellers,

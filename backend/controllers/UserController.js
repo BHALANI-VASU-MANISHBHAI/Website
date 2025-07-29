@@ -20,7 +20,6 @@ const createdToken = (id, role) => {
 const loginUser = async (req, res) => {
   try {
     const { email, password, role, cartData } = req.body;
-    console.log("Login request body:", req.body);
     // Basic validation
     if (!email || !password || !role) {
       return res.status(400).json({
@@ -45,7 +44,7 @@ const loginUser = async (req, res) => {
         ...user.cartData,
         ...cartData,
       };
-      console.log("Updated cartData:", user.cartData);
+      
 
       await userModel.findByIdAndUpdate(user._id, {
         cartData: user.cartData,
@@ -249,7 +248,7 @@ const UpdateProfile = async (req, res) => {
         folder: "profilePhotos",
       });
       updateData.profilePhoto = result.secure_url;
-      console.log("✅ Image uploaded:", result.secure_url);
+     
     }
 
     // 5. Update user document

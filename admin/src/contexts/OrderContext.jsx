@@ -62,7 +62,6 @@ const OrderContextProvider = ({ children, token }) => {
 
     socket.on("order:status:update", (data) => {
       console.log("Order status updated:", data);
-      toast.info("Orader status must be updated");
       fetchAllOrders();
     });
     return () => {

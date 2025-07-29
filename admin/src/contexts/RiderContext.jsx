@@ -94,7 +94,6 @@ const RiderContextProvider = ({ children }) => {
     socket.on("order:packed", async (data) => {
       console.log("Order packed event received:", data);
       // You can handle the order packed event here, e.g., show a notification
-      toast.info(`Order ${data.orderId} is ready to assign a rider`);
       // Optionally, you can call AssignOrderToRider here if needed
       await AssignOrderToRider(data.orderId);
     });
@@ -120,7 +119,6 @@ const RiderContextProvider = ({ children }) => {
       toast.info(`Order ${data.orderId} status updated to ${data.status}`);
       if (data.status !== "Packing") {
         // Handle the order status update event here, e.g., update the riderOrders state
-        toast.info(`Order ${data.orderId} status updated to ${data.status}`);
         await getAllRidersOrders(); // Refresh the orders
       }
     });

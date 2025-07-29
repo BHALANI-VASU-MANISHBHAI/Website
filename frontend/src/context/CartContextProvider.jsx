@@ -10,7 +10,7 @@ const CartContextProvider = ({ children }) => {
   const { backendUrl, token } = useContext(GlobalContext);
   const { products } = useContext(ProductContext);
   const [cartItems, setCartItems] = useState({});
-
+  const maxCartItems = 30; // Maximum items allowed in cart
   // Automatically fetch cart when token changes
   useEffect(() => {
     const fetchCart = async () => {
@@ -46,10 +46,19 @@ const CartContextProvider = ({ children }) => {
     }
     const product = products.find((product) => product._id === itemId);
     const Stock = product.stock.find((stock) => stock.size === size);
+
+    console.log("Adding to cart", itemId, size, Stock);
     if (cartData[itemId]) {
-      if (cartData[itemId][size] && cartData[itemId][size] >= Stock.quantity) {
-        toast.error("You have already added maximum quantity of this item");
+      console.log("Item already in cart", cartData[itemId][size]);
+      if (
+        (cartData[itemId][size] && cartData[itemId][size] >= Stock.quantity) 
+      ) {
+        toast.error("no more stock available");
         return;
+      }
+      if (cartData[itemId][size] && cartData[itemId][size] + 1 > maxCartItems) {
+        toast.error("You can only add up to " + maxCartItems + " items");
+        return
       }
       cartData[itemId][size] = (cartData[itemId][size] || 0) + 1;
     } else {
@@ -129,6 +138,7 @@ const CartContextProvider = ({ children }) => {
     getCartCount,
     updateQuantity,
     getCartAmount,
+    maxCartItems,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

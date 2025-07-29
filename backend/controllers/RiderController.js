@@ -8,31 +8,32 @@ import RiderCODHistory from "../models/riderPaymentHistory.js";
 import UserModel from "../models/userModel.js";
 import orderHandler from "../socketHandlers/orderHandler.js";
 import riderHandler from "../socketHandlers/riderHandler.js";
+import axios from "axios";
 
-function getHaversineDistance(lat1, lon1, lat2, lon2) {
-  const a =
-    Math.pow(Math.sin(((lat2 - lat1) * Math.PI) / 360), 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.pow(Math.sin(((lon2 - lon1) * Math.PI) / 360), 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return 6371 * c; // Distance in km
-}
-async function getRoadDistance(lat1, lon1, lat2, lon2) {
+async function getRouteDistance(fromLat, fromLng, toLat, toLng) {
   try {
-    const response = await fetch(
-      `http://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=false`
+    const res = await axios.post(
+      "https://api.openrouteservice.org/v2/directions/driving-car",
+      {
+        coordinates: [
+          [fromLng, fromLat],
+          [toLng, toLat],
+        ],
+      },
+      {
+        headers: {
+          Authorization:
+            "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6Ijc2NGJiZWY5YTU5YjQxMTU4YTkwY2Y4ODQzZWZhNDBkIiwiaCI6Im11cm11cjY0In0=",
+          "Content-Type": "application/json",
+        },
+      }
     );
-    const data = await response.json();
 
-    if (data.code === "Ok" && data.routes?.length > 0) {
-      return data.routes[0].distance / 1000; // Convert meters to km
-    }
-    throw new Error("Failed to fetch road distance");
-  } catch (error) {
-    console.error("OSRM Error:", error);
-    // Fallback to Haversine (straight-line distance)
-    return getHaversineDistance(lat1, lon1, lat2, lon2);
+    const distanceInKm = res.data.routes[0].summary.distance / 1000;
+    return distanceInKm;
+  } catch (err) {
+    console.error("Distance API error:", err.message);
+    return 0;
   }
 }
 const findAllRidersByShortestTrip = async (
@@ -212,7 +213,6 @@ const riderAcceptOrder = async (req, res) => {
       {
         data: {
           order: updatedOrder,
-
           message: "Order accepted by rider",
         },
       },
@@ -264,7 +264,6 @@ const updateRiderLocation = async (req, res) => {
 const GetcurrentRiderOrder = async (req, res) => {
   try {
     const userId = req.userId;
-    console.log("Current rider userId:", userId);
 
     if (!userId) {
       return res.status(401).json({
@@ -282,8 +281,6 @@ const GetcurrentRiderOrder = async (req, res) => {
         "name phone email riderStatus codMarkedDone earning cod codSubmittedMoney"
       )
       .lean();
-
-    console.log("Current rider order:", order);
 
     if (!order) {
       return res.status(200).json({
@@ -365,14 +362,13 @@ const getAllRidersOrder = async (req, res) => {
       )
       .lean();
 
-    console.log("Orders for rider:", orders);
     if (!orders || orders.length === 0) {
       return res.json({
         success: false,
         message: "No orders found for this rider",
       });
     }
-    console.log("Fetched all riders length:", orders.length);
+
     return res.status(200).json({
       success: true,
       orders: orders,
@@ -406,7 +402,7 @@ const submitRiderCOD = async (req, res) => {
     const { amount } = req.body;
 
     const riderId = req.userId;
-    console.log("Rider ID:", riderId);
+
     if (!amount || amount < 0) {
       return res.status(400).json({ error: "Invalid amount" });
     }
@@ -464,16 +460,6 @@ const verifyRiderCODPayment = async (req, res) => {
   const { razorpay_payment_id, razorpay_order_id, razorpay_signature, amount } =
     req.body;
   const riderId = req.userId;
-
-  console.log("🔐 Payment Verification Details:");
-  console.log({
-    razorpay_payment_id,
-    razorpay_order_id,
-    razorpay_signature,
-    amount,
-    riderId,
-  });
-
   const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
     .update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -512,7 +498,6 @@ const verifyRiderCODPayment = async (req, res) => {
       razorpay_payment_id,
       verified: true, // already default, optional
     });
-    console.log("✅ COD Amount Updated:", updatedRider.codSubmittedMoney);
 
     //currently we are not updating the codMarkedDone field, but you can uncomment the below line if needed
 
@@ -527,7 +512,7 @@ const verifyRiderCODPayment = async (req, res) => {
       amount,
       message: "Rider COD payment verified",
     });
-    // io.to("riderRoom-" + riderId).emit(
+  
 
     return res
       .status(200)
@@ -569,35 +554,196 @@ const getRiderCODHistory = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
+// async function assignSingleOrder(order, io) {
+//   try {
+//     const existingOrder = await OrderModel.findById(order._id);
+//     const deliveryLat = existingOrder.address.latitude;
+//     const deliveryLng = existingOrder.address.longitude;
+//     const pickupLat = existingOrder.pickUpLocation.lat;
+//     const pickupLng = existingOrder.pickUpLocation.lng;
+//     const orderId = existingOrder._id;
+//     console.log("Assigning order:",
+//       existingOrder
+//     );
+//     if (!deliveryLat || !deliveryLng || !pickupLat || !pickupLng || !orderId) {
+//       return {
+//         success: false,
+//         message: "All coordinates and orderId are required",
+//       };
+//     }
+//     console.log("data available for assigning order:");
+//     if (!existingOrder || existingOrder.riderId) {
+//       return { success: false, message: "Invalid or already assigned order" };
+//     }
+//     console.log("Order data: not repeated");
+
+//     await OrderModel.findByIdAndUpdate(orderId, {
+//       riderId: null,
+//       expiresAt: null,
+//       isAssigning: true,
+//     });
+//     console.log("Finding riders for order:", orderId);
+//     const riders = await findAllRidersByShortestTrip(
+//       deliveryLat,
+//       deliveryLng,
+//       pickupLat,
+//       pickupLng
+//     );
+
+//     if (!riders || riders.length === 0) {
+//       return { success: false, message: "No available riders found" };
+//     }
+
+//     const distanceFromPickUpLocation = await getRouteDistance(
+//       pickupLat,
+//       pickupLng,
+//       location.lat,
+//       location.lng
+//     );
+//     const distanceFromDeliveryLocation = await getRouteDistance(
+//       deliveryLat,
+//       deliveryLng,
+//       location.lat,
+//       location.lng
+//     );
+//     console.log(
+//       "Distance from Pickup Location:",
+//       distanceFromPickUpLocation
+//     );
+//     console.log(
+//       "Distance from Delivery Location:",
+//       distanceFromDeliveryLocation
+//     );
+//     const totalDistance =
+//       distanceFromDeliveryLocation + distanceFromPickUpLocation;
+//     let riderAmount = 0;
+//     let BaseCharge = 10;
+//     if (totalDistance < 3) {
+//       riderAmount = BaseCharge + 5 * totalDistance;
+//     } else if (totalDistance < 20) {
+//       riderAmount = BaseCharge + 10 * totalDistance;
+//     } else if (totalDistance < 50) {
+//       riderAmount = BaseCharge + 15 * totalDistance;
+//     } else {
+//       riderAmount = BaseCharge + 20 * totalDistance;
+//     }
+
+//     await OrderModel.findByIdAndUpdate(orderId, {
+//       earning: {
+//         amount: riderAmount, // Default to 0 if not provided
+//         collected: 0, // Initially set to 0, can be updated later
+//       },
+//     });
+
+//     for (const rider of riders) {
+//       const lockKey = `rider-lock-${rider._id}`;
+//       const lock = await redisClient.set(lockKey, "locked", {
+//         EX: 30,
+//         NX: true,
+//       });
+//       if (!lock) continue; // Rider is already locked by another assignment
+
+//       try {
+//         await OrderModel.findByIdAndUpdate(orderId, {
+//           expiresAt: new Date(Date.now() + 30000),
+//         });
+//         const ORDER = await OrderModel.findById(orderId)
+//           .populate(
+//             "riderId",
+//             "name phone email riderStatus codMarkedDone earning cod codSubmittedMoney"
+//           )
+//           .lean();
+//         console.log("Emitting new order to rider:", existingOrder);
+//         const payload = {
+//           ORDER,
+//         };
+
+//         // io.to(`riderRoom-${rider._id}`).emit(
+//         //   "order:rider:notification",
+//         //   payload
+//         // );
+
+//         riderHandler(
+//           io,
+//           `riderRoom-${rider._id}`,
+//           { data: payload },
+//           "order:rider:notification"
+//         );
+
+//         const response = await waitForRiderResponse(io, rider._id, orderId);
+//         if (response.accepted) {
+//           return {
+//             success: true,
+//             rider: {
+//               _id: rider._id,
+//               name: rider.name,
+//               phone: rider.phone,
+//             },
+//           };
+//         }
+
+//         if (response.reason === "taken_by_other") {
+//           await OrderModel.findByIdAndUpdate(orderId, {
+//             expiresAt: null,
+//             isAssigning: false,
+//             earning: {
+//               amount: 0, // Reset earning if not accepted
+//               collected: 0,
+//             },
+//             riderId: null,
+//           });
+//           await UserModel.findByIdAndUpdate(rider._id, {
+//             riderStatus: "available",
+//           });
+//           break;
+//         }
+//       } catch (error) {
+//         console.error(`Error processing rider ${rider._id}:`, error);
+//       } finally {
+//         await redisClient.del(lockKey); // Always release lock
+//       }
+//     }
+
+//     await OrderModel.findByIdAndUpdate(orderId, {
+//       riderId: null,
+//       expiresAt: null,
+//       isAssigning: false,
+//       status: "Packing",
+//       riderAmount: 0,
+//     });
+
+//     return { success: false, message: "No rider accepted the order" };
+//   } catch (error) {
+//     console.error("Error in assignSingleOrder:", error);
+//     return { success: false, message: "Internal error" };
+//   }
+// }
 async function assignSingleOrder(order, io) {
   try {
     const existingOrder = await OrderModel.findById(order._id);
+    if (!existingOrder || existingOrder.riderId) {
+      return { success: false, message: "Invalid or already assigned order" };
+    }
+
     const deliveryLat = existingOrder.address.latitude;
     const deliveryLng = existingOrder.address.longitude;
     const pickupLat = existingOrder.pickUpLocation.lat;
     const pickupLng = existingOrder.pickUpLocation.lng;
     const orderId = existingOrder._id;
-    console.log("Assigning order:",
-      existingOrder
-    );
+
     if (!deliveryLat || !deliveryLng || !pickupLat || !pickupLng || !orderId) {
       return {
         success: false,
         message: "All coordinates and orderId are required",
       };
     }
-    console.log("data available for assigning order:");
-    if (!existingOrder || existingOrder.riderId) {
-      return { success: false, message: "Invalid or already assigned order" };
-    } 
-    console.log("Order data: not repeated");
 
     await OrderModel.findByIdAndUpdate(orderId, {
       riderId: null,
       expiresAt: null,
       isAssigning: true,
     });
-    console.log("Finding riders for order:", orderId);
+
     const riders = await findAllRidersByShortestTrip(
       deliveryLat,
       deliveryLng,
@@ -609,56 +755,68 @@ async function assignSingleOrder(order, io) {
       return { success: false, message: "No available riders found" };
     }
 
-    const distanceFromPickUpLocation = 5;
-    const distanceFromDeliveryLocation = 10;
-    const totalDistance =
-      distanceFromDeliveryLocation + distanceFromPickUpLocation;
-    let riderAmount = 0;
-    let BaseCharge = 10;
-    if (totalDistance < 3) {
-      riderAmount = BaseCharge + 5 * totalDistance;
-    } else if (totalDistance < 20) {
-      riderAmount = BaseCharge + 10 * totalDistance;
-    } else if (totalDistance < 50) {
-      riderAmount = BaseCharge + 15 * totalDistance;
-    } else {
-      riderAmount = BaseCharge + 20 * totalDistance;
-    }
-
-    await OrderModel.findByIdAndUpdate(orderId, {
-      earning: {
-        amount: riderAmount, // Default to 0 if not provided
-        collected: 0, // Initially set to 0, can be updated later
-      },
-    });
-
     for (const rider of riders) {
       const lockKey = `rider-lock-${rider._id}`;
       const lock = await redisClient.set(lockKey, "locked", {
         EX: 30,
         NX: true,
       });
-      if (!lock) continue; // Rider is already locked by another assignment
+      if (!lock) continue;
 
       try {
+        const riderLat = rider.location.lat;
+        const riderLng = rider.location.lng;
+
+        const distanceToPickup = await getRouteDistance(
+          riderLat,
+          riderLng,
+          pickupLat,
+          pickupLng
+        );
+
+        const distanceToDelivery = await getRouteDistance(
+          pickupLat,
+          pickupLng,
+          deliveryLat,
+          deliveryLng
+        );
+
+        const totalDistance = distanceToPickup + distanceToDelivery;
+
+        let BaseCharge = 10;
+        let riderAmount = 0;
+        console.log("Distance from Pickup Location:", distanceToPickup);
+        console.log("Distance from Delivery Location:", distanceToDelivery);
+        console.log("Total Distance:", totalDistance);
+        if (totalDistance < 3) {
+          riderAmount = BaseCharge + 5 * totalDistance;
+        } else if (totalDistance < 20) {
+          riderAmount = BaseCharge + 10 * totalDistance;
+        } else if (totalDistance < 50) {
+          riderAmount = BaseCharge + 15 * totalDistance;
+        } else {
+          riderAmount = BaseCharge + 20 * totalDistance;
+        }
+
+        await OrderModel.findByIdAndUpdate(orderId, {
+          earning: {
+            amount: riderAmount,
+            collected: 0,
+          },
+        });
+
         await OrderModel.findByIdAndUpdate(orderId, {
           expiresAt: new Date(Date.now() + 30000),
         });
+
         const ORDER = await OrderModel.findById(orderId)
           .populate(
             "riderId",
             "name phone email riderStatus codMarkedDone earning cod codSubmittedMoney"
           )
           .lean();
-        console.log("Emitting new order to rider:", existingOrder);
-        const payload = {
-          ORDER,
-        };
 
-        // io.to(`riderRoom-${rider._id}`).emit(
-        //   "order:rider:notification",
-        //   payload
-        // );
+        const payload = { ORDER };
 
         riderHandler(
           io,
@@ -683,10 +841,7 @@ async function assignSingleOrder(order, io) {
           await OrderModel.findByIdAndUpdate(orderId, {
             expiresAt: null,
             isAssigning: false,
-            earning: {
-              amount: 0, // Reset earning if not accepted
-              collected: 0,
-            },
+            earning: { amount: 0, collected: 0 },
             riderId: null,
           });
           await UserModel.findByIdAndUpdate(rider._id, {
@@ -697,7 +852,7 @@ async function assignSingleOrder(order, io) {
       } catch (error) {
         console.error(`Error processing rider ${rider._id}:`, error);
       } finally {
-        await redisClient.del(lockKey); // Always release lock
+        await redisClient.del(lockKey);
       }
     }
 
@@ -727,9 +882,7 @@ const assignRider = async (req, res) => {
       isAssigning: false,
       riderId: null,
     });
-    console.log(
-      `Initial packed orders count: ${packedOrders.length}`
-    );
+
     const MAX_RETRIES = 3;
     let attempt = 0;
     let assigned = [];

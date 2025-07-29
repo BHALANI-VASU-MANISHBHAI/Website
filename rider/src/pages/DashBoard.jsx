@@ -111,10 +111,11 @@ const Dashboard = () => {
 
     const handleNewOrder = (data) => {
       const fullOrder = data.ORDER;
+      console.log("New order received:", fullOrder);
       setOrderData(fullOrder);
       localStorage.setItem("activeOrder", JSON.stringify(fullOrder));
       startCountdown(fullOrder);
-
+      setRiderAmount(fullOrder.earning.amount);
       // Estimate pickup → delivery
       calculateDistanceAndTime(
         fullOrder.pickUpLocation,
@@ -140,7 +141,6 @@ const Dashboard = () => {
         setDistance,
         setEta
       );
-      calculateRiderAmount(distance, fullOrder.earning.amount);
     };
 
     socket.on("order:rider:notification", handleNewOrder);
