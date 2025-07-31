@@ -44,7 +44,6 @@ const loginUser = async (req, res) => {
         ...user.cartData,
         ...cartData,
       };
-      
 
       await userModel.findByIdAndUpdate(user._id, {
         cartData: user.cartData,
@@ -132,18 +131,42 @@ const registerUser = async (req, res) => {
 // route for admin login
 const adminLogin = async (req, res) => {
   const { email, password } = req.body;
-
-  if (
-    email == process.env.ADMIN_EMAIL &&
-    password == process.env.ADMIN_PASSWORD
-  ) {
-    const token = createdToken(email + password, "admin");
-    return res.status(200).json({ success: true, token, role: "admin" });
-  } else {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid credentials" });
+  console.log("Admin login attempt with email:", email);
+  const exist = await userModel.findOne({ email, role: "admin" });
+  console.log("Admin found:", exist ? "Yes" : "No");
+  if (!exist) {
+    return res.json({ success: false, message: "Admin not found" });
   }
+
+  const isMatch = await bcrypt.compare(password, exist.password);
+  console.log("Password match:", isMatch ? "Yes" : "No");
+  if (!isMatch) {
+    return res.json({ success: false, message: "Invalid credentials" });
+  }
+
+  // Create token
+  const token = createdToken(exist._id, exist.role);
+  console.log("Token created for admin:", token);
+  return res.status(200).json({
+    success: true,
+    token,
+    role: exist.role,
+    userId: exist._id, // Often useful to return user ID
+  });
+
+  // if (
+  //   email == process.env.ADMIN_EMAIL &&
+  //   password == process.env.ADMIN_PASSWORD
+  // ) {
+
+  //   con
+  //   const token = createdToken(email + password, "admin");
+  //   return res.status(200).json({ success: true, token, role: "admin" });
+  // } else {
+  //   return res
+  //     .status(400)
+  //     .json({ success: false, message: "Invalid credentials" });
+  // }
 };
 
 // Get user data by Id
@@ -248,7 +271,6 @@ const UpdateProfile = async (req, res) => {
         folder: "profilePhotos",
       });
       updateData.profilePhoto = result.secure_url;
-     
     }
 
     // 5. Update user document

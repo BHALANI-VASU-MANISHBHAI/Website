@@ -107,6 +107,9 @@ async function waitForRiderResponse(io, riderId, orderId, timeout = 30000) {
       if (!order) return { accepted: false, reason: "order_not_found" };
       if (order.status === "Shipped") {
         if (order.riderId?.toString() === riderId.toString()) {
+          await OrderModel.findByIdAndUpdate(orderId, {
+            status: "Packing",
+          });
           return { accepted: true };
         } else if (
           order.riderId &&

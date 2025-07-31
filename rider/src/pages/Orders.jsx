@@ -5,7 +5,8 @@ import { GlobalContext } from "../contexts/GlobalContext";
 import { OrderContext } from "../contexts/OrderContext";
 
 const Orders = () => {
-  const { currentOrder, setCurrentOrder } = useContext(OrderContext);
+  const { currentOrder, setCurrentOrder, currentLocation } =
+    useContext(OrderContext);
   const { backendUrl, token } = useContext(GlobalContext);
 
   const [otp, setOtp] = useState("");
@@ -18,6 +19,7 @@ const Orders = () => {
   const [timeFromPickup, setTimeFromPickup] = useState(null);
   const [distanceFromDelivery, setDistanceFromDelivery] = useState(null);
   const [timeFromDelivery, setTimeFromDelivery] = useState(null);
+  const [locationIsValid, setLocationIsValid] = useState(false);
 
   const calculateDistanceAndTime = async (from, to, setDistFn, setTimeFn) => {
     try {
@@ -40,7 +42,7 @@ const Orders = () => {
 
   useEffect(() => {
     let watchId;
-
+    console.log("Current Order:", currentOrder);
     if (currentOrder && "geolocation" in navigator) {
       watchId = navigator.geolocation.watchPosition(
         (position) => {
@@ -74,6 +76,7 @@ const Orders = () => {
     };
   }, [currentOrder]);
 
+  useEffect(() => {}, [currentOrder]);
   const sendOTP = async () => {
     setSending(true);
     try {
@@ -119,6 +122,41 @@ const Orders = () => {
       setVerifying(false);
     }
   };
+
+  const ChangedToShipped = async () => {
+    try {
+      console.log("Backend URL:", backendUrl);
+      const response = await axios.post(
+        `${backendUrl}/api/order/status`,
+        { orderId: currentOrder._id, status: "Shipped" },
+        { headers: { token } }
+      );
+      if (response.data.success) {
+        toast.success("Order status changed to Shipped!");
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      console.error("Error changing order status to shipped:", error);
+      toast.error("❌ Failed to change order status");
+    }
+  };
+
+  const checkValidLocation = (location) => {
+    if (currentOrder && currentOrder.pickUpLocation) {
+      const { lat, lng } = currentOrder.pickUpLocation;
+      const distance = Math.sqrt(
+        Math.pow(location.lat - lat, 2) + Math.pow(location.lng - lng, 2)
+      );
+      setLocationIsValid(distance < 0.1); // 100 meters threshold
+    }
+  };
+
+  useEffect(() => {
+    if (currentLocation) {
+      checkValidLocation(currentLocation);
+    }
+  }, [currentLocation, currentOrder]);
 
   if (!currentOrder) {
     return (
@@ -245,8 +283,19 @@ const Orders = () => {
         )}
 
         <hr />
-
         <div className="flex flex-col sm:flex-row gap-4 justify-end">
+          {status === "Packing" && locationIsValid && (
+            // <p className="text-red-600 font-semibold">
+            //    Order is currently being packed. Please wait for further updates.
+            // </p>
+            <button
+              onClick={ChangedToShipped}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md w-full sm:w-[150px] hover:bg-blue-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={status !== "Packing"}
+            >
+              Mark as Shipped
+            </button>
+          )}
           <button
             onClick={sendOTP}
             disabled={sending || verifying}

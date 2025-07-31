@@ -10,6 +10,8 @@ const RiderCodInfo = () => {
   const [totalCodAmount, setTotalCodAmount] = useState(0);
   const [totalSubmittedCod, setTotalSubmittedCod] = useState(0);
   const [totalRemainingCod, setTotalRemainingCod] = useState(0);
+  
+  
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,6 +20,7 @@ const RiderCodInfo = () => {
   const [codRangeFilter, setCodRangeFilter] = useState("all");
   const [codDoneFilter, setCodDoneFilter] = useState("all");
   const [dateRange, setDateRange] = useState("7");
+
   const [customStartDate, setCustomStartDate] = useState(
     new Date().toISOString().split("T")[0]
   ); // Default to today
@@ -338,22 +341,40 @@ const RiderCodInfo = () => {
               </div>
 
               <div className="mt-6">
-                <div>
-                  <p className="font-semibold mb-2 text-base">
-                    Orders Assigned:
-                  </p>
-                  <input
-                    type="text"
-                    placeholder="Search order by ID or status"
-                    value={orderSearchMap[riderId] || ""}
-                    onChange={(e) =>
-                      setOrderSearchMap((prev) => ({
-                        ...prev,
-                        [riderId]: e.target.value,
-                      }))
-                    }
-                    className="border px-3 py-1.5 rounded-md mb-4 w-full sm:w-1/2"
-                  />
+                <div className="mb-4 flex justify-between sm:flex-row flex-col">
+                  <div className="text-sm text-gray-600 w-[70%]">
+                    <p className="font-semibold mb-2 text-base">
+                      Orders Assigned:
+                    </p>
+                    <input
+                      type="text"
+                      placeholder="Search order by ID or status"
+                      value={orderSearchMap[riderId] || ""}
+                      onChange={(e) =>
+                        setOrderSearchMap((prev) => ({
+                          ...prev,
+                          [riderId]: e.target.value,
+                        }))
+                      }
+                      className="border px-3 py-1.5 rounded-md mb-4 w-full sm:w-1/2"
+                    />
+                  </div>
+                  <div className="text-sm text-gray-600 mb-2 flex items-center ">
+                    <span className="text-black"> Today Remaning COD: ₹</span>
+                    <p>
+                      {data.orders
+                        .filter(
+                          (order) =>
+                            new Date(order.acceptedTime).toDateString() ===
+                            new Date().toDateString()
+                        )
+                        .reduce(
+                          (sum, order) => sum + (order.earning?.collected || 0),
+                          0
+                        )
+                        .toFixed(2)}
+                    </p>
+                  </div>
                 </div>
                 <div className="hidden sm:grid grid-cols-4 gap-3 sm:gap-20 text-sm font-semibold border-b pb-2">
                   <div>Order ID</div>
@@ -374,7 +395,8 @@ const RiderCodInfo = () => {
                     (a, b) =>
                       new Date(b.acceptedTime) - new Date(a.acceptedTime)
                   )
-                  .map((order) => (
+                  .slice(0, 5) // Show only the latest 5 orders
+                  . map((order) => (
                     <RiderCodInfoCard key={order._id} order={order} />
                   ))}
               </div>

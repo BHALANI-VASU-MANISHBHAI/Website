@@ -25,19 +25,20 @@ riderRouter.get(
   GetcurrentRiderOrder
 );
 riderRouter.get("/acceptedOrder", restrictToRoles("rider"), riderAcceptedOrder);
-riderRouter.get("/AllriderOrders", adminAuth, getAllRidersOrder);
+riderRouter.get("/AllriderOrders", restrictToRoles("admin"), getAllRidersOrder);
 riderRouter.get("/submitCOD", restrictToRoles("rider"), submitRiderCOD);
-riderRouter.get("/online-riderCount", adminAuth, getOnlineTotalRider);
+riderRouter.get(
+  "/online-riderCount",
+  restrictToRoles("admin"),
+  getOnlineTotalRider
+);
 riderRouter.get(
   "/riderCODHistory",
-  restrictToRoles("rider", "admin"),
+  restrictToRoles("admin", "rider"),
   getRiderCODHistory
 );
 
-riderRouter.post(
-  "/assign",
-  assignRider
-);
+riderRouter.post("/assign", assignRider);
 riderRouter.post("/acceptOrder", restrictToRoles("rider"), riderAcceptOrder);
 riderRouter.post(
   "/createRiderCODOrder",

@@ -332,6 +332,8 @@ const allOrders = async (req, res) => {
         status: { $ne: "Cancelled" }, // Exclude cancelled orders
       })
       .sort({ date: -1 });
+    console.log("All orders fetched successfully");
+    
     res.json({ success: true, orders });
   } catch (err) {
     console.log(err);

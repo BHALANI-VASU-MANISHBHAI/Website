@@ -1,29 +1,35 @@
 import jwt from "jsonwebtoken";
+import User from "../models/userModel.js";
 
+const adminAuth = async (req, res, next) => {
+  try {
+    const { token } = req.headers;
 
-const adminAuth = (req, res, next) => {
-try{
-     const {token} = req.headers;
-        // Check if token is provided
-        if(!token){
-            return res.status(401).json({success:false,message:"Unauthorized"});
-        }
+    if (!token) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized: Token missing" });
+    }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        let value  = process.env.ADMIN_EMAIL + process.env.ADMIN_PASSWORD;
-        
-        if(decoded.id!=(process.env.ADMIN_EMAIL + process.env.ADMIN_PASSWORD)){
-            return res.status(401).json({success:false,message:"Unauthorized"});
-        }
-    
-        req.userId = decoded.id;
-        req.role = decoded.role;    
-        next();
-}catch(err){
-    console.log(err);
-    return res.status(500).json({success:false,message:err.message});   
-}
-}
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log("Decoded Token:", decoded);
+    const user = await User.findOne({ _id: decoded.id }); // ✅ await and async added
+
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Unauthorized: User not found" });
+    }
+
+    req.userId = user._id;
+    req.userRole = user.role;
+    next();
+  } catch (err) {
+    console.error("Admin Auth Error:", err);
+    return res
+      .status(401)
+      .json({ success: false, message: "Invalid or expired token" });
+  }
+};
 
 export default adminAuth;

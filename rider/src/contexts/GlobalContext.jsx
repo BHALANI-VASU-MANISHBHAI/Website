@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
     const backendUrl = import.meta.env.VITE_BACKEND_URL;
     const [token, setToken] = useState(() =>  localStorage.getItem("token") || null);
     const [currentLocation, setCurrentLocation] = useState(null);
-  
+    
     const navigate = useNavigate();
 
     // 3. Load token from localStorage on mount

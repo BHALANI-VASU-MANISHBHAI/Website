@@ -44,7 +44,7 @@ const Payment = () => {
     const total = totalCollectedMoney();
     setSubmitMoney(total);
     setAmount(total.toString());
-    if (total > 0) toast.info(`Total collected money: ₹${total}`);
+
   }, [orderHistory, userData]);
 
   const handleSubmit = async () => {
@@ -133,7 +133,7 @@ const Payment = () => {
           type="number"
           placeholder="Enter amount"
           value={amount}
-          min={1}
+          min={submitMoney}
           max={submitMoney}
           onChange={(e) => setAmount(e.target.value)}
           className="w-full p-2 border rounded mb-4"
@@ -146,6 +146,7 @@ const Payment = () => {
             Number(amount) <= 0 ||
             Number(amount) > submitMoney
           }
+
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full disabled:bg-gray-400"
         >
           Submit via Razorpay
