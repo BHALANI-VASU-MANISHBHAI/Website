@@ -1,25 +1,23 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import assets from "../assets/assets.js";
 import { RiderContext } from "../contexts/RiderContext";
-import RiderCodInfoCard from "../components/RiderCodInfoCard.jsx";
+import RiderCodOrderInfoCard from "../components/RiderCodOrderInfoCard.jsx";
+import RiderInfoCard from "../components/RiderInfoCard.jsx";
 
 const RiderCodInfo = () => {
   const { riderOrders } = useContext(RiderContext);
-  const [RiderOrders, setRiderOrders] = useState([]);
   const [groupedRiders, setGroupedRiders] = useState({});
   const [totalCodAmount, setTotalCodAmount] = useState(0);
   const [totalSubmittedCod, setTotalSubmittedCod] = useState(0);
   const [totalRemainingCod, setTotalRemainingCod] = useState(0);
-  
-  
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [codRangeFilter, setCodRangeFilter] = useState("all");
   const [codDoneFilter, setCodDoneFilter] = useState("all");
   const [dateRange, setDateRange] = useState("7");
+
 
   const [customStartDate, setCustomStartDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -28,11 +26,7 @@ const RiderCodInfo = () => {
     new Date().toISOString().split("T")[0]
   ); // Default to today
   const [orderSearchMap, setOrderSearchMap] = useState({});
-  useEffect(() => {
-    // Initialize custom date range to last 7 days
-    setRiderOrders(riderOrders);
-    console.log("Rider Orders:", riderOrders);
-  }, [riderOrders]);
+  // No need for useEffect to sync RiderOrders, use riderOrders directly
   const filterOrdersByDateRange = (orders) => {
     if (dateRange === "all") return orders;
 
@@ -60,9 +54,8 @@ const RiderCodInfo = () => {
   };
 
   useEffect(() => {
-    if (!RiderOrders || RiderOrders.length === 0) return;
-
-    const filteredOrders = filterOrdersByDateRange(RiderOrders);
+    if (!riderOrders || riderOrders.length === 0) return;
+    const filteredOrders = filterOrdersByDateRange(riderOrders);
     const map = {};
 
     for (const order of filteredOrders) {
@@ -83,6 +76,8 @@ const RiderCodInfo = () => {
           orders: [],
           collected: 0,
           submitted: rider.codSubmittedMoney || 0,
+          showRiderInfo: false,
+          showOrderDetails: false,
         };
       }
 
@@ -92,7 +87,6 @@ const RiderCodInfo = () => {
     }
 
     const groupedArray = Object.values(map);
-    console.log("Grouped Riders:", groupedArray);
     const totalCOD = groupedArray.reduce((sum, r) => sum + r.collected, 0);
     const totalSubmitted = groupedArray.reduce(
       (sum, r) => sum + r.submitted,
@@ -104,7 +98,7 @@ const RiderCodInfo = () => {
     setTotalCodAmount(totalCOD);
     setTotalSubmittedCod(totalSubmitted);
     setTotalRemainingCod(totalRemaining);
-  }, [RiderOrders, dateRange, customStartDate, customEndDate]);
+  }, [riderOrders, dateRange, customStartDate, customEndDate]);
 
   const filteredRiders = useMemo(() => {
     return Object.entries(groupedRiders).filter(([_, data]) => {
@@ -117,28 +111,16 @@ const RiderCodInfo = () => {
       const remaining = codAmount - submittedAmount;
 
       return (
-        (searchTerm === "" ||
-          name.includes(searchTerm.toLowerCase()) ||
-          phone.includes(searchTerm.toLowerCase())) &&
+        (debouncedSearchTerm === "" ||
+          name.includes(debouncedSearchTerm.toLowerCase()) ||
+          phone.includes(debouncedSearchTerm.toLowerCase())) &&
         (statusFilter === "all" || riderInfo.riderStatus === statusFilter) &&
-        (codRangeFilter === "all" ||
-          (codRangeFilter === "<500" && codAmount < 500) ||
-          (codRangeFilter === "500-1000" &&
-            codAmount >= 500 &&
-            codAmount <= 1000) ||
-          (codRangeFilter === ">1000" && codAmount > 1000)) &&
         (codDoneFilter === "all" ||
           (codDoneFilter === "done" && remaining === 0) ||
           (codDoneFilter === "pending" && remaining > 0))
       );
     });
-  }, [
-    groupedRiders,
-    debouncedSearchTerm,
-    statusFilter,
-    codRangeFilter,
-    codDoneFilter,
-  ]);
+  }, [groupedRiders, debouncedSearchTerm, statusFilter, codDoneFilter]);
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -150,7 +132,7 @@ const RiderCodInfo = () => {
   }, [searchTerm]);
 
   return (
-    <div className="p-4 max-w-6xl mx-auto">
+    <main className="p-4 max-w-6xl mx-auto" aria-label="Rider COD Information">
       <h1 className="text-2xl font-bold mb-6 text-center">
         Rider COD Information
       </h1>
@@ -169,7 +151,7 @@ const RiderCodInfo = () => {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <input
           type="text"
           placeholder="Search by name or phone..."
@@ -187,17 +169,6 @@ const RiderCodInfo = () => {
           <option value="available">Available</option>
           <option value="busy">Busy</option>
           <option value="notified">Notified</option>
-        </select>
-
-        <select
-          value={codRangeFilter}
-          onChange={(e) => setCodRangeFilter(e.target.value)}
-          className="border px-4 py-2 rounded-md"
-        >
-          <option value="all">All COD Amounts</option>
-          <option value="<500">Less than ₹500</option>
-          <option value="500-1000">₹500 - ₹1000</option>
-          <option value=">1000">Greater than ₹1000</option>
         </select>
 
         <select
@@ -233,11 +204,12 @@ const RiderCodInfo = () => {
               onChange={(e) => setCustomStartDate(e.target.value)}
               className="border px-4 py-2 rounded-md"
             />
+            {/* Prevent future dates */}
             <input
               type="date"
               value={customEndDate}
               min={customStartDate}
-              max={new Date().toISOString().split("T")[0]} // Prevent future dates
+              max={new Date().toISOString().split("T")[0]}
               onChange={(e) => setCustomEndDate(e.target.value)}
               className="border px-4 py-2 rounded-md"
             />
@@ -250,21 +222,22 @@ const RiderCodInfo = () => {
         <p className="text-center text-gray-500">No matching riders found.</p>
       ) : (
         filteredRiders.map(([riderId, data]) => {
+          console.log("Rider Data:", data);
           const riderCodAmount = data.collected;
           const riderSubmitted = data.submitted;
-          const remaining = riderCodAmount - riderSubmitted;
           const latestOrder = [...data.orders].sort(
             (a, b) => new Date(b.acceptedTime) - new Date(a.acceptedTime)
           )[0];
+          const remaining = riderCodAmount - riderSubmitted;
 
           return (
             <div
               key={riderId}
               className="mb-8 border p-4 rounded-xl shadow-lg bg-white"
             >
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 ">
                 <h2 className="text-xl font-semibold text-gray-800">
-                  Rider: {data.riderInfo.name || "N/A"}
+                  RiderName : {data.riderInfo.name || "N/A"}
                 </h2>
 
                 {remaining === 0 ? (
@@ -282,7 +255,13 @@ const RiderCodInfo = () => {
                   <div
                     className="flex items-center cursor-pointer hover:opacity-80"
                     onClick={() =>
-                      console.log("Marking as done:", data.riderInfo._id)
+                      setGroupedRiders((prev) => ({
+                        ...prev,
+                        [riderId]: {
+                          ...prev[riderId],
+                          submitted: prev[riderId].collected,
+                        },
+                      }))
                     }
                   >
                     <p className="mr-2 text-blue-600 font-medium">
@@ -296,116 +275,139 @@ const RiderCodInfo = () => {
                   </div>
                 )}
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2 text-base">
-                  <p>
-                    <span className="font-medium">Phone:</span>{" "}
-                    {data.riderInfo.phone || "N/A"}
+              <div className="flex flex-row justify-between items-center  ">
+                {data.riderInfo._id && (
+                  <p className="text-gray-600 md:flex-1 hidden">
+                    <span className="font-medium">Rider ID:</span> {riderId.slice(0, 8)}
                   </p>
-                  <p>
-                    <span className="font-medium">Email:</span>{" "}
-                    {data.riderInfo.email || "N/A"}
-                  </p>
-                  <p>
-                    <span className="font-medium">Status:</span>{" "}
-                    {data.riderInfo.riderStatus || "N/A"}
-                  </p>
-                  <p>
-                    <span className="font-medium">Last Assigned:</span>{" "}
-                    {latestOrder?.acceptedTime
-                      ? new Date(latestOrder.acceptedTime).toLocaleString(
-                          "en-IN"
-                        )
-                      : "N/A"}
-                  </p>
-                </div>
-
-                <div className="space-y-2 text-base">
-                  <p>
-                    <span className="font-medium">Total COD Amount:</span> ₹
-                    {riderCodAmount.toFixed(2)}
-                  </p>
-                  <p>
-                    <span className="font-medium">Submitted COD:</span> ₹
-                    {riderSubmitted.toFixed(2)}
-                  </p>
-                  <p>
-                    <span className="font-medium">Remaining COD:</span> ₹
-                    {remaining.toFixed(2)}
-                  </p>
-                  <p className="text-gray-600">
-                    Total Orders: {data.orders.length}
-                  </p>
-                </div>
+                )}
+                <button
+                  onClick={() =>
+                    setGroupedRiders((prev) => ({
+                      ...prev,
+                      [riderId]: {
+                        ...prev[riderId],
+                        showRiderInfo: !prev[riderId].showRiderInfo,
+                      },
+                    }))
+                  }
+                  className="text-blue-600 hover:underline mt-2"
+                >
+                  {data.showRiderInfo ? "Hide Rider Info" : "Show Rider Info"}
+                </button>
               </div>
-
-              <div className="mt-6">
-                <div className="mb-4 flex justify-between sm:flex-row flex-col">
-                  <div className="text-sm text-gray-600 w-[70%]">
-                    <p className="font-semibold mb-2 text-base">
-                      Orders Assigned:
-                    </p>
-                    <input
-                      type="text"
-                      placeholder="Search order by ID or status"
-                      value={orderSearchMap[riderId] || ""}
-                      onChange={(e) =>
-                        setOrderSearchMap((prev) => ({
-                          ...prev,
-                          [riderId]: e.target.value,
-                        }))
-                      }
-                      className="border px-3 py-1.5 rounded-md mb-4 w-full sm:w-1/2"
-                    />
-                  </div>
-                  <div className="text-sm text-gray-600 mb-2 flex items-center ">
-                    <span className="text-black"> Today Remaning COD: ₹</span>
+              {data.showRiderInfo && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <RiderInfoCard data={data} latestOrder={latestOrder} />
+                  <div className="space-y-2 text-base">
                     <p>
-                      {data.orders
-                        .filter(
-                          (order) =>
-                            new Date(order.acceptedTime).toDateString() ===
-                            new Date().toDateString()
-                        )
-                        .reduce(
-                          (sum, order) => sum + (order.earning?.collected || 0),
-                          0
-                        )
-                        .toFixed(2)}
+                      <span className="font-medium">Total COD Amount:</span> ₹
+                      {riderCodAmount.toFixed(2)}
+                    </p>
+                    <p>
+                      <span className="font-medium">Submitted COD:</span> ₹
+                      {riderSubmitted.toFixed(2)}
+                    </p>
+                    <p>
+                      <span className="font-medium">Remaining COD:</span> ₹
+                      {remaining.toFixed(2)}
+                    </p>
+                    <p className="text-gray-600">
+                      Total Orders: {data.orders.length}
                     </p>
                   </div>
                 </div>
-                <div className="hidden sm:grid grid-cols-4 gap-3 sm:gap-20 text-sm font-semibold border-b pb-2">
-                  <div>Order ID</div>
-                  <div>Status</div>
-                  <div>Amount</div>
-                  <div className="hidden sm:block">Done</div>
-                </div>
-
-                {[...data.orders]
-                  .filter((order) => {
-                    const search = orderSearchMap[riderId]?.toLowerCase() || "";
-                    return (
-                      order._id.toLowerCase().includes(search) ||
-                      order.status?.toLowerCase().includes(search)
-                    );
-                  })
-                  .sort(
-                    (a, b) =>
-                      new Date(b.acceptedTime) - new Date(a.acceptedTime)
-                  )
-                  .slice(0, 5) // Show only the latest 5 orders
-                  . map((order) => (
-                    <RiderCodInfoCard key={order._id} order={order} />
-                  ))}
+              )}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                <button
+                  onClick={() =>
+                    setGroupedRiders((prev) => ({
+                      ...prev,
+                      [riderId]: {
+                        ...prev[riderId],
+                        showOrderDetails: !prev[riderId].showOrderDetails,
+                      },
+                    }))
+                  }
+                  className="text-blue-600 hover:underline mt-1 "
+                >
+                  {data.showOrderDetails
+                    ? "Hide Order Details"
+                    : "Show Order Details"}
+                </button>
               </div>
+              {/* Order Details */}
+              {data.showOrderDetails && (
+                <div className="mt-6">
+                  <div className="mb-4 flex justify-between sm:flex-row flex-col">
+                    <div className="text-sm text-gray-600 w-[70%]">
+                      <p className="font-semibold mb-2 text-base">
+                        Orders Assigned:
+                      </p>
+                      <input
+                        type="text"
+                        placeholder="Search order by ID or status"
+                        value={orderSearchMap[riderId] || ""}
+                        onChange={(e) =>
+                          setOrderSearchMap((prev) => ({
+                            ...prev,
+                            [riderId]: e.target.value,
+                          }))
+                        }
+                        className="border px-3 py-1.5 rounded-md mb-4 w-full sm:w-1/2"
+                      />
+                    </div>
+                    <div className="text-sm text-gray-600 mb-2 flex items-center ">
+                      <span className="text-black sm:text-base  mr-2">
+                        {" "}
+                        Today Collected COD: ₹
+                      </span>
+                      <p>
+                        {data.orders
+                          .filter(
+                            (order) =>
+                              new Date(order.acceptedTime).toDateString() ===
+                              new Date().toDateString()
+                          )
+                          .reduce(
+                            (sum, order) =>
+                              sum + (order.earning?.collected || 0),
+                            0
+                          )
+                          .toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="hidden sm:grid grid-cols-4 gap-3 sm:gap-20 text-sm font-semibold border-b pb-2">
+                    <div>Order ID</div>
+                    <div>Status</div>
+                    <div>Amount</div>
+                    <div className="hidden sm:block">Done</div>
+                  </div>
+
+                  {[...data.orders]
+                    .filter((order) => {
+                      const search =
+                        orderSearchMap[riderId]?.toLowerCase() || "";
+                      return (
+                        order._id.toLowerCase().includes(search) ||
+                        order.status?.toLowerCase().includes(search)
+                      );
+                    })
+                    .sort(
+                      (a, b) =>
+                        new Date(b.acceptedTime) - new Date(a.acceptedTime)
+                    )
+                    .map((order) => (
+                      <RiderCodOrderInfoCard key={order._id} order={order} />
+                    ))}
+                </div>
+              )}
             </div>
           );
         })
       )}
-    </div>
+    </main>
   );
 };
-
 export default RiderCodInfo;

@@ -1,6 +1,6 @@
 import assets from "../assets/assets.js";
 
-const RiderCodInfoCard = ({ order }) => {
+const RiderCodOrderInfoCard = ({ order }) => {
   return (
     <div
       key={order._id}
@@ -52,4 +52,4 @@ const RiderCodInfoCard = ({ order }) => {
   );
 };
 
-export default RiderCodInfoCard;
+export default RiderCodOrderInfoCard;

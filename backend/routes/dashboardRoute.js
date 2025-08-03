@@ -3,6 +3,7 @@ import {
   getMostSellingProductsByRange,
   getOrdersByRange,
   getTotalCustomers,
+  getDataByDateRange,
 } from "../controllers/dashboardController.js";
 
 const dashboardRouter = express.Router();
@@ -13,5 +14,6 @@ dashboardRouter.get(
   "/getMostSellingProductsByRange",
   getMostSellingProductsByRange
 );
+dashboardRouter.get("/getDataByDateRange", getDataByDateRange);
 
 export default dashboardRouter;

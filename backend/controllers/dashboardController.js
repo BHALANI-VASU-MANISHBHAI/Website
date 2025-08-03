@@ -1,6 +1,7 @@
 import orderModel from "../models/orderModel.js";
 import UserModel from "../models/userModel.js";
-
+import DailyStats from "../models/dailyStatsModel.js";
+import dayjs from "dayjs";
 // Utility: To get full day range
 const formatDateRange = (startDate, endDate) => {
   const start = new Date(startDate);
@@ -102,7 +103,48 @@ const getOrdersByRange = async (req, res) => {
   }
 };
 
-export {
-  getMostSellingProductsByRange, getOrdersByRange, getTotalCustomers
+const getDataByDateRange = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    console.log("Fetching data for range:", startDate, endDate);
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Date range required." });
+    }
+
+    const start = dayjs(startDate).format("YYYY-MM-DD");
+    const end = dayjs(endDate).format("YYYY-MM-DD");
+
+    console.log("Formatted date range:", start, end);
+
+    const dailyStats = await DailyStats.find({
+      date: { $gte: start, $lte: end },
+    }).sort({ date: 1 });
+    console.log("Daily stats fetched:", dailyStats.length, "records");
+    if (!dailyStats || dailyStats.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+    const formattedData = dailyStats.map((stat) => ({
+      day: stat.day,
+      Profit: stat.Profit,
+      RiderProfit: stat.RiderProfit,
+      Cost: stat.Cost,
+      RiderCost: stat.RiderCost,
+    }));
+    return res.json({ success: true, data: dailyStats });
+  } catch (error) {
+    console.error("Error fetching daily stats:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching daily stats.",
+    });
+  }
 };
 
+export {
+  getMostSellingProductsByRange,
+  getOrdersByRange,
+  getTotalCustomers,
+  getDataByDateRange,
+};

@@ -5,8 +5,8 @@ import { GlobalContext } from "../contexts/GlobalContext";
 import { OrderContext } from "../contexts/OrderContext";
 
 const Orders = () => {
-  const { currentOrder, setCurrentOrder, currentLocation } =
-    useContext(OrderContext);
+  const { currentOrder, setCurrentOrder } = useContext(OrderContext);
+  const { currentLocation } = useContext(GlobalContext);
   const { backendUrl, token } = useContext(GlobalContext);
 
   const [otp, setOtp] = useState("");
@@ -76,7 +76,6 @@ const Orders = () => {
     };
   }, [currentOrder]);
 
-  useEffect(() => {}, [currentOrder]);
   const sendOTP = async () => {
     setSending(true);
     try {
@@ -133,6 +132,10 @@ const Orders = () => {
       );
       if (response.data.success) {
         toast.success("Order status changed to Shipped!");
+        setCurrentOrder((prev) => ({
+          ...prev,
+          status: "Shipped",
+        }));
       } else {
         toast.error(response.data.message);
       }
@@ -142,17 +145,39 @@ const Orders = () => {
     }
   };
 
-  const checkValidLocation = (location) => {
-    if (currentOrder && currentOrder.pickUpLocation) {
-      const { lat, lng } = currentOrder.pickUpLocation;
-      const distance = Math.sqrt(
-        Math.pow(location.lat - lat, 2) + Math.pow(location.lng - lng, 2)
-      );
-      setLocationIsValid(distance < 0.1); // 100 meters threshold
-    }
-  };
+ const checkValidLocation = (location) => {
+   if (currentOrder && currentOrder.pickUpLocation) {
+     const { lat, lng } = currentOrder.pickUpLocation;
+
+     const getDistanceFromLatLng = (lat1, lon1, lat2, lon2) => {
+       const R = 6371000; // Earth radius in meters
+       const dLat = (lat2 - lat1) * (Math.PI / 180);
+       const dLon = (lon2 - lon1) * (Math.PI / 180);
+       const a =
+         Math.sin(dLat / 2) ** 2 +
+         Math.cos((lat1 * Math.PI) / 180) *
+           Math.cos((lat2 * Math.PI) / 180) *
+           Math.sin(dLon / 2) ** 2;
+       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+       return R * c; 
+     };
+
+
+     const distance = getDistanceFromLatLng(
+       location.lat,
+       location.lng,
+       lat,
+       lng
+     );
+     console.log("Distance to pickup (in meters):", distance);
+
+     setLocationIsValid(distance < 1000); // 100 meters threshold ✅
+   }
+ };
+
 
   useEffect(() => {
+    console.log("Current Location:", currentLocation);
     if (currentLocation) {
       checkValidLocation(currentLocation);
     }
@@ -284,7 +309,7 @@ const Orders = () => {
 
         <hr />
         <div className="flex flex-col sm:flex-row gap-4 justify-end">
-          {status === "Packing" && locationIsValid && (
+          {status === "Packing" && locationIsValid ? (
             // <p className="text-red-600 font-semibold">
             //    Order is currently being packed. Please wait for further updates.
             // </p>
@@ -295,12 +320,12 @@ const Orders = () => {
             >
               Mark as Shipped
             </button>
-          )}
+          ) : null}
           <button
             onClick={sendOTP}
-            disabled={sending || verifying}
+            disabled={sending || verifying || status !== "Shipped"}
             className={`px-4 py-2 bg-green-600 text-white rounded-md w-full sm:w-[150px] ${
-              sending || verifying
+              sending || verifying || status !== "Shipped"
                 ? "opacity-50 cursor-not-allowed"
                 : "hover:bg-green-700"
             }`}

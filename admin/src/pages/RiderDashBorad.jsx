@@ -5,32 +5,9 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { OrderContext } from "../contexts/OrderContext.jsx";
 import { RiderContext } from "../contexts/RiderContext.jsx";
-
-// Memoized StatCard component
-const StatCard = React.memo(({ title, value, color }) => {
-  const colorMap = {
-    green: "bg-green-100 text-green-700",
-    blue: "bg-blue-100 text-blue-700",
-    red: "bg-red-100 text-red-700",
-    yellow: "bg-yellow-100 text-yellow-700",
-    gray: "bg-gray-100 text-gray-700",
-    indigo: "bg-indigo-100 text-indigo-700",
-    purple: "bg-purple-100 text-purple-700",
-  };
-
-  return (
-    <div
-      className={`p-5 rounded-md shadow-md ${
-        colorMap[color] || "bg-gray-100 text-gray-700"
-      }`}
-    >
-      <p className="text-sm text-gray-600">{title}</p>
-      <p className="text-2xl font-bold">{value}</p>
-    </div>
-  );
-});
+import StatCard from "../components/StatCard.jsx";
+import RiderOrderCard from "../components/RiderOrderCard.jsx";
 
 // Memoized FilterDropdown component
 const FilterDropdown = React.memo(({ label, value, onChange, options }) => (
@@ -65,102 +42,9 @@ const DateInput = React.memo(({ label, value, onChange, min, max }) => (
   </div>
 ));
 
-// Memoized OrderCard component
-const OrderCard = React.memo(({ order }) => {
-  return (
-    <div className="border p-5 rounded-lg shadow bg-white flex flex-col md:flex-row justify-between items-start gap-6">
-      <div className="text-sm text-gray-800 space-y-2 w-full md:w-1/2">
-        <p>
-          <strong>Order ID:</strong> {order._id}
-        </p>
-        <p>
-          <strong>Status:</strong> {order.status}
-        </p>
-        <p>
-          <strong>Amount:</strong> ₹{order.amount}
-        </p>
-        <p className="flex items-center gap-2">
-          <strong>Payment:</strong> {order.paymentMethod} ({order.paymentStatus}
-          )
-          {order.paymentMethod === "COD" && (
-            <span className="ml-2 text-xs text-yellow-700 font-semibold bg-yellow-100 px-2 py-1 rounded">
-              Collect Cash on Delivery
-            </span>
-          )}
-        </p>
-        <p>
-          <strong>Date:</strong>{" "}
-          {new Date(order.createdAt).toLocaleDateString("en-GB")}
-        </p>
-        <p>
-          <strong>Time:</strong>{" "}
-          {new Date(order.acceptedTime).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          })}
-        </p>
-        <p className="text-sm font-semibold text-gray-600 border-t pt-2">
-          Rider Info
-        </p>
-        <p>
-          <strong>Name:</strong> {order.riderId?.name || "N/A"}
-        </p>
-        <p>
-          <strong>Phone:</strong> {order.riderId?.phone || "N/A"}
-        </p>
-        <p>
-          <strong>Email:</strong> {order.riderId?.email || "N/A"}
-        </p>
-        <p>
-          <strong>Status:</strong> {order.riderId?.riderStatus || "N/A"}
-        </p>
-      </div>
-
-      <div className="text-sm text-gray-800 w-full md:w-1/2 space-y-3">
-        <p className="text-sm font-semibold text-gray-600 border-t pt-2">
-          Address Info
-        </p>
-        <p className="font-semibold">
-          Pickup Address:
-          <span className="font-normal">
-            {" "}
-            {order.pickUpAddress?.street}, {order.pickUpAddress?.city},{" "}
-            {order.pickUpAddress?.state} - {order.pickUpAddress?.pincode}
-          </span>
-        </p>
-        <p className="font-semibold">
-          Delivery Address:
-          <span className="font-normal">
-            {" "}
-            {order.address?.firstName} {order.address?.lastName},{" "}
-            {order.address?.street}, {order.address?.city},{" "}
-            {order.address?.state} - {order.address?.zipcode}
-          </span>
-        </p>
-        <p>Email: {order.address?.email}</p>
-        <p>Phone: {order.address?.phone}</p>
-        {order.items?.length > 0 && (
-          <div>
-            <p className="font-semibold text-gray-700 pt-2">Items:</p>
-            <ul className="list-disc ml-6 space-y-1">
-              {order.items.map((item, idx) => (
-                <li key={idx}>
-                  {item.name} - Qty: {item.quantity} (Size: {item.size})
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-});
-
 const RiderDashboard = () => {
   // Contexts
   const { onlineRiders, riderOrders = [] } = useContext(RiderContext);
-  const { orders } = useContext(OrderContext);
 
   // Consolidated state
   const [filters, setFilters] = useState({
@@ -422,7 +306,7 @@ const RiderDashboard = () => {
         <div className="grid grid-cols-1 gap-5 mt-4">
           {filteredOrders.length > 0 ? (
             filteredOrders.map((order) => (
-              <OrderCard key={order._id} order={order} />
+              <RiderOrderCard key={order._id} order={order} />
             ))
           ) : (
             <p className="text-gray-500 mt-4">No rider orders found.</p>

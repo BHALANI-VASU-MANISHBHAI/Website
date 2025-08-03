@@ -129,7 +129,6 @@ const RiderContextProvider = ({ children }) => {
       toast.success(`COD payment verified for order ${data.orderId}`);
     });
     socket.on("rider:profile:updated", async (data) => {
-      toast.success(`Rider profile updated: ${data.riderName}`);
       // Optionally, you can fetch
       await getAllRidersOrders(); // Refresh the orders
     });

@@ -17,6 +17,9 @@ import { useNavigate } from "react-router-dom";
       if (storedToken) setToken(storedToken);
     }, []);
 
+    useEffect(() => {
+        console.log("Current location updated: now ", currentLocation);
+    }, [currentLocation]);
     
 
 
