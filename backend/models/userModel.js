@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema(
         return !this.googleId;
       },
     },
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
     authType: {
       type: String,
       enum: ["local", "google"],

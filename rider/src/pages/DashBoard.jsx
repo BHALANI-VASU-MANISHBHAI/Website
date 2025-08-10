@@ -7,15 +7,14 @@ import { UserContext } from "../contexts/UserContext";
 import socket from "../services/socket";
 
 const Dashboard = () => {
-  const { userData } = useContext(UserContext);
+  const { userData, orderData, setOrderData } = useContext(UserContext);
   const { backendUrl, token, currentLocation } = useContext(GlobalContext);
   const { setCurrentOrder } = useContext(OrderContext);
 
-  const [orderData, setOrderData] = useState(null);
+  // const [orderData, setOrderData] = useState(null);
   const [timer, setTimer] = useState(null);
   const [distance, setDistance] = useState(0);
   const [eta, setEta] = useState(null);
-  const [riderAmount, setRiderAmount] = useState(0);
   const [isAccepting, setIsAccepting] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
 
@@ -92,43 +91,28 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem("activeOrder");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setOrderData(parsed);
-        startCountdown(parsed);
-        calculateDistanceAndTime(
-          parsed.pickUpLocation,
-          parsed.address,
-          setDistance,
-          setEta
-        );
-      } catch {
-        localStorage.removeItem("activeOrder");
-      }
-    }
+    // const saved = localStorage.getItem("activeOrder");
 
-    const handleNewOrder = (data) => {
-      const fullOrder = data.ORDER;
-      console.log("New order received:", fullOrder);
-      setOrderData(fullOrder);
-      localStorage.setItem("activeOrder", JSON.stringify(fullOrder));
-      startCountdown(fullOrder);
-      setRiderAmount(fullOrder.earning.amount);
-      // Estimate pickup → delivery
+    try {
+      startCountdown(orderData);
       calculateDistanceAndTime(
-        fullOrder.pickUpLocation,
-        fullOrder.address,
+        orderData.pickUpLocation,
+        orderData.address,
+        setDistance,
+        setEta
+      );
+      calculateDistanceAndTime(
+        orderData.pickUpLocation,
+        orderData.address,
         setDistanceFromPickupToDeliveryLocation,
         setTimeFromPickupToDeliveryLocation
       );
 
       // Estimate rider current location → pickup
-      if (currentLocation && fullOrder.pickUpLocation) {
+      if (currentLocation && orderData.pickUpLocation) {
         calculateDistanceAndTime(
           currentLocation,
-          fullOrder.pickUpLocation,
+          orderData.pickUpLocation,
           setDistanceFromPickupToCurrentLocation,
           setTimeFromPickupToCurrentLocation
         );
@@ -136,11 +120,22 @@ const Dashboard = () => {
 
       // Calculate total route distance
       calculateDistanceAndTime(
-        fullOrder.pickUpLocation,
-        fullOrder.address,
+        orderData.pickUpLocation,
+        orderData.address,
         setDistance,
         setEta
       );
+    } catch {
+      // localStorage.removeItem("activeOrder");
+    }
+
+    const handleNewOrder = (data) => {
+      const fullOrder = data.ORDER;
+      console.log("New order received:", fullOrder);
+      // setOrderData(fullOrder);
+      // localStorage.setItem("activeOrder", JSON.stringify(fullOrder));
+      // startCountdown(orderData);
+      // // Estimate pickup → delivery
     };
 
     socket.on("order:rider:notification", handleNewOrder);
@@ -148,7 +143,7 @@ const Dashboard = () => {
       socket.off("order:rider:notification", handleNewOrder);
       clearInterval(countdownRef.current);
     };
-  }, [currentLocation]);
+  }, [currentLocation, orderData]);
 
   const handleAcceptOrder = async (orderId) => {
     if (isAccepting) return;
@@ -164,7 +159,9 @@ const Dashboard = () => {
         { headers: { token } }
       );
       if (response.data.success) {
-        toast.success(`✅ Order accepted! You will earn ₹${riderAmount}`);
+        toast.success(
+          `✅ Order accepted! You will earn ₹${orderData.earning.amount}`
+        );
         clearInterval(countdownRef.current);
         localStorage.removeItem("activeOrder");
         setTimer(null);

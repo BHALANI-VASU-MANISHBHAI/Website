@@ -18,7 +18,6 @@ const RiderCodInfo = () => {
   const [codDoneFilter, setCodDoneFilter] = useState("all");
   const [dateRange, setDateRange] = useState("7");
 
-
   const [customStartDate, setCustomStartDate] = useState(
     new Date().toISOString().split("T")[0]
   ); // Default to today
@@ -278,7 +277,8 @@ const RiderCodInfo = () => {
               <div className="flex flex-row justify-between items-center  ">
                 {data.riderInfo._id && (
                   <p className="text-gray-600 md:flex-1 hidden">
-                    <span className="font-medium">Rider ID:</span> {riderId.slice(0, 8)}
+                    <span className="font-medium">Rider ID:</span>{" "}
+                    {riderId.slice(0, 8)}
                   </p>
                 )}
                 <button
@@ -398,6 +398,7 @@ const RiderCodInfo = () => {
                       (a, b) =>
                         new Date(b.acceptedTime) - new Date(a.acceptedTime)
                     )
+
                     .map((order) => (
                       <RiderCodOrderInfoCard key={order._id} order={order} />
                     ))}

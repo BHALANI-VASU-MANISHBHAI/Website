@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
 import { GlobalContext } from "./GlobalContext"; // Import GlobalContext
-
+import socket from "../services/socket";
+import { useEffect } from "react";
 export const UserContext = React.createContext();
 
 const UserContextProvider = ({ children }) => {
@@ -39,12 +40,15 @@ const UserContextProvider = ({ children }) => {
     userData,
     // fetchUserData,
   };
+  useEffect(() => {
+    if (token) {
+      // Join the admin room if the user is an admin
+      
+    }
+  }, [token]);
 
-  return (
-    <UserContext.Provider value={values}>
-      {children}
-    </UserContext.Provider>
-  );
+  // Optionally, you can add a function to update user data
+  return <UserContext.Provider value={values}>{children}</UserContext.Provider>;
 };
 
 export default UserContextProvider;

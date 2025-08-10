@@ -10,13 +10,13 @@ const ProductContextProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    if(products.length > 0) return; // Prevent fetching if products are already loaded
+    if (products.length > 0) return; // Prevent fetching if products are already loaded
     getProductsData(); // Initial product fetch
   }, []);
 
   useEffect(() => {
     // ✅ Join stock room
-    socket.emit('joinStockRoom');
+    socket.emit("joinStockRoom");
 
     // ✅ Socket listener for new product addition
     socket.on("product:added", (data) => {
@@ -63,11 +63,11 @@ const ProductContextProvider = ({ children }) => {
           return product;
         })
       );
-    }); 
-    
+    });
+
     // ✅ Cleanup on unmount
     return () => {
-      socket.emit('leaveStockRoom');
+      socket.emit("leaveStockRoom");
       socket.off("product:added");
       socket.off("product:updated");
       socket.off("product:deleted");
@@ -96,9 +96,7 @@ const ProductContextProvider = ({ children }) => {
   };
 
   return (
-    <ProductContext.Provider value={value}>
-      {children}
-    </ProductContext.Provider>
+    <ProductContext.Provider value={value}>{children}</ProductContext.Provider>
   );
 };
 

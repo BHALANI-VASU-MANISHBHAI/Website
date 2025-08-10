@@ -116,7 +116,7 @@ const RiderContextProvider = ({ children }) => {
 
     socket.on("order:status:update", async (data) => {
       console.log("Order status updated event received:", data);
-      toast.info(`Order ${data.orderId} status updated to ${data.status}`);
+      
       if (data.status !== "Packing") {
         // Handle the order status update event here, e.g., update the riderOrders state
         await getAllRidersOrders(); // Refresh the orders

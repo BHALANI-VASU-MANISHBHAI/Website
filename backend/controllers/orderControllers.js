@@ -90,6 +90,7 @@ const placeOrder = async (req, res) => {
         { session }
       );
 
+      // If no document was updated, it means the size
       if (!updateResult) {
         // This shouldn't happen because we pre-validated, but just in case
         await session.abortTransaction();
@@ -109,12 +110,14 @@ const placeOrder = async (req, res) => {
     //   .get("io")
     //   .to("adminRoom")
     //   .emit("orderPlaced", { orderId: newOrder[0]._id, userId });
-    console.log("Order placed successfully:", newOrder[0]._id);
+
+    const currenOrder = await orderModel.findById(newOrder[0]._id);
+
     orderHandler(
       io,
       "adminRoom",
       {
-        data: { orderId: newOrder[0]._id, userId },
+        data: { orderId: newOrder[0]._id, userId, order: currenOrder },
       },
       "order:placed"
     );
@@ -149,7 +152,7 @@ const placeOrder = async (req, res) => {
       },
       "product:bestseller:updated"
     );
-    // ✅ Emit Order Placed Event to User Room
+
     return res.json({ success: true, message: "Order placed successfully" });
   } catch (err) {
     console.error("Order placement error:", err);
@@ -333,7 +336,7 @@ const allOrders = async (req, res) => {
       })
       .sort({ date: -1 });
     console.log("All orders fetched successfully");
-    
+
     res.json({ success: true, orders });
   } catch (err) {
     console.log(err);
@@ -420,8 +423,6 @@ const updatedStatus = async (req, res) => {
       );
     }
 
-    console.log("Updated order status to:", status);
-    console.log("Order ID (user ID for socket):", updatedOrder.userId);
 
     orderHandler(
       req.app.get("io"),
@@ -667,7 +668,12 @@ const singleorder = async (req, res) => {
   try {
     const orderId = req.params.orderId;
     const userId = req.userId;
-
+    console.log(
+      "Fetching single order for user:",
+      userId,
+      "Order ID:",
+      orderId
+    );
     if (!orderId) {
       return res
         .status(400)

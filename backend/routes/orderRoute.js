@@ -30,7 +30,7 @@ orderRouter.post(
 ); //create razorpay order
 
 //User Features
-orderRouter.get("/:orderId", restrictToRole("user"), singleorder); //get single order by id
+orderRouter.get("/:orderId", restrictToRole("user","admin"), singleorder); //get single order by id
 orderRouter.post("/userorders", restrictToRole("user"), userOrders); //get user orders
 orderRouter.post("/cancel", restrictToRole("user"), cancelOrderItem); //cancel order
 orderRouter.post("/cancelAll", restrictToRole("user"), cancelAllOrders); //cancel all orders

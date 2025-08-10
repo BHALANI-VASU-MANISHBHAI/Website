@@ -323,9 +323,9 @@ const Orders = () => {
           ) : null}
           <button
             onClick={sendOTP}
-            disabled={sending || verifying || status !== "Shipped"}
+            disabled={sending || verifying }
             className={`px-4 py-2 bg-green-600 text-white rounded-md w-full sm:w-[150px] ${
-              sending || verifying || status !== "Shipped"
+              sending || verifying 
                 ? "opacity-50 cursor-not-allowed"
                 : "hover:bg-green-700"
             }`}

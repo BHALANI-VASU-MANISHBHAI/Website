@@ -38,17 +38,19 @@ const OrderContextProvider = ({ children, token }) => {
     socket.on("order:cancelled", (data) => {
       console.log("Order cancelled:", data);
       toast.error("Order cancelled successfully!");
-      // Remove the cancelled order from the list
-      // setOrders((prevOrders) =>
-      //   prevOrders.map((order) => order._id !== data.orderId)
-      // );
-      fetchAllOrders();
-      // Optionally, you can also fetch all orders again
+      setOrders((prevOrders) =>
+        prevOrders.filter((order) => order._id !== data.orderId)
+      );
     });
 
-    socket.on("order:placed", () => {
-      toast.success("Order placed successfully!wowowoowowowo");
-      fetchAllOrders();
+    socket.on("order:placed", async (data) => {
+      toast.success("Order placed successfully!");
+
+      console.log("Order placed:", data);
+      if (data && data.order) {
+        const order = data.order;
+        setOrders((prevOrders) => [...prevOrders, order]);
+      }
     });
 
     socket.on("order:all:cancelled", () => {
@@ -57,12 +59,24 @@ const OrderContextProvider = ({ children, token }) => {
 
     socket.on("order:delivered", (data) => {
       console.log("Order delivered: From OrderContect ", data);
-      fetchAllOrders();
+      toast.success("Order delivered successfully!");
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === data.orderId ? { ...order, status: "Delivered" } : order
+        )
+      );
     });
 
     socket.on("order:status:update", (data) => {
       console.log("Order status updated:", data);
-      fetchAllOrders();
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order._id === data.orderId ? { ...order, status: data.status } : order
+        )
+      );
+      toast.success(`Order status updated to ${data.status}`);
+      // fetchAllOrders();
     });
     return () => {
       socket.off("order:cancelled");

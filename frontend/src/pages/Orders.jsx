@@ -6,6 +6,7 @@ import { GlobalContext } from "../context/GlobalContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
 import socket from "../services/sockets.jsx";
 
+
 const Orders = () => {
   const { backendUrl, token, currency } = useContext(GlobalContext);
   const { userData } = useContext(UserContext);
@@ -133,10 +134,17 @@ const Orders = () => {
   }, [token]);
 
   useEffect(() => {
-    socket.emit("joinUserRoom", userData._id);
+    // socket.emit("joinUserRoom", userData._id);
 
-    socket.on("order:status:update", () => {
-      loadOrderData();
+    socket.on("order:status:update", (data) => {
+      
+      setOrderData((prevOrders) =>
+        prevOrders.map((order) =>
+          order.orderId === data.orderId ? { ...order, status: data.status } : order
+        )
+      );
+      
+      // loadOrderData();
     });
 
     socket.on("order:cancelled", (data) => {

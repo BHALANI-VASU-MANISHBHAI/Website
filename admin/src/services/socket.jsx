@@ -17,7 +17,7 @@ socket.on('connect', () => {
   console.log('Socket connected:', socket.id);
 
   // Always re-join admin room on connect/reconnect
-  socket.emit('joinAdminRoom');
+  socket.emit('joinAdminRoom'); 
 });
 
 export default socket;

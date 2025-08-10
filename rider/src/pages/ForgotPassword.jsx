@@ -12,8 +12,14 @@ const ForgotPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [step, setStep] = useState("request"); // "request" | "verify" | "reset"
   const [loading, setLoading] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
   // 1. Send OTP to email
   const handleRequestOtp = async () => {
+    if (!email) {
+      return toast.error("Please enter your email");
+    }
+    setSendingOtp(true);
     try {
       setLoading(true);
       const res = await axios.post(`${backendUrl}/api/auth/forgot-password`, {
@@ -31,11 +37,17 @@ const ForgotPassword = () => {
       toast.error(res.data?.message || "Failed to send OTP");
     } finally {
       setLoading(false);
+      setSendingOtp(false);
+      setVerifyingOtp(false);
     }
   };
 
   // 2. Verify the OTP
   const handleVerifyOtp = async () => {
+    if (!otp) {
+      return toast.error("Please enter the OTP");
+    }
+    setVerifyingOtp(true);
     try {
       setLoading(true);
       const res = await axios.post(`${backendUrl}/api/auth/verify-otp`, {
@@ -52,6 +64,7 @@ const ForgotPassword = () => {
       toast.error("Failed to verify OTP");
     } finally {
       setLoading(false);
+      setVerifyingOtp(false);
     }
   };
 
@@ -99,10 +112,10 @@ const ForgotPassword = () => {
             <button
               onClick={handleRequestOtp}
               className={`w-full bg-blue-600 text-white py-2 rounded-lg ${
-                loading ? "opacity-50 cursor-not-allowed" : ""
+                sendingOtp ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
-              {loading ? "Sending..." : "Send OTP"}
+              {sendingOtp ? "Sending OTP..." : "Send OTP"}
             </button>
           </>
         )}
@@ -115,17 +128,16 @@ const ForgotPassword = () => {
               placeholder="Enter OTP"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg"
               value={otp}
-              x
               onChange={(e) => setOtp(e.target.value)}
               required
             />
             <button
               onClick={handleVerifyOtp}
               className={`w-full bg-blue-600 text-white py-2 rounded-lg ${
-                loading ? "opacity-50 cursor-not-allowed" : ""
+                verifyingOtp ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
-              {loading ? "Verifying..." : "Verify OTP"}
+              {verifyingOtp ? "Verifying..." : "Verify OTP"}
             </button>
           </>
         )}

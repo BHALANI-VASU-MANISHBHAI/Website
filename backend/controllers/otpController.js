@@ -8,8 +8,8 @@ import orderHandler from "../socketHandlers/orderHandler.js";
 const TWOFACTOR_API_KEY = process.env.TWOFACTOR_API_KEY;
 async function storeOTP(req, res) {
   try {
-    const { email ,role } = req.body;
-
+    const { email, role } = req.body;
+    console.log("Storing OTP for email:", email, "Role:", role);
     // Check if user exists
     const user = await UserModel.findOne({ email, role });
     if (!user) {
@@ -29,10 +29,10 @@ async function storeOTP(req, res) {
     await OTP.deleteMany({ email });
     const otpDoc = new OTP({ email, otp });
     await otpDoc.save();
-
+    console.log("OTP stored in database:", otp);
     // Send OTP email
     await sendOtpEmail(email, otp);
-
+    console.log("OTP sent to email:", email);
     return res.json({ success: true, message: "OTP sent to your email" });
   } catch (error) {
     console.error(error);
@@ -46,7 +46,8 @@ async function verifyOTP(req, res) {
     console.log("Verifying OTP for email:", email);
     if (!email || !otp)
       return res.status(400).json({ message: "Email and OTP required" });
-
+    console.log("Received OTP:", otp);
+    console.log("Received email:", email);
     // Find OTP in DB
     const otpDoc = await OTP.findOne({ email, otp });
     if (!otpDoc) return res.status(400).json({ message: "Invalid OTP" });
@@ -94,9 +95,23 @@ const resetPassword = async (req, res) => {
 
     user.password = hashedPassword;
     user.updatedAt = new Date();
-
+    user.tokenVersion += 1; // Increment token version for security
     await user.save();
-
+    if (user.role === "user") {
+      req.app.get("io").to(user._id.toString()).emit("user:password:reset", {
+        userId: user._id,
+        message: "Password reset successfully",
+      });
+    } else if (user.role === "rider") {
+      console.log("Emitting password reset event to rider room");
+      req.app
+        .get("io")
+        .to(`riderRoom-${user._id}`)
+        .emit("rider:password:reset", {
+          userId: user._id,
+          message: "Password reset successfully",
+        });
+    }
     return res.json({ success: true, message: "Password reset successfully" });
   } catch (error) {
     console.error("Password reset error:", error);
@@ -106,7 +121,6 @@ const resetPassword = async (req, res) => {
     });
   }
 };
-
 
 const PhoneSentOTP = async (req, res) => {
   const { phone } = req.body;
@@ -212,7 +226,7 @@ const verifyDeliveryOtp = async (req, res) => {
     order.status = "Delivered";
     order.isActive = false;
     order.deliveryOtp = null;
-    order.otpExpiresAt = null;  
+    order.otpExpiresAt = null;
     order.earning.collected = order.amount;
     order.paymentStatus = "success";
     order.cancelledBy = null;
@@ -231,7 +245,6 @@ const verifyDeliveryOtp = async (req, res) => {
     //   order: updatedOrder,
     //   message: "Order marked as delivered",
     // });
-
 
     // io.to(`riderRoom-${order.riderId}`).emit("CollectedCOD", {
     //   orderId: updatedOrder._id,
@@ -278,7 +291,7 @@ const verifyDeliveryOtp = async (req, res) => {
           message: "Order marked as delivered",
         },
       },
-     "order:delivered"
+      "order:delivered"
     );
     return res.status(200).json({
       success: true,
@@ -295,6 +308,11 @@ const verifyDeliveryOtp = async (req, res) => {
 };
 
 export {
-  PhoneSentOTP, resetPassword, sendDeliveryOtp, storeOTP, verifyDeliveryOtp, verifyOTP, verifyPhoneOTP
+  PhoneSentOTP,
+  resetPassword,
+  sendDeliveryOtp,
+  storeOTP,
+  verifyDeliveryOtp,
+  verifyOTP,
+  verifyPhoneOTP,
 };
-

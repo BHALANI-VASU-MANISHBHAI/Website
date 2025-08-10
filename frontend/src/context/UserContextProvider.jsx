@@ -3,14 +3,15 @@ import React, { useContext, useState } from "react";
 import { toast } from "react-toastify";
 import { GlobalContext } from "./GlobalContext";
 import { UserContext } from "./UserContext";
-
+import socket from "../services/sockets";
+import { useEffect } from "react";
+import { use } from "react";
 
 const UserContextProvider = ({ children }) => {
+  const { backendUrl, token, navigate, setToken } = useContext(GlobalContext);
+  const [userData, setUserData] = useState({});
 
-    const { backendUrl, token } = useContext(GlobalContext);
-    const [userData, setUserData] = useState({});
-
- // Fetch user data from backend
+  // Fetch user data from backend
   const getUserData = async (token) => {
     if (!token) return;
 
@@ -32,11 +33,37 @@ const UserContextProvider = ({ children }) => {
     }
   };
 
-  React.useEffect(() => {
-    if (token) {
+  useEffect(() => {
+    console.log("User Data:", userData);
+    if (userData) {
+      socket.emit("joinUserRoom", userData._id);
+      console.log("User joined their room:", userData._id);
+    }
+  }, [userData]);
+  useEffect(() => {
+    // Listen for user data updates via socket
+    socket.on("user:password:reset", (data) => {
+      toast.success("User changed password successfully");
+      localStorage.removeItem("token");
+      setToken("");
+      setUserData({});
+    });
+
+    // Cleanup listener when component unmounts
+    return () => {
+      socket.off("user:password:reset");
+    };
+  }, []);
+
+  //if not token then navigate to login
+  useEffect(() => {
+    if (!token) {
+      console.log("No token found, redirecting to login");
+      navigate("/login");
+    } else {
       getUserData(token);
     }
-  }, [token]);
+  }, [token, navigate]);
 
   const value = {
     userData,
@@ -44,11 +71,7 @@ const UserContextProvider = ({ children }) => {
     getUserData,
   };
 
-  return (
-    <UserContext.Provider value={value}>
-        {children}
-    </UserContext.Provider>
-    );
-}
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+};
 
-export default UserContextProvider; 
+export default UserContextProvider;

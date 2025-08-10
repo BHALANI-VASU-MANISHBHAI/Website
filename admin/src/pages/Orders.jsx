@@ -35,7 +35,7 @@ const Orders = ({ token }) => {
   const getAllNotification = async () => {
     //find all shipped orders
     const shippedOrders = orders.filter(
-      (order) => order.status === "Packing" && order.riderId
+      (order) => order.status === "Shipped" && order.riderId
     );
     shippedOrders.sort(
       (a, b) => new Date(b.acceptedTime) - new Date(a.acceptedTime)

@@ -8,7 +8,7 @@ import React, {
   useState,
 } from "react";
 
-import { useNavigate } from "react-router-dom";
+import { data, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { backendUrl } from "../App.jsx";
 import assets from "../assets/assets.js";
@@ -66,7 +66,7 @@ const Dashboard = ({ token }) => {
     endDate: new Date().toISOString().split("T")[0],
     selectedRange: null,
   });
-  const [tab, setTab] = useState("weekly-stats");
+  const [tab, setTab] = useState("overview");
   const [year, setYear] = useState(new Date().getFullYear());
   const [stats, setStats] = useState([]);
   const [month, setMonth] = useState(new Date().getMonth() + 1);
@@ -175,16 +175,21 @@ const Dashboard = ({ token }) => {
           headers: { token },
         }
       );
-
+      console.log("Low stock products response:", response.data);
       if (response.data.success) {
         const allLowStocks = response.data.products;
         setDashboardData((prev) => ({
           ...prev,
-          outOfStock: allLowStocks.filter((pro) =>
-            pro.stock.some((s) => s.quantity === 0)
-          ),
           lowStock: allLowStocks.filter((pro) =>
-            pro.stock.some((s) => s.quantity > 0 && s.quantity <= 5)
+            pro.stock.some(
+              (s) =>
+                pro.sizes.includes(s.size) && s.quantity > 0 && s.quantity <= 5
+            )
+          ),
+          outOfStock: allLowStocks.filter((pro) =>
+            pro.stock.some(
+              (s) => pro.sizes.includes(s.size) && s.quantity === 0
+            )
           ),
         }));
       } else {
@@ -330,8 +335,10 @@ const Dashboard = ({ token }) => {
   // Effects
   useEffect(() => {
     getLowStocksProduct();
+  }, [getLowStocksProduct]);
+  useEffect(() => {
     TotalCustomers();
-  }, [getLowStocksProduct, TotalCustomers]);
+  }, [TotalCustomers]);
   const getWeeklyStats = () => {
     const weeklyStats = stats.reduce(
       (acc, stat) => {
@@ -356,7 +363,7 @@ const Dashboard = ({ token }) => {
       });
       return;
     }
-    console.log("Calculating monthly stats.,..", monthlyStats);
+    // console.log("Calculating monthly stats.,..", monthlyStats);
     const monthlyStatss = monthlyStats.reduce(
       (acc, stat) => {
         acc.Profit += stat.Profit;
@@ -369,7 +376,7 @@ const Dashboard = ({ token }) => {
     );
     setMonthlyData(monthlyStatss);
 
-    console.log("Monthly Stats:", monthlyStatss);
+    // console.log("Monthly Stats:", monthlyStatss);
   };
 
   useEffect(() => {
@@ -402,6 +409,21 @@ const Dashboard = ({ token }) => {
       socket.off("customerAdded", handleCustomerAdded);
     };
   }, [fetchAllDashboardData, TotalCustomers]);
+
+  useEffect(() => {
+    socket.on("product:lowstock:updated", (data) => {
+      console.log("Low stock updated:", data);
+      getLowStocksProduct();
+    });
+    socket.on("product:outofstock:updated", (data) => {
+      console.log("Out of stock updated:", data);
+      getLowStocksProduct();
+    });
+    return () => {
+      socket.off("product:lowstock:updated");
+      socket.off("product:outofstock:updated");
+    };
+  }, []);
 
   if (dashboardData.loading)
     return <p className="text-center mt-10">Loading dashboard...</p>;

@@ -11,7 +11,7 @@ import { UserContext } from "../contexts/UserContext.jsx";
 const Login = () => {
   const { backendUrl, navigate, setToken, token } = useContext(GlobalContext);
   const { getUserData } = useContext(UserContext);
-
+  const [forgetingPassword, setForgetingPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -216,9 +216,6 @@ const Login = () => {
                 />
               </div>
             </div>
-
-           
-           
           </div>
         </div>
       </div>

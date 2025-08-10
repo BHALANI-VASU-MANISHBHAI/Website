@@ -123,6 +123,7 @@ const Login = () => {
         email,
         otp,
       });
+      console.log("OTP verification response:", response.data);
       if (response.data.success) {
         setOtpVerified(true);
         setStep("reset");
@@ -198,11 +199,10 @@ const Login = () => {
   // Redirect to home page after successful login/signup
   React.useEffect(() => {
     if (token) {
-      if (window.history.length > 1) {
-        navigate(-1);
-      } else {
-        navigate("/");
-      }
+      console.log("Token found, redirecting to home");
+      navigate("/");
+    } else {
+      navigate("/login");
     }
   }, [token]);
 

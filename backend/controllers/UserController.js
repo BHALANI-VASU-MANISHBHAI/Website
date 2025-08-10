@@ -10,10 +10,18 @@ import {
 import riderHandler from "../socketHandlers/riderHandler.js";
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-const createdToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  });
+const createdToken = (id, role, tokenVersion) => {
+  return jwt.sign(
+    {
+      id,
+      role,
+      tokenVersion,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    }
+  );
 };
 
 // route for user login
@@ -50,10 +58,10 @@ const loginUser = async (req, res) => {
       });
       console.log("Cart data updated in database");
     }
-
+    console.log("User found:", user);
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
-
+    console.log("Password match:", isMatch ? "Yes" : "No");
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -61,8 +69,10 @@ const loginUser = async (req, res) => {
       });
     }
 
+    console.log("User ", user);
+    console.log("User authenticated successfully:", user.tokenVersion);
     // Create token
-    const token = createdToken(user._id, user.role);
+    const token = createdToken(user._id, user.role, user.tokenVersion);
 
     return res.status(200).json({
       success: true,
@@ -115,7 +125,7 @@ const registerUser = async (req, res) => {
 
     const user = await newUser.save();
 
-    const token = createdToken(user._id, user.role);
+    const token = createdToken(user._id, user.role, user.tokenVersion);
 
     req.app
       .get("io")
@@ -145,7 +155,7 @@ const adminLogin = async (req, res) => {
   }
 
   // Create token
-  const token = createdToken(exist._id, exist.role);
+  const token = createdToken(exist._id, exist.role, exist.tokenVersion);
   console.log("Token created for admin:", token);
   return res.status(200).json({
     success: true,
@@ -402,7 +412,7 @@ const googleAuth = async (req, res) => {
       await user.save();
     }
 
-    const jwtToken = createdToken(user._id, user.role);
+    const jwtToken = createdToken(user._id, user.role, user.tokenVersion);
 
     // 👥 Notify via socket (optional)
     req.app.get("io").emit("customerAdded", {
