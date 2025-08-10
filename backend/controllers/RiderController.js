@@ -168,11 +168,7 @@ const riderAcceptOrder = async (req, res) => {
       });
     }
 
-    console.log("Distance from Pickup Location:", distanceFromPickUpLocation);
-    console.log(
-      "Distance from Delivery Location:",
-      distanceFromDeliveryLocation
-    );
+ 
     await Promise.all([
       UserModel.findByIdAndUpdate(userId, {
         riderStatus: "busy",
@@ -529,7 +525,7 @@ const verifyRiderCODPayment = async (req, res) => {
 const getRiderCODHistory = async (req, res) => {
   try {
     const riderId = req.userId;
-    console.log("Fetching COD history for rider:", riderId);
+    
 
     const RiderOrders = await OrderModel.find({
       riderId,
@@ -788,9 +784,7 @@ async function assignSingleOrder(order, io) {
 
         let BaseCharge = 10;
         let riderAmount = 0;
-        console.log("Distance from Pickup Location:", distanceToPickup);
-        console.log("Distance from Delivery Location:", distanceToDelivery);
-        console.log("Total Distance:", totalDistance);
+   
         if (totalDistance < 3) {
           riderAmount = BaseCharge + 5 * totalDistance;
         } else if (totalDistance < 20) {

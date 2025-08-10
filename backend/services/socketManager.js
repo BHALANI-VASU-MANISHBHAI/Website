@@ -8,10 +8,16 @@ export default function socketManager(io) {
       console.log("Admin joined adminRoom:", socket.id);
       socket.join("adminRoom");
     });
-    socket.on("leaveAdminRoom", () => socket.leave("adminRoom"));
+    socket.on("leaveAdminRoom", () => {
+      console.log("Admin left adminRoom:", socket.id);
+      socket.leave("adminRoom");
+    });
 
     // ---- User ----
-    socket.on("joinUserRoom", (userId) => socket.join(userId));
+    socket.on("joinUserRoom", (userId) => {
+      console.log("User joined userRoom:", userId);
+      socket.join(userId);
+    });
     socket.on("joinProductRoom", ({ productId }) =>
       socket.join(productId.toString())
     );
@@ -24,7 +30,10 @@ export default function socketManager(io) {
     socket.on("leaveStockRoom", () => socket.leave("stockRoom"));
 
     // ---- Rider ----
-    socket.on("joinRiderRoom", () => socket.join("riderRoom"));
+    socket.on("joinRiderRoom", () => {
+      console.log("Rider joined riderRoom:", socket.id);
+      socket.join("riderRoom");
+    });
     socket.on("leaveRiderRoom", () => socket.leave("riderRoom"));
 
     socket.on("joinSingleRiderRoom", (riderId) =>
