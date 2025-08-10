@@ -2,8 +2,11 @@
 import axios from "axios";
 import { createContext, useEffect, useState } from "react";
 import { backendUrl } from "../App";
-import socket from "../services/socket";
+// import socket from "../services/socket";
+// import socket from "../../../shared/socket/socketManager.js";
 import { toast } from "react-toastify";
+import SOCKET_EVENTS from "../../../shared/socket/events";
+import { on, off } from "../../../shared/socket/socketManager.js";
 // ✅ Create context here (this was wrong in your code)
 export const OrderContext = createContext();
 
@@ -35,7 +38,8 @@ const OrderContextProvider = ({ children, token }) => {
 
   // Listen to socket updates
   useEffect(() => {
-    socket.on("order:cancelled", (data) => {
+    // ✅ Listen for order cancellation
+    on(SOCKET_EVENTS.ORDER_CANCELLED, (data) => {
       console.log("Order cancelled:", data);
       toast.error("Order cancelled successfully!");
       setOrders((prevOrders) =>
@@ -43,7 +47,8 @@ const OrderContextProvider = ({ children, token }) => {
       );
     });
 
-    socket.on("order:placed", async (data) => {
+    // ✅ Listen for order placement
+    on(SOCKET_EVENTS.ORDER_PLACED, (data) => {
       toast.success("Order placed successfully!");
 
       console.log("Order placed:", data);
@@ -53,11 +58,13 @@ const OrderContextProvider = ({ children, token }) => {
       }
     });
 
-    socket.on("order:all:cancelled", () => {
+    // ✅ Listen for all orders cancellation
+    on(SOCKET_EVENTS.ORDER_ALL_CANCELLED, (data) => {
       fetchAllOrders();
     });
 
-    socket.on("order:delivered", (data) => {
+    // ✅ Listen for order delivery
+    on(SOCKET_EVENTS.ORDER_DELIVERED, (data) => {
       console.log("Order delivered: From OrderContect ", data);
       toast.success("Order delivered successfully!");
 
@@ -68,7 +75,8 @@ const OrderContextProvider = ({ children, token }) => {
       );
     });
 
-    socket.on("order:status:update", (data) => {
+    // ✅ Listen for order status updates
+    on(SOCKET_EVENTS.ORDER_STATUS_UPDATE, (data) => {
       console.log("Order status updated:", data);
       setOrders((prevOrders) =>
         prevOrders.map((order) =>
@@ -79,12 +87,12 @@ const OrderContextProvider = ({ children, token }) => {
       // fetchAllOrders();
     });
     return () => {
-      socket.off("order:cancelled");
+      off(SOCKET_EVENTS.ORDER_CANCELLED);
       // socket.off("orderPlaced");
-      socket.off("order:placed");
-      socket.off("order:all:cancelled");
-      socket.off("order:status:update");
-      socket.off("order:delivered");
+      off(SOCKET_EVENTS.ORDER_PLACED);
+      off(SOCKET_EVENTS.ORDER_ALL_CANCELLED);
+      off(SOCKET_EVENTS.ORDER_STATUS_UPDATE);
+      off(SOCKET_EVENTS.ORDER_DELIVERED);
     };
   }, []);
 

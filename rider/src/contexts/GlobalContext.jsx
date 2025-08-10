@@ -1,6 +1,11 @@
 import { createContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  connectSocket,
+  disconnectSocket,
+} from "../../../shared/socket/socketManager";
 // 1. Create context
+
 export const GlobalContext = createContext();
 
 // 2. Create provider component
@@ -15,13 +20,14 @@ const GlobalContextProvider = ({ children }) => {
 
   // 3. Load token from localStorage on mount
   useEffect(() => {
+    connectSocket();
     const storedToken = localStorage.getItem("token");
     if (storedToken) setToken(storedToken);
+    // Cleanup function to disconnect socket when component unmounts
+    return () => {
+      disconnectSocket();
+    };
   }, []);
-
-  useEffect(() => {
-    console.log("Current location updated: now ", currentLocation);
-  }, [currentLocation]);
 
   const value = {
     backendUrl,

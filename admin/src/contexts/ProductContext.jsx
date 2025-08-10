@@ -1,7 +1,10 @@
 import axios from "axios";
 import React from "react";
-import socket from "../services/socket";
+// import socket from "../services/socket";
+// import socket from "../../../shared/socket/socketMa
 import { useEffect } from "react";
+import SOCKET_EVENTS from "../../../shared/socket/events";
+import { on, off } from "../../../shared/socket/socketManager";
 export const ProductContext = React.createContext();
 
 const ProductContextProvider = ({ children, token }) => {
@@ -36,17 +39,17 @@ const ProductContextProvider = ({ children, token }) => {
   // we used the soket to add the product chnaged real time Low Stock
 
   useEffect(() => {
-    socket.on("product:lowstock:updated", (data) => {
-    console.log("Low stock updated in the context :", data);
-    //  getLowStocksProduct();
+    on(SOCKET_EVENTS.PRODUCT_LOW_STOCK_UPDATED, (data) => {
+      console.log("Low stock updated in the context :", data);
+      getLowStocksProduct();
     });
-    socket.on("product:outofstock:updated", (data) => {
+    on(SOCKET_EVENTS.PRODUCT_OUT_OF_STOCK_UPDATED, (data) => {
       console.log("Out of stock updated: int the context ", data);
-    //   getLowStocksProduct();
+      getLowStocksProduct();
     });
     return () => {
-      socket.off("product:lowstock:updated");
-      socket.off("product:outofstock:updated");
+      off(SOCKET_EVENTS.PRODUCT_LOW_STOCK_UPDATED);
+      off(SOCKET_EVENTS.PRODUCT_OUT_OF_STOCK_UPDATED);
     };
   }, []);
 

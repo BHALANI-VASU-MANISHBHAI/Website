@@ -1,9 +1,12 @@
 import axios from "axios";
 import { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import socket from "../services/sockets.jsx";
+// import socket from "../services/sockets.jsx";
+// import socket from "../../../shared/socket/socketManager.js";
 import { GlobalContext } from "./GlobalContext";
 import { ProductContext } from "./ProductContext";
+import SOCKET_EVENTS from "../../../shared/socket/events.js";
+import { on, off, emit } from "../../../shared/socket/socketManager.js"; // Import socket manager functions
 
 const ProductContextProvider = ({ children }) => {
   const { backendUrl } = useContext(GlobalContext);
@@ -16,16 +19,17 @@ const ProductContextProvider = ({ children }) => {
 
   useEffect(() => {
     // ✅ Join stock room
-    socket.emit("joinStockRoom");
+
+    emit(SOCKET_EVENTS.JOIN_STOCK_ROOM);
 
     // ✅ Socket listener for new product addition
-    socket.on("product:added", (data) => {
+    on(SOCKET_EVENTS.PRODUCT_ADDED, (data) => {
       toast.success(data.message || "New product added!");
       setProducts((prevProducts) => [...prevProducts, data.product]);
     });
 
     // ✅ Socket listener for product updates
-    socket.on("product:updated", (data) => {
+    on(SOCKET_EVENTS.PRODUCT_UPDATED, (data) => {
       // toast.success(data.message || "Product updated!");
       setProducts((prevProducts) =>
         prevProducts.map((product) =>
@@ -37,7 +41,7 @@ const ProductContextProvider = ({ children }) => {
     });
 
     // ✅ Socket listener for product deletion
-    socket.on("product:deleted", (data) => {
+    on(SOCKET_EVENTS.PRODUCT_DELETED, (data) => {
       toast.success(data.message || "Product deleted!");
       setProducts((prevProducts) =>
         prevProducts.filter((product) => product._id !== data.productId)
@@ -45,7 +49,7 @@ const ProductContextProvider = ({ children }) => {
     });
 
     // ✅ Real-time stock update listener
-    socket.on("stock:updated", (data) => {
+    on(SOCKET_EVENTS.STOCK_UPDATED, (data) => {
       setProducts((prevProducts) =>
         prevProducts.map((product) => {
           if (product._id === data.productId) {
@@ -67,11 +71,11 @@ const ProductContextProvider = ({ children }) => {
 
     // ✅ Cleanup on unmount
     return () => {
-      socket.emit("leaveStockRoom");
-      socket.off("product:added");
-      socket.off("product:updated");
-      socket.off("product:deleted");
-      socket.off("stock:updated");
+      emit(SOCKET_EVENTS.LEAVE_STOCK_ROOM);
+      off(SOCKET_EVENTS.PRODUCT_ADDED);
+      off(SOCKET_EVENTS.PRODUCT_UPDATED);
+      off(SOCKET_EVENTS.PRODUCT_DELETED);
+      off(SOCKET_EVENTS.STOCK_UPDATED);
     };
   }, []);
 

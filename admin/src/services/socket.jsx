@@ -1,5 +1,6 @@
 // src/services/socket.js
 import { io } from "socket.io-client";
+import SOCKET_EVENTS from "../../../shared/socket/events";
 
 // Create a single, persistent socket connection
 const socket = io(
@@ -13,11 +14,11 @@ const socket = io(
 );
 
 // Optional: Add a global reconnect listener
-socket.on('connect', () => {
-  console.log('Socket connected:', socket.id);
+socket.on("connect", () => {
+  console.log("Socket connected:", socket.id);
 
   // Always re-join admin room on connect/reconnect
-  socket.emit('joinAdminRoom'); 
+  socket.emit(SOCKET_EVENTS.JOIN_ADMIN_ROOM);
 });
 
 export default socket;

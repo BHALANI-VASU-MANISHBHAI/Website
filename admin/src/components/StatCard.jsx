@@ -1,5 +1,4 @@
 import React from "react";
-
 const StatCard = React.memo(({ title, value, color }) => {
   const colorMap = {
     green: "bg-green-100 text-green-700",

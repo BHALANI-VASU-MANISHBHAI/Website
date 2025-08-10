@@ -1,8 +1,11 @@
 import axios from "axios";
 import React, { useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import socket from "../services/socket";
+// import socket from "../services/socket";
+import socket from "../../../shared/socket/socketManager.js"; // Adjust the import path as needed
 import { GlobalContext } from "./GlobalContext";
+import SOCKET_EVENTS from "../../../shared/socket/events.js";
+import { on, off } from "../../../shared/socket/socketManager.js"; // Import socket manager functions
 
 export const OrderContext = React.createContext();
 
@@ -64,7 +67,7 @@ const OrderContextProvider = ({ children }) => {
       const res = await axios.get(`${backendUrl}/api/rider/riderCODHistory`, {
         headers: { token },
       });
-      console.log("Payment History Response:", res.data);
+      // console.log("Payment History Response:", res.data);
       if (res.data.success) {
         setPaymentHistory(res.data.RiderOrders);
       } else {
@@ -78,7 +81,7 @@ const OrderContextProvider = ({ children }) => {
     }
   };
   useEffect(() => {
-    socket.on("order:delivered", (data) => {
+    on(SOCKET_EVENTS.ORDER_DELIVERED, (data) => {
       toast.success("Order accepted successfully");
 
       orderHistory.push(data.order);
@@ -89,17 +92,16 @@ const OrderContextProvider = ({ children }) => {
       setOrderHistory((prev) => [...prev, data.order]);
       setCurrentOrder(null);
     });
-    socket.on("order:rider:accept", (data) => {
+    on(SOCKET_EVENTS.ORDER_RIDER_ACCEPT, (data) => {
       toast.success("Order accepted successfully");
       setCurrentOrder(data.order);
     });
 
     return () => {
-      socket.off("order:delivered");
-      socket.off("order:rider:accept");
+      off(SOCKET_EVENTS.ORDER_DELIVERED);
+      off(SOCKET_EVENTS.ORDER_RIDER_ACCEPT);
     };
   }, [token]);
-
 
   useEffect(() => {
     if (token) {
@@ -108,8 +110,6 @@ const OrderContextProvider = ({ children }) => {
       getCurrentOrder();
     }
   }, [token]);
-
-  
 
   const value = {
     orderHistory,

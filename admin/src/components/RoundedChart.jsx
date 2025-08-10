@@ -5,7 +5,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 const RoundedChart = React.memo(({ data }) => {
   const [radius, setRadius] = useState({ outer: 60, inner: 30 });
   const [loading, setLoading] = useState(true);
-
+  
   // ✅ Debounce Function
   const debounce = (func, delay) => {
     let timeout;
@@ -50,7 +50,7 @@ const RoundedChart = React.memo(({ data }) => {
 
   return (
     <div className="border-2 border-gray-300 rounded-lg p-5 shadow-md bg-white mt-10 text-center flex flex-col sm:justify-center">
-      <div className="w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] md:w-[300px] md:h-[300px] mx-auto">
+      <div className="w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] md:w-[400px] md:h-[300px] mx-auto">
         <h1>Net Profit vs Cost </h1>
         <ResponsiveContainer>
           <PieChart>
@@ -80,7 +80,7 @@ const RoundedChart = React.memo(({ data }) => {
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: entry.color }}
             ></div>
-            <span>{entry.name}</span>
+            <span className="text-sm">{entry.name}</span>
           </div>
         ))}
       </div>

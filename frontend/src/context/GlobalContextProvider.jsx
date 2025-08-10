@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GlobalContext } from "./GlobalContext";
+import {
+  connectSocket,
+  disconnectSocket,
+} from "../../../shared/socket/socketManager.js";
 
 const GlobalContextProvider = ({ children }) => {
   const [token, setToken] = useState("");
@@ -14,10 +18,15 @@ const GlobalContextProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    connectSocket();
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       setToken(storedToken);
     }
+    () => {
+      // Cleanup function to disconnect socket when component unmounts
+      disconnectSocket();
+    };
   }, []);
 
   const value = {

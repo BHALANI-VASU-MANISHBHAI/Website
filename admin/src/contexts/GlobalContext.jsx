@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-
+// import socket from '../../../shared/socket/socketManager';
 export const GlobalContext = React.createContext();
 
 const GlobalContextProvider = ({ children }) => {

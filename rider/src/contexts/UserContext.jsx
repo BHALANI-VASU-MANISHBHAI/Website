@@ -1,9 +1,12 @@
 import axios from "axios";
 import { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import socket from "../services/socket";
+// import socket from "../services/socket";
+// import socket from "./shared/socket/socketManager.js"; // Adjust the import path as needed
 import { GlobalContext } from "./GlobalContext";
-
+import SOCKET_EVENTS from "../../../shared/socket/events.js";
+import { on, off, emit } from "../../../shared/socket/socketManager.js"; // Import socket manager functions
+import { connectSocket } from "../../../shared/socket/socketManager.js";
 export const UserContext = createContext();
 
 const UserContextProvider = ({ children }) => {
@@ -35,14 +38,15 @@ const UserContextProvider = ({ children }) => {
 
   useEffect(() => {
     if (!userData || userData.role !== "rider") return;
-
+    
     console.log("User data is available and role is rider:", userData);
 
     // Join common room
-    socket.emit("joinRiderRoom", userData._id);
+
+    emit(SOCKET_EVENTS.JOIN_RIDER_ROOM, userData._id);
 
     // ✅ Immediately join the individual rider room
-    socket.emit("joinSingleRiderRoom", userData._id);
+    emit(SOCKET_EVENTS.JOIN_SINGLE_RIDER_ROOM, userData._id);
 
     // Optional: Listen for confirmation
 
@@ -50,12 +54,12 @@ const UserContextProvider = ({ children }) => {
       console.log("✅ Server acknowledged joinRiderRoom:", data);
     };
 
-    socket.on("joinRiderRoom", handleJoin);
+    on(SOCKET_EVENTS.JOIN_RIDER_ROOM, handleJoin);
 
     return () => {
-      socket.off("joinRiderRoom", handleJoin);
-      socket.emit("leaveSingleRiderRoom", userData._id);
-      socket.emit("leaveRiderRoom", userData._id);
+      off(SOCKET_EVENTS.JOIN_RIDER_ROOM, handleJoin);
+      emit(SOCKET_EVENTS.LEAVE_SINGLE_RIDER_ROOM, userData._id);
+      emit(SOCKET_EVENTS.LEAVE_RIDER_ROOM, userData._id);
     };
   }, [userData]);
 
@@ -72,15 +76,16 @@ const UserContextProvider = ({ children }) => {
       }
     };
 
-    socket.on("rider:profile:updated", handleProfileUpdate);
-    socket.on("order:rider:notification", (data) => {
+    on(SOCKET_EVENTS.RIDER_PROFILE_UPDATED, handleProfileUpdate);
+    on(SOCKET_EVENTS.ORDER_RIDER_NOTIFICATION, (data) => {
       console.log("New order notification for rider: in context ", data.ORDER);
       setOrderData(data.ORDER);
       toast.success("New order received!");
     });
 
     return () => {
-      socket.off("rider:profile:updated", handleProfileUpdate);
+      off(SOCKET_EVENTS.RIDER_PROFILE_UPDATED, handleProfileUpdate);
+      off(SOCKET_EVENTS.ORDER_RIDER_NOTIFICATION);
     };
   }, [userData]);
   useEffect(() => {
@@ -92,10 +97,10 @@ const UserContextProvider = ({ children }) => {
       navigate("/login");
     };
 
-    socket.on("rider:password:reset", handleResetPassword);
+    on(SOCKET_EVENTS.RIDER_PASSWORD_RESET, handleResetPassword);
 
     return () => {
-      socket.off("rider:password:reset", handleResetPassword);
+      off(SOCKET_EVENTS.RIDER_PASSWORD_RESET, handleResetPassword);
     };
   }, []);
 
@@ -111,16 +116,16 @@ const UserContextProvider = ({ children }) => {
     }
   }, [token]);
 
-  useEffect(() => {
-    socket.on("order:rider:notification", ({ ORDER }) => {
-      setOrderData(ORDER);
-      localStorage.setItem("activeOrder", JSON.stringify(ORDER));
-      toast.success("New order received!");
-    });
-    return () => {
-      socket.off("order:rider:notification");
-    };
-  }, []);
+  // useEffect(() => {
+  //   on(SOCKET_EVENTS.ORDER_RIDER_NOTIFICATION, ({ ORDER }) => {
+  //     setOrderData(ORDER);
+  //     localStorage.setItem("activeOrder", JSON.stringify(ORDER));
+  //     toast.success("New order received!");
+  //   });
+  //   return () => {
+  //     off(SOCKET_EVENTS.ORDER_RIDER_NOTIFICATION);
+  //   };
+  // }, []);
 
   const value = {
     userData,

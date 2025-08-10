@@ -4,8 +4,10 @@ import { toast } from "react-toastify";
 import Title from "../components/Title";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
-import socket from "../services/sockets.jsx";
-
+// import socket from "../services/sockets.jsx";
+import socket from "../../../shared/socket/socketManager.js"; // Adjust the import path as needed
+import SOCKET_EVENTS from "../../../shared/socket/events.js";
+import { on, off } from "../../../shared/socket/socketManager.js"; // Import socket manager functions
 
 const Orders = () => {
   const { backendUrl, token, currency } = useContext(GlobalContext);
@@ -96,14 +98,12 @@ const Orders = () => {
   };
 
   const TrackLocation = async (orderId) => {
-
     try {
-      const  response = await axios.get(
-        `${backendUrl}/api/order/${orderId}`,
-        { headers: { token } }
-      );
+      const response = await axios.get(`${backendUrl}/api/order/${orderId}`, {
+        headers: { token },
+      });
       if (response.data.success) {
-        console.log("Rider location:", response.data)
+        console.log("Rider location:", response.data);
 
         setOrderData((prevOrders) =>
           prevOrders.map((order) =>
@@ -113,10 +113,8 @@ const Orders = () => {
           )
         );
 
-        
         // toast.success("Rider location tracked successfully");
-      }
-      else {
+      } else {
         console.error("Failed to track rider location:", response.data.message);
         toast.error("Failed to track rider location");
       }
@@ -124,9 +122,7 @@ const Orders = () => {
       console.error("Error tracking location:", error);
       toast.error("Error tracking location");
     }
-  }
-
-
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -136,32 +132,33 @@ const Orders = () => {
   useEffect(() => {
     // socket.emit("joinUserRoom", userData._id);
 
-    socket.on("order:status:update", (data) => {
-      
+    on(SOCKET_EVENTS.ORDER_STATUS_UPDATE, (data) => {
       setOrderData((prevOrders) =>
         prevOrders.map((order) =>
-          order.orderId === data.orderId ? { ...order, status: data.status } : order
+          order.orderId === data.orderId
+            ? { ...order, status: data.status }
+            : order
         )
       );
-      
+
       // loadOrderData();
     });
 
-    socket.on("order:cancelled", (data) => {
+    on(SOCKET_EVENTS.ORDER_CANCELLED, (data) => {
       toast.info("Order Cancelled");
       console.log("Order Cancelled:", data);
       loadOrderData();
     });
 
-    socket.on("order:all:cancelled", (data) => {
+    on(SOCKET_EVENTS.ORDER_ALL_CANCELLED, (data) => {
       toast.info(data.message);
       loadOrderData();
     });
 
     return () => {
-      socket.off("order:status:update");
-      socket.off("order:cancelled");
-      socket.off("order:all:cancelled");
+      off(SOCKET_EVENTS.ORDER_STATUS_UPDATE);
+      off(SOCKET_EVENTS.ORDER_CANCELLED);
+      off(SOCKET_EVENTS.ORDER_ALL_CANCELLED);
     };
   }, [userData]);
 
@@ -229,7 +226,7 @@ const Orders = () => {
                         className="text-sm text-blue-600 underline"
                         onClick={() => TrackLocation(item.orderId)}
                       >
-                       Track Rider
+                        Track Rider
                       </a>
                     )}
                   </div>

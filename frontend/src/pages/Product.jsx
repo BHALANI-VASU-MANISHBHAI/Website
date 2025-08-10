@@ -13,7 +13,10 @@ import { CartContext } from "../context/CartContext.jsx";
 import { GlobalContext } from "../context/GlobalContext.jsx";
 import { ProductContext } from "../context/ProductContext.jsx";
 import { UserContext } from "../context/UserContext.jsx";
-import socket from "../services/sockets.jsx";
+// import socket from "../services/sockets.jsx";
+// import socket from "../../../shared/socket/socketManager.js"; // Adjust the import path as needed
+import SOCKET_EVENTS from "../../../shared/socket/events.js";
+import { emit, on, off } from "../../../shared/socket/socketManager.js"; // Import socket manager functions
 
 const Product = () => {
   //  products, currency, addToCart, backendUrl, token, userData
@@ -184,9 +187,9 @@ const Product = () => {
   }, [id]);
   useEffect(() => {
     // Join product room on mount
-    socket.emit("joinProductRoom", { productId: id });
+    emit(SOCKET_EVENTS.JOIN_PRODUCT_ROOM, { productId: id });
 
-    socket.on("review:add", (data) => {
+    on(SOCKET_EVENTS.REVIEW_ADDED, (data) => {
       console.log("data", data);
       if (data.productId === id) {
         toast.success("New review added!");
@@ -195,7 +198,7 @@ const Product = () => {
       }
     });
 
-    socket.on("review:update", (data) => {
+    on(SOCKET_EVENTS.REVIEW_UPDATED, (data) => {
       console.log("data", data);
       console.log("id", id);
       if (data.productId === id) {
@@ -205,7 +208,7 @@ const Product = () => {
       }
     });
 
-    socket.on("review:delete", (data) => {
+    on(SOCKET_EVENTS.REVIEW_DELETED, (data) => {
       if (data.productId === id) {
         toast.success("Review deleted successfully!");
         fetchReviews();
@@ -214,10 +217,10 @@ const Product = () => {
 
     // Leave product room on unmount
     return () => {
-      socket.emit("leaveProductRoom", { productId: id });
-      socket.off("review:add");
-      socket.off("review:update");
-      socket.off("review:delete");
+      emit(SOCKET_EVENTS.LEAVE_PRODUCT_ROOM, { productId: id });
+      off(SOCKET_EVENTS.REVIEW_ADDED);
+      off(SOCKET_EVENTS.REVIEW_UPDATED);
+      off(SOCKET_EVENTS.REVIEW_DELETED);
     };
   }, [id]);
 

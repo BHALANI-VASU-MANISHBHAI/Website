@@ -1,7 +1,12 @@
 import React, { useContext, useState } from "react";
 import { GlobalContext } from "./GlobalContext"; // Import GlobalContext
-import socket from "../services/socket";
+// import socket from "../services/socket";
+// import socket from "../../../shared/socket/socketManager.js"; // Adjust the import path as needed
 import { useEffect } from "react";
+import {
+  connectAdminRoom,
+  disconnectAdminRoom,
+} from "../../../shared/socket/socketManager";
 export const UserContext = React.createContext();
 
 const UserContextProvider = ({ children }) => {
@@ -43,8 +48,12 @@ const UserContextProvider = ({ children }) => {
   useEffect(() => {
     if (token) {
       // Join the admin room if the user is an admin
-      
+      connectAdminRoom();
     }
+
+    return () => {
+      disconnectAdminRoom();
+    };
   }, [token]);
 
   // Optionally, you can add a function to update user data

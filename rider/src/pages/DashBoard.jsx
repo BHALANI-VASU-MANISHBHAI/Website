@@ -4,8 +4,10 @@ import { toast } from "react-toastify";
 import { GlobalContext } from "../contexts/GlobalContext";
 import { OrderContext } from "../contexts/OrderContext";
 import { UserContext } from "../contexts/UserContext";
-import socket from "../services/socket";
-
+// import socket from "../services/socket";
+// import socket from "../../../shared/socket/socketManager";
+import SOCKET_EVENTS from "../../../shared/socket/events";
+import { on, off } from "../../../shared/socket/socketManager.js"; // Import socket manager functions
 const Dashboard = () => {
   const { userData, orderData, setOrderData } = useContext(UserContext);
   const { backendUrl, token, currentLocation } = useContext(GlobalContext);
@@ -138,9 +140,9 @@ const Dashboard = () => {
       // // Estimate pickup → delivery
     };
 
-    socket.on("order:rider:notification", handleNewOrder);
+    // on(SOCKET_EVENTS.ORDER_RIDER_NOTIFICATION, handleNewOrder);
     return () => {
-      socket.off("order:rider:notification", handleNewOrder);
+      // off(SOCKET_EVENTS.ORDER_RIDER_NOTIFICATION, handleNewOrder);
       clearInterval(countdownRef.current);
     };
   }, [currentLocation, orderData]);

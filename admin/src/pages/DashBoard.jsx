@@ -1,6 +1,5 @@
 import axios from "axios";
 import React, {
-  use,
   useCallback,
   useContext,
   useEffect,
@@ -8,38 +7,23 @@ import React, {
   useState,
 } from "react";
 
-import { data, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { backendUrl } from "../App.jsx";
 import assets from "../assets/assets.js";
 import RoundedChart from "../components/RoundedChart.jsx";
 import { OrderContext } from "../contexts/OrderContext.jsx";
-import { ProductContext } from "../contexts/ProductContext.jsx";
-import socket from "../services/socket.jsx";
-import PopularProductCard from "../components/PopularProductCard.jsx";
+import SOCKET_EVENTS from "../../../shared/socket/events.js";
+import { off, on } from "../../../shared/socket/socketManager.js";
 import DashboardCard from "../components/DashboardCard.jsx";
-import StockItem from "../components/StockItem.jsx";
+import {
+  MonthlyStatsCard,
+  StockList,
+  WeeklyStatsCard,
+  TopFilter,
+} from "../components/DashboardComponents.jsx";
+import PopularProductCard from "../components/PopularProductCard.jsx";
 import WeeklyStatsChart from "../components/WeeklyStatsChart.jsx";
-const StockHeader = React.memo(() => (
-  <div className="hidden md:grid grid-cols-[1fr_3fr_1fr_1fr_1fr] bg-gray-100 items-center py-1 px-2 border text-sm">
-    <b>Image</b>
-    <b>Name</b>
-    <b>Category (SubCategory)</b>
-    <b className="ml-5">Stock</b>
-    <b className="text-center">Action</b>
-  </div>
-));
-
-const QuickDateButton = React.memo(({ label, onClick, selected }) => (
-  <button
-    className={`px-3 py-1 rounded cursor-pointer ${
-      selected ? "bg-blue-500 text-white" : "bg-gray-200 hover:bg-gray-300"
-    }`}
-    onClick={onClick}
-  >
-    {label}
-  </button>
-));
 
 const Dashboard = ({ token }) => {
   const { orders } = useContext(OrderContext);
@@ -141,13 +125,13 @@ const Dashboard = ({ token }) => {
       { name: "Profit", value: dashboardData.profit, color: "#4CAF50" },
       {
         name: "Rider Profit",
-        value: dashboardData.deliveryProfit,
+        value: dashboardData.deliveryProfit.toFixed(2),
         color: "#2196F3",
       },
       { name: "Cost", value: dashboardData.cost, color: "#FF9800" },
       {
         name: "Rider Cost",
-        value: dashboardData.deliveredCost,
+        value: dashboardData.deliveredCost.toFixed(2),
         color: "#9C27B0",
       },
     ],
@@ -375,8 +359,6 @@ const Dashboard = ({ token }) => {
       { Profit: 0, RiderProfit: 0, Cost: 0, RiderCost: 0 }
     );
     setMonthlyData(monthlyStatss);
-
-    // console.log("Monthly Stats:", monthlyStatss);
   };
 
   useEffect(() => {
@@ -399,29 +381,29 @@ const Dashboard = ({ token }) => {
     const handleUpdate = () => fetchAllDashboardData();
     const handleCustomerAdded = () => TotalCustomers();
 
-    socket.on("order:placed", handleUpdate);
-    socket.on("order:cancelled", handleUpdate);
-    socket.on("customerAdded", handleCustomerAdded);
+    on(SOCKET_EVENTS.ORDER_PLACED, handleUpdate);
+    on(SOCKET_EVENTS.ORDER_CANCELLED, handleUpdate);
+    on(SOCKET_EVENTS.CUSTOMER_ADDED, handleCustomerAdded);
 
     return () => {
-      socket.off("order:placed", handleUpdate);
-      socket.off("order:cancelled", handleUpdate);
-      socket.off("customerAdded", handleCustomerAdded);
+      off(SOCKET_EVENTS.ORDER_PLACED, handleUpdate);
+      off(SOCKET_EVENTS.ORDER_CANCELLED, handleUpdate);
+      off(SOCKET_EVENTS.CUSTOMER_ADDED, handleCustomerAdded);
     };
   }, [fetchAllDashboardData, TotalCustomers]);
 
   useEffect(() => {
-    socket.on("product:lowstock:updated", (data) => {
+    on(SOCKET_EVENTS.PRODUCT_LOW_STOCK_UPDATED, (data) => {
       console.log("Low stock updated:", data);
       getLowStocksProduct();
     });
-    socket.on("product:outofstock:updated", (data) => {
+    on(SOCKET_EVENTS.PRODUCT_OUT_OF_STOCK_UPDATED, (data) => {
       console.log("Out of stock updated:", data);
       getLowStocksProduct();
     });
     return () => {
-      socket.off("product:lowstock:updated");
-      socket.off("product:outofstock:updated");
+      off(SOCKET_EVENTS.PRODUCT_LOW_STOCK_UPDATED);
+      off(SOCKET_EVENTS.PRODUCT_OUT_OF_STOCK_UPDATED);
     };
   }, []);
 
@@ -457,52 +439,13 @@ const Dashboard = ({ token }) => {
       {tab === "overview" && (
         <>
           {/* Date Picker */}
-          <div className="flex flex-col gap-4 mb-5 px-4 py-4 rounded-lg md:flex-row md:justify-between md:items-center bg-gray-100 shadow-md">
-            <div className="flex flex-wrap gap-4">
-              {["Today", "7D", "1M", "3M", "6M", "1Y"].map((label, i) => (
-                <QuickDateButton
-                  key={label}
-                  label={label}
-                  selected={filters.selectedRange === label}
-                  onClick={() =>
-                    setStartDateToPastDays([0, 7, 30, 90, 180, 365][i], label)
-                  }
-                />
-              ))}
-            </div>
-            <div className="flex gap-3 items-center">
-              <p>Start Date</p>
-              <input
-                type="date"
-                value={filters.startDate}
-                max={filters.endDate}
-                onChange={(e) => {
-                  setFilters((prev) => ({
-                    ...prev,
-                    startDate: e.target.value,
-                    selectedRange: null,
-                  }));
-                }}
-                className="border border-gray-300 rounded px-2 py-1"
-              />
-            </div>
-            <div className="flex gap-4 items-center">
-              <p>End Date</p>
-              <input
-                type="date"
-                value={filters.endDate}
-                min={filters.startDate}
-                onChange={(e) => {
-                  setFilters((prev) => ({
-                    ...prev,
-                    endDate: e.target.value,
-                    selectedRange: null,
-                  }));
-                }}
-                className="border border-gray-300 rounded px-2 py-1"
-              />
-            </div>
-          </div>
+          <TopFilter
+            label="Date Range"
+            selected={filters.selectedRange}
+            setStartDateToPastDays={setStartDateToPastDays}
+            filters={filters}
+            setFilters={setFilters}
+          />
 
           {/* Cards */}
           <div className="flex flex-row gap-7">
@@ -561,27 +504,11 @@ const Dashboard = ({ token }) => {
                 <option value="low">Low Stock</option>
               </select>
             </div>
-            {displayedProducts.length > 0 ? (
-              <div className="flex flex-col gap-2 mt-3">
-                <StockHeader />
-                {displayedProducts.map((item, index) => (
-                  <StockItem
-                    key={index}
-                    item={item}
-                    selectedStockType={filters.selectedStockType}
-                    navigate={navigate}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 mt-2">
-                No{" "}
-                {filters.selectedStockType === "out"
-                  ? "Out of Stock"
-                  : "Low Stock"}{" "}
-                Products
-              </p>
-            )}
+            <StockList
+              displayedProducts={displayedProducts}
+              selectedStockType={filters.selectedStockType}
+              navigate={navigate}
+            />
           </div>
         </>
       )}
@@ -660,101 +587,17 @@ const Dashboard = ({ token }) => {
           <div>
             {weeklyStats && (
               <div className="mt-10 space-y-6">
-                {/* Weekly Stats Card */}
-                <div className="p-6 bg-white rounded-lg shadow-md space-y-4">
-                  <h2 className="text-xl font-bold">
-                    Weekly Stats from {startDate} to {endDate}
-                  </h2>
+                <WeeklyStatsCard
+                  weeklyStats={weeklyStats}
+                  startDate={startDate}
+                  endDate={endDate}
+                />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {weeklyStats.Profit > 0 && (
-                      <div className="p-3 bg-gray-50 rounded-md">
-                        <p className="text-lg font-semibold">
-                          Total Profit: ₹{weeklyStats.Profit.toFixed(2)}
-                        </p>
-                      </div>
-                    )}
-
-                    {weeklyStats.RiderProfit > 0 && (
-                      <div className="p-3 bg-gray-50 rounded-md">
-                        <p className="text-lg font-semibold">
-                          Total Rider Profit: ₹
-                          {weeklyStats.RiderProfit.toFixed(2)}
-                        </p>
-                      </div>
-                    )}
-
-                    {weeklyStats.Cost > 0 && (
-                      <div className="p-3 bg-gray-50 rounded-md">
-                        <p className="text-lg font-semibold">
-                          Total Cost: ₹{weeklyStats.Cost.toFixed(2)}
-                        </p>
-                      </div>
-                    )}
-
-                    {weeklyStats.RiderCost > 0 && (
-                      <div className="p-3 bg-gray-50 rounded-md">
-                        <p className="text-lg font-semibold">
-                          Total Rider Cost: ₹{weeklyStats.RiderCost.toFixed(2)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  {weeklyStats.Profit == 0 && weeklyStats.Cost == 0 ? (
-                    <p className="text-gray-500 mt-2">
-                      No stats available for {startDate} to {endDate}.
-                    </p>
-                  ) : null}
-                </div>
-
-                {/* Monthly Stats Card */}
-                <div className="p-6 bg-white rounded-lg shadow-md space-y-4">
-                  <h2 className="text-xl font-bold mb-2">
-                    Monthly Stats for{" "}
-                    {new Date(year, month - 1).toLocaleString("default", {
-                      month: "long",
-                    })}{" "}
-                    {year}
-                  </h2>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {monthlyData.Profit > 0 && (
-                      <>
-                        <div className="p-3 bg-gray-50 rounded-md">
-                          <p className="text-lg font-semibold">
-                            Total Profit: ₹{monthlyData.Profit?.toFixed(2) || 0}
-                          </p>
-                        </div>
-
-                        <div className="p-3 bg-gray-50 rounded-md">
-                          <p className="text-lg font-semibold">
-                            Total Rider Profit: ₹
-                            {monthlyData.RiderProfit?.toFixed(2) || 0}
-                          </p>
-                        </div>
-
-                        <div className="p-3 bg-gray-50 rounded-md">
-                          <p className="text-lg font-semibold">
-                            Total Cost: ₹{monthlyData.Cost?.toFixed(2) || 0}
-                          </p>
-                        </div>
-
-                        <div className="p-3 bg-gray-50 rounded-md">
-                          <p className="text-lg font-semibold">
-                            Total Rider Cost: ₹
-                            {monthlyData.RiderCost?.toFixed(2) || 0}
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {monthlyData.Profit == 0 && monthlyData.Cost == 0 ? (
-                    <p className="text-gray-500 mt-2">
-                      No stats available for this month.
-                    </p>
-                  ) : null}
-                </div>
+                <MonthlyStatsCard
+                  monthlyData={monthlyData}
+                  month={month}
+                  year={year}
+                />
               </div>
             )}
           </div>

@@ -1,8 +1,11 @@
 import axios from "axios";
 import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify"; // ✅ Make sure you're using toast properly
-import socket from "../services/socket"; // ✅ Import your socket service
+// import socket from "../services/socket"; // ✅ Import your socket service
+import SOCKET_EVENTS from "../../../shared/socket/events.js";
+import { on, off } from "../../../shared/socket/socketManager.js"; // Import socket manager functions
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
 
 export const RiderContext = createContext();
 
@@ -82,8 +85,6 @@ const RiderContextProvider = ({ children }) => {
     }
   };
 
-
-
   useEffect(() => {
     //    req.app.get("io").to("adminRoom").emit("orderPacked", {
     // orderId: updatedOrder._id,
@@ -91,14 +92,14 @@ const RiderContextProvider = ({ children }) => {
     // message: "Order is ready to assign a rider",
     //    });
 
-    socket.on("order:packed", async (data) => {
+    on(SOCKET_EVENTS.ORDER_PACKED, async (data) => {
       console.log("Order packed event received:", data);
       // You can handle the order packed event here, e.g., show a notification
       // Optionally, you can call AssignOrderToRider here if needed
       await AssignOrderToRider(data.orderId);
     });
 
-    socket.on("order:accepted", async (data) => {
+    on(SOCKET_EVENTS.ORDER_RIDER_ACCEPT, async (data) => {
       console.log("Order accepted event received:", data);
 
       // Optimistically update order in context
@@ -114,33 +115,33 @@ const RiderContextProvider = ({ children }) => {
       toast.success(`Order ${data.order._id} accepted by rider`);
     });
 
-    socket.on("order:status:update", async (data) => {
+    on(SOCKET_EVENTS.ORDER_STATUS_UPDATE, async (data) => {
       console.log("Order status updated event received:", data);
-      
+
       if (data.status !== "Packing") {
         // Handle the order status update event here, e.g., update the riderOrders state
         await getAllRidersOrders(); // Refresh the orders
       }
     });
-    socket.on("codSubmitted", async (data) => {
+    on(SOCKET_EVENTS.COD_SUBMITTED, async (data) => {
       console.log("COD submitted event received:", data);
       // Handle the COD submitted event here, e.g., update the riderOrders state
       await getAllRidersOrders(); // Refresh the orders
       toast.success(`COD payment verified for order ${data.orderId}`);
     });
-    socket.on("rider:profile:updated", async (data) => {
+    on(SOCKET_EVENTS.RIDER_PROFILE_UPDATED, async (data) => {
       // Optionally, you can fetch
       await getAllRidersOrders(); // Refresh the orders
     });
 
     return () => {
-      socket.off("order:packed"); // Clean up the event listener
-      socket.off("order:status:update"); // Clean up the event listener
-      socket.off("codSubmitted"); // Clean up the event listener
-      socket.off("rider:profile:updated"); // Clean up the event listener
-      // socket.off("orderStatusUpdated"); // Clean up the event listener
-      socket.off("order:status:update"); // Clean up the event listener
-      socket.off("order:accepted"); // Clean up the event listener
+      off(SOCKET_EVENTS.ORDER_PACKED); // Clean up the event listener
+      off("ORDER_STATUS_UPDATE"); // Clean up the event listener
+      off(SOCKET_EVENTS.COD_SUBMITTED);
+      off(SOCKET_EVENTS.RIDER_PROFILE_UPDATED); 
+      // off("orderStatusUpdated"); // Clean up the event listener
+      off(SOCKET_EVENTS.ORDER_STATUS_UPDATE); // Clean up the event listener
+      off(SOCKET_EVENTS.ORDER_ACCEPTED); // Clean up the event listener
     };
   }, [token]);
 

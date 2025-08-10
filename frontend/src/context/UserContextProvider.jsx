@@ -3,10 +3,16 @@ import React, { useContext, useState } from "react";
 import { toast } from "react-toastify";
 import { GlobalContext } from "./GlobalContext";
 import { UserContext } from "./UserContext";
-import socket from "../services/sockets";
+// import socket from "../services/sockets";
+// import socket from "../../../shared/socket/socketManager.js"; // Adjust the import path as needed
 import { useEffect } from "react";
-import { use } from "react";
-
+import SOCKET_EVENTS from "../../../shared/socket/events";
+import {
+  on,
+  off,
+  emit,
+  connectSocket,
+} from "../../../shared/socket/socketManager.js"; // Import socket manager functions
 const UserContextProvider = ({ children }) => {
   const { backendUrl, token, navigate, setToken } = useContext(GlobalContext);
   const [userData, setUserData] = useState({});
@@ -36,13 +42,13 @@ const UserContextProvider = ({ children }) => {
   useEffect(() => {
     console.log("User Data:", userData);
     if (userData) {
-      socket.emit("joinUserRoom", userData._id);
+      emit(SOCKET_EVENTS.JOIN_USER_ROOM, userData._id);
       console.log("User joined their room:", userData._id);
     }
   }, [userData]);
   useEffect(() => {
     // Listen for user data updates via socket
-    socket.on("user:password:reset", (data) => {
+    on(SOCKET_EVENTS.USER_PASSWORD_RESET, (data) => {
       toast.success("User changed password successfully");
       localStorage.removeItem("token");
       setToken("");
@@ -51,7 +57,7 @@ const UserContextProvider = ({ children }) => {
 
     // Cleanup listener when component unmounts
     return () => {
-      socket.off("user:password:reset");
+      off(SOCKET_EVENTS.USER_PASSWORD_RESET);
     };
   }, []);
 
